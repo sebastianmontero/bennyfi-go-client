@@ -86,6 +86,19 @@ func (m *BennyfiContract) GetSettings() ([]Setting, error) {
 	return m.GetSettingsReq(nil)
 }
 
+func (m *BennyfiContract) GetSetting(key string) (*Setting, error) {
+	settings, err := m.GetSettings()
+	if err != nil {
+		return nil, err
+	}
+	for _, setting := range settings {
+		if setting.Key == key {
+			return &setting, nil
+		}
+	}
+	return nil, nil
+}
+
 func (m *BennyfiContract) GetSettingsReq(req *eos.GetTableRowsRequest) ([]Setting, error) {
 
 	var settings []Setting

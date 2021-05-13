@@ -24,10 +24,14 @@ package bennyfi
 import (
 	"fmt"
 
+	eos "github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/ecc"
 	"github.com/sebastianmontero/eos-go-toolbox/contract"
 	"github.com/sebastianmontero/eos-go-toolbox/service"
+	"github.com/sebastianmontero/eos-go-toolbox/util"
 )
+
+var PercentageAdjustment = float64(10000000)
 
 type BennyfiContract struct {
 	*contract.Contract
@@ -65,4 +69,13 @@ func (m *BennyfiContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) erro
 		return fmt.Errorf("failed to link open permission to the unstakeopen action, error: %v", err)
 	}
 	return nil
+}
+
+func CalculatePercentage(amount interface{}, percentage int64) (eos.Asset, error) {
+	amnt, err := util.ToAsset(amount)
+	if err != nil {
+		return eos.Asset{}, err
+	}
+	perctAmnt := float64(amnt.Amount) * float64((float64(percentage) / PercentageAdjustment))
+	return eos.Asset{Amount: eos.Int64(perctAmnt), Symbol: amnt.Symbol}, nil
 }

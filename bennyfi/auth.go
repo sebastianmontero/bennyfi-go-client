@@ -27,20 +27,52 @@ import (
 	eos "github.com/eoscanada/eos-go"
 )
 
+var (
+	Sudo         uint64 = 0
+	Admin        uint64 = 10
+	Enroller     uint64 = 20
+	TermManager  uint64 = 30
+	RoundManager uint64 = 40
+	Player       uint64 = 50
+	Beneficiary  uint64 = 60
+)
+
 type Auth struct {
-	Authorizer eos.AccountName `json:"authorizer"`
-	Account    eos.AccountName `json:"account"`
-	Level      uint64          `json:"auth_level"`
-	Notes      string          `json:"notes"`
+	Authorizer  eos.AccountName `json:"authorizer"`
+	Account     eos.AccountName `json:"account"`
+	Level       uint64          `json:"auth_level"`
+	DisplayName string          `json:"display_name"`
+	Avatar      string          `json:"avatar"`
+	Notes       string          `json:"notes"`
 }
 
-func (m *BennyfiContract) SetAuth(authorizer, account eos.AccountName, level uint64, notes string) (string, error) {
+func (m *BennyfiContract) SetAuth(auth *Auth) (string, error) {
+	_, err := m.Contract.ExecAction(auth.Authorizer, "setauth", auth)
+	if err != nil {
+		return "", err
+	}
+	return "", nil
+}
+
+func (m *BennyfiContract) SetAuthLevel(authorizer, account eos.AccountName, level uint64, notes string) (string, error) {
 	actionData := make(map[string]interface{})
 	actionData["authorizer"] = authorizer
 	actionData["account"] = account
 	actionData["auth_level"] = level
 	actionData["notes"] = notes
-	_, err := m.Contract.ExecAction(string(authorizer), "setauth", actionData)
+	_, err := m.Contract.ExecAction(authorizer, "setauthlevel", actionData)
+	if err != nil {
+		return "", err
+	}
+	return "", nil
+}
+
+func (m *BennyfiContract) SetProfile(account eos.AccountName, displayName, avatar string) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["account"] = account
+	actionData["display_name"] = displayName
+	actionData["avatar"] = avatar
+	_, err := m.Contract.ExecAction(account, "setprofile", actionData)
 	if err != nil {
 		return "", err
 	}
@@ -60,6 +92,27 @@ func (m *BennyfiContract) EraseAuth(authorizer, account eos.AccountName) (string
 
 func (m *BennyfiContract) GetAuths() ([]Auth, error) {
 	return m.GetAuthsReq(nil)
+}
+
+func (m *BennyfiContract) GetAuth(accountName interface{}) (*Auth, error) {
+	request := &eos.GetTableRowsRequest{}
+	m.FilterAuthsByAccount(request, accountName, true)
+	auths, err := m.GetAuthsReq(request)
+	if err != nil {
+		return nil, fmt.Errorf("get table rows %v", err)
+	}
+	if len(auths) > 0 {
+		return &auths[0], nil
+	}
+	return nil, nil
+}
+
+func (m *BennyfiContract) FilterAuthsByAccount(req *eos.GetTableRowsRequest, account interface{}, exclusive bool) {
+	req.LowerBound = fmt.Sprintf("%v", account)
+	if exclusive {
+		req.UpperBound = req.LowerBound
+		req.Limit = 1
+	}
 }
 
 func (m *BennyfiContract) GetAuthsReq(req *eos.GetTableRowsRequest) ([]Auth, error) {

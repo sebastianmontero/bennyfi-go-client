@@ -126,10 +126,8 @@ func (m *BennyfiContract) GetTokens() ([]AuthToken, error) {
 
 func (m *BennyfiContract) GetToken(symbol eos.Symbol) (*AuthToken, error) {
 
-	request := &eos.GetTableRowsRequest{
-		Limit: 1,
-	}
-	err := m.FilterTokensBySymbol(request, symbol)
+	request := &eos.GetTableRowsRequest{}
+	err := m.FilterTokensBySymbol(request, symbol, true)
 	if err != nil {
 		return nil, err
 	}
@@ -143,13 +141,17 @@ func (m *BennyfiContract) GetToken(symbol eos.Symbol) (*AuthToken, error) {
 	return nil, nil
 }
 
-func (m *BennyfiContract) FilterTokensBySymbol(req *eos.GetTableRowsRequest, symbol eos.Symbol) error {
+func (m *BennyfiContract) FilterTokensBySymbol(req *eos.GetTableRowsRequest, symbol eos.Symbol, exclusive bool) error {
 
 	symbolCode, err := symbol.SymbolCode()
 	if err != nil {
 		return fmt.Errorf("converting symbol to uint64 %v", err)
 	}
 	req.LowerBound = symbolCode.String()
+	if exclusive {
+		req.UpperBound = req.LowerBound
+		req.Limit = 1
+	}
 	return nil
 }
 

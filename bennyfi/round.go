@@ -40,6 +40,7 @@ var (
 	EntryStaked           = eos.Name("entrystaked")
 	EntryReturnPaid       = eos.Name("returnpaid")
 	EntryUnstaked         = eos.Name("unstaked")
+	EntryEarlyExit        = eos.Name("earlyexit")
 )
 
 var microsecondsPerHr int64 = 60 * 60 * 1000000
@@ -112,6 +113,22 @@ func TermToNewTermArgs(terms *Term) *NewTermArgs {
 	}
 }
 
+type Winner struct {
+	Participant   eos.AccountName `json:"participant"`
+	Prize         string          `json:"prize"`
+	EntryPosition uint64          `json:"entry_position"`
+}
+
+func NewWinner(participant eos.AccountName, prize string, entryPosition uint64) *Winner {
+	return &Winner{
+		Participant:   participant,
+		Prize:         prize,
+		EntryPosition: entryPosition,
+	}
+}
+
+type Winners []*Winner
+
 type Round struct {
 	RoundID                uint64          `json:"round_id"`
 	TermID                 uint64          `json:"term_id"`
@@ -124,11 +141,14 @@ type Round struct {
 	NumParticipantsEntered uint32          `json:"num_participants_entered"`
 	NumClaimedReturns      uint32          `json:"num_claimed_returns"`
 	NumUnstaked            uint32          `json:"num_unstaked"`
+	NumEarlyExits          uint32          `json:"num_early_exits"`
 	CurrentState           eos.Name        `json:"current_state"`
 	TotalDeposits          string          `json:"total_deposits"`
-	WinnerPrize            string          `json:"winner_prize"`
+	Winners                Winners         `json:"winners"`
 	BeneficiaryReward      string          `json:"beneficiary_reward"`
 	MinParticipantReward   string          `json:"min_participant_reward"`
+	TotalEarlyExitStake    string          `json:"total_early_exit_stake"`
+	TotalEarlyExitReward   string          `json:"total_early_exit_reward"`
 	RoundManager           eos.AccountName `json:"round_manager"`
 	StakedTime             string          `json:"staked_time"`
 	CreatedDate            string          `json:"created_date"`
@@ -170,11 +190,14 @@ func (m *Round) Clone() *Round {
 		NumParticipantsEntered: m.NumParticipantsEntered,
 		NumClaimedReturns:      m.NumClaimedReturns,
 		NumUnstaked:            m.NumUnstaked,
+		NumEarlyExits:          m.NumEarlyExits,
 		CurrentState:           m.CurrentState,
 		TotalDeposits:          m.TotalDeposits,
-		WinnerPrize:            m.WinnerPrize,
+		Winners:                m.Winners,
 		BeneficiaryReward:      m.BeneficiaryReward,
 		MinParticipantReward:   m.MinParticipantReward,
+		TotalEarlyExitStake:    m.TotalEarlyExitStake,
+		TotalEarlyExitReward:   m.TotalEarlyExitReward,
 		RoundManager:           m.RoundManager,
 		StakedTime:             m.StakedTime,
 		CreatedDate:            m.CreatedDate,
