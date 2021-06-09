@@ -454,6 +454,29 @@ func (m *BennyfiContract) FilterEntriesbyStatus(req *eos.GetTableRowsRequest, st
 	req.UpperBound = string(status)
 }
 
+func (m *BennyfiContract) GetEntriesbyRoundAndPos(roundID uint64, pos uint64) ([]Entry, error) {
+	request := &eos.GetTableRowsRequest{}
+	err := m.FilterEntriesbyRoundAndPos(request, roundID, pos)
+	if err != nil {
+		return nil, err
+	}
+	return m.GetEntriesReq(request)
+}
+
+func (m *BennyfiContract) FilterEntriesbyRoundAndPos(req *eos.GetTableRowsRequest, roundID uint64, pos uint64) error {
+
+	req.Index = "7"
+	req.KeyType = "i128"
+	rndAndPos, err := m.EOS.GetComposedIndexValue(roundID, pos)
+	fmt.Println("By round and pos value: ", rndAndPos)
+	if err != nil {
+		return fmt.Errorf("failed to generate composed index, err: %v", err)
+	}
+	req.LowerBound = rndAndPos
+	req.UpperBound = rndAndPos
+	return err
+}
+
 func (m *BennyfiContract) GetEntriesbyRoundAndStatus(roundID uint64, status eos.Name) ([]Entry, error) {
 	request := &eos.GetTableRowsRequest{}
 	err := m.FilterEntriesbyRoundAndStatus(request, roundID, status)
