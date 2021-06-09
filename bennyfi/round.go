@@ -468,7 +468,6 @@ func (m *BennyfiContract) FilterEntriesbyRoundAndPos(req *eos.GetTableRowsReques
 	req.Index = "7"
 	req.KeyType = "i128"
 	rndAndPos, err := m.EOS.GetComposedIndexValue(roundID, pos)
-	fmt.Println("By round and pos value: ", rndAndPos)
 	if err != nil {
 		return fmt.Errorf("failed to generate composed index, err: %v", err)
 	}
