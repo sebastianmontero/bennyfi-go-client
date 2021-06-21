@@ -133,6 +133,7 @@ type Winners []*Winner
 type Round struct {
 	RoundID                uint64          `json:"round_id"`
 	TermID                 uint64          `json:"term_id"`
+	RoundName              string          `json:"round_name"`
 	StakingPeriod          *Microseconds   `json:"staking_period"`
 	EnrollmentTimeOut      *Microseconds   `json:"enrollment_time_out"`
 	NumParticipants        uint32          `json:"num_participants"`
@@ -158,6 +159,7 @@ type Round struct {
 
 type NewRoundArgs struct {
 	TermID               uint64          `json:"term_id"`
+	RoundName            string          `json:"round_name"`
 	StakingPeriodHrs     uint32          `json:"staking_period_hrs"`
 	EnrollmentTimeOutHrs uint32          `json:"enrollment_time_out_hrs"`
 	NumParticipants      uint32          `json:"num_participants"`
@@ -169,6 +171,7 @@ type NewRoundArgs struct {
 func RoundToNewRoundArgs(round *Round) *NewRoundArgs {
 	return &NewRoundArgs{
 		TermID:               round.TermID,
+		RoundName:            round.RoundName,
 		StakingPeriodHrs:     uint32(round.StakingPeriod.Hrs()),
 		EnrollmentTimeOutHrs: uint32(round.EnrollmentTimeOut.Hrs()),
 		NumParticipants:      round.NumParticipants,
@@ -182,6 +185,7 @@ func (m *Round) Clone() *Round {
 	return &Round{
 		RoundID:                m.RoundID,
 		TermID:                 m.TermID,
+		RoundName:              m.RoundName,
 		StakingPeriod:          m.StakingPeriod,
 		EnrollmentTimeOut:      m.EnrollmentTimeOut,
 		NumParticipants:        m.NumParticipants,
@@ -239,6 +243,7 @@ func (m *BennyfiContract) NewRound(round *Round) (string, error) {
 func (m *BennyfiContract) NewRoundFromRoundArgs(roundArgs *NewRoundArgs) (string, error) {
 	actionData := make(map[string]interface{})
 	actionData["round_manager"] = roundArgs.RoundManager
+	actionData["round_name"] = roundArgs.RoundName
 	actionData["term_id"] = roundArgs.TermID
 	actionData["entry_stake"] = roundArgs.EntryStake
 	actionData["total_reward"] = roundArgs.TotalReward
