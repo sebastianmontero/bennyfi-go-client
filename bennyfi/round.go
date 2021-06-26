@@ -157,6 +157,10 @@ type Round struct {
 	UpdatedDate            string          `json:"updated_date"`
 }
 
+func (m *Round) NumEntriesToClose() uint32 {
+	return m.NumParticipants - m.NumParticipantsEntered
+}
+
 type NewRoundArgs struct {
 	TermID               uint64          `json:"term_id"`
 	RoundName            string          `json:"round_name"`
@@ -383,6 +387,21 @@ func (m *BennyfiContract) FilterRoundsbyState(req *eos.GetTableRowsRequest, stat
 	req.KeyType = "name"
 	req.LowerBound = string(state)
 	req.UpperBound = req.LowerBound
+}
+
+func (m *BennyfiContract) GetRound(roundID uint64) (*Round, error) {
+	rounds, err := m.GetRoundsReq(&eos.GetTableRowsRequest{
+		LowerBound: strconv.FormatUint(roundID, 10),
+		UpperBound: strconv.FormatUint(roundID, 10),
+		Limit:      1,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(rounds) > 0 {
+		return &rounds[0], nil
+	}
+	return nil, nil
 }
 
 func (m *BennyfiContract) GetLastRound() (*Round, error) {
