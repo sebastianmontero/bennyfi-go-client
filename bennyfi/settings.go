@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"time"
 
 	eos "github.com/eoscanada/eos-go"
 )
@@ -43,16 +44,23 @@ type Setting struct {
 
 func (m *BennyfiContract) setter(owner eos.AccountName,
 	key string, flexValue *FlexValue, action eos.ActionName) (string, error) {
+	actionData := m.getSetterData(owner, key, flexValue)
+	return m.ExecAction(string(owner), string(action), actionData)
+}
+
+func (m *BennyfiContract) proposeSetter(proposerName interface{}, requested []eos.PermissionLevel, expireIn time.Duration, owner eos.AccountName,
+	key string, flexValue *FlexValue, action eos.ActionName) (string, error) {
+	actionData := m.getSetterData(owner, key, flexValue)
+	return m.ProposeAction(proposerName, requested, expireIn, string(owner), string(action), actionData)
+}
+
+func (m *BennyfiContract) getSetterData(owner eos.AccountName,
+	key string, flexValue *FlexValue) map[string]interface{} {
 	actionData := make(map[string]interface{})
 	actionData["setter"] = owner
 	actionData["key"] = key
 	actionData["value"] = flexValue
-	_, err := m.Contract.ExecAction(string(owner), string(action), actionData)
-	if err != nil {
-		return "", err
-	}
-	return "", nil
-	// return m.ExecAction(owner, string(action), actionData)
+	return actionData
 }
 
 func (m *BennyfiContract) SetSetting(owner eos.AccountName,
@@ -61,16 +69,34 @@ func (m *BennyfiContract) SetSetting(owner eos.AccountName,
 	return m.setter(owner, key, flexValue, eos.ActN("setsetting"))
 }
 
+func (m *BennyfiContract) ProposeSetSetting(proposerName interface{}, requested []eos.PermissionLevel, expireIn time.Duration, owner eos.AccountName,
+	key string, flexValue *FlexValue) (string, error) {
+
+	return m.proposeSetter(proposerName, requested, expireIn, owner, key, flexValue, eos.ActN("setsetting"))
+}
+
 func (m *BennyfiContract) AppendSetting(owner eos.AccountName,
 	key string, flexValue *FlexValue) (string, error) {
 
 	return m.setter(owner, key, flexValue, eos.ActN("appndsetting"))
 }
 
+func (m *BennyfiContract) ProposeAppendSetting(proposerName interface{}, requested []eos.PermissionLevel, expireIn time.Duration, owner eos.AccountName,
+	key string, flexValue *FlexValue) (string, error) {
+
+	return m.proposeSetter(proposerName, requested, expireIn, owner, key, flexValue, eos.ActN("appndsetting"))
+}
+
 func (m *BennyfiContract) ClipSetting(owner eos.AccountName,
 	key string, flexValue *FlexValue) (string, error) {
 
 	return m.setter(owner, key, flexValue, eos.ActN("clipsetting"))
+}
+
+func (m *BennyfiContract) ProposeClipSetting(proposerName interface{}, requested []eos.PermissionLevel, expireIn time.Duration, owner eos.AccountName,
+	key string, flexValue *FlexValue) (string, error) {
+
+	return m.proposeSetter(proposerName, requested, expireIn, owner, key, flexValue, eos.ActN("clipsetting"))
 }
 
 func (m *BennyfiContract) EraseSetting(owner eos.AccountName, key string) (string, error) {
@@ -80,6 +106,15 @@ func (m *BennyfiContract) EraseSetting(owner eos.AccountName, key string) (strin
 	actionData["key"] = key
 
 	return m.ExecAction(owner, "erasesetting", actionData)
+}
+
+func (m *BennyfiContract) ProposeEraseSetting(proposerName interface{}, requested []eos.PermissionLevel, expireIn time.Duration, owner eos.AccountName,
+	key string) (string, error) {
+
+	actionData := make(map[string]interface{})
+	actionData["setter"] = owner
+	actionData["key"] = key
+	return m.ProposeAction(proposerName, requested, expireIn, string(owner), "erasesetting", actionData)
 }
 
 func (m *BennyfiContract) GetSettings() ([]Setting, error) {

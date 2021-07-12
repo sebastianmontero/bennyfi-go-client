@@ -161,8 +161,8 @@ github.com/rs/xhandler v0.0.0-20160618193221-ed27b6fd6521/go.mod h1:RvLn4FgxWubr
 github.com/russross/blackfriday/v2 v2.0.1/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/schollz/progressbar/v3 v3.7.4 h1:G2HfclnGJR2HtTOmFkERQcRqo9J20asOFiuD6AnI5EQ=
 github.com/schollz/progressbar/v3 v3.7.4/go.mod h1:1H8m5kMPW6q5fyjpDqtBHW1JT22mu2NwHQ1ApuCPh/8=
-github.com/sebastianmontero/eos-go-toolbox v0.0.0-20210630224120-6c017aee51bc h1:XCkD7itq4yrmLUmleVbLqgbGk4k9tysAizVOiI5hXhE=
-github.com/sebastianmontero/eos-go-toolbox v0.0.0-20210630224120-6c017aee51bc/go.mod h1:KV26OVZaECVwnqhCZ0Bf9iJVqJkznD5bjt+5SQxu6Mg=
+github.com/sebastianmontero/eos-go-toolbox v0.0.0-20210712222341-7feb8bc4e3ad h1:j0/gR8xn18NrpKOczaxN89RloS6uFNgcLSHiYqV3a1Q=
+github.com/sebastianmontero/eos-go-toolbox v0.0.0-20210712222341-7feb8bc4e3ad/go.mod h1:KV26OVZaECVwnqhCZ0Bf9iJVqJkznD5bjt+5SQxu6Mg=
 github.com/shurcooL/sanitized_anchor_name v1.0.0/go.mod h1:1NzhyTcUVG4SuEtjjoZeVRXNmyL/1OwPU0+IJeTBvfc=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spaolacci/murmur3 v1.0.1-0.20190317074736-539464a789e9/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
