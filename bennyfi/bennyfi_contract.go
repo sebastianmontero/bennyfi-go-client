@@ -64,18 +64,22 @@ func (m *BennyfiContract) ProposeAction(proposerName interface{}, requested []eo
 }
 
 func (m *BennyfiContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) error {
+	openActions := []string{
+		"timedevents",
+		"timeoutrnds",
+		"unlockrnds",
+		"redraw",
+		"unstakeopen",
+	}
 	err := m.EOS.CreateSimplePermission(m.ContractName, "open", publicKey)
 	if err != nil {
 		return fmt.Errorf("failed to create open permission, error: %v", err)
 	}
-	err = m.EOS.LinkPermission(m.ContractName, "timedevents", "open")
-	if err != nil {
-		return fmt.Errorf("failed to link open permission to the timedevents action, error: %v", err)
-	}
-
-	err = m.EOS.LinkPermission(m.ContractName, "unstakeopen", "open")
-	if err != nil {
-		return fmt.Errorf("failed to link open permission to the unstakeopen action, error: %v", err)
+	for _, action := range openActions {
+		err = m.EOS.LinkPermission(m.ContractName, action, "open", false)
+		if err != nil {
+			return fmt.Errorf("failed to link open permission to the %v action, error: %v", action, err)
+		}
 	}
 	return nil
 }

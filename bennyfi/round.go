@@ -288,6 +288,18 @@ func (m *BennyfiContract) TimedEvents() (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "timedevents", nil)
 }
 
+func (m *BennyfiContract) TimeoutRounds() (string, error) {
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "timeoutrnds", nil)
+}
+
+func (m *BennyfiContract) UnlockRounds() (string, error) {
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unlockrnds", nil)
+}
+
+func (m *BennyfiContract) Redraw() (string, error) {
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "redraw", nil)
+}
+
 func (m *BennyfiContract) TstLapseTime(roundId uint64) (string, error) {
 	actionData := make(map[string]interface{})
 	actionData["round_id"] = roundId
