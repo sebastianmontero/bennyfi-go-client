@@ -444,6 +444,62 @@ func (m *BennyfiContract) GetRoundsReq(req *eos.GetTableRowsRequest) ([]Round, e
 	return rounds, nil
 }
 
+func (m *BennyfiContract) GetRoundsbyStateAndId(state eos.Name) ([]Round, error) {
+	request := &eos.GetTableRowsRequest{}
+	err := m.FilterRoundsbyStateAndId(request, state)
+	if err != nil {
+		return nil, err
+	}
+	return m.GetRoundsReq(request)
+}
+
+func (m *BennyfiContract) FilterRoundsbyStateAndId(req *eos.GetTableRowsRequest, state eos.Name) error {
+
+	req.Index = "7"
+	req.KeyType = "i128"
+	req.Reverse = true
+	stateAndRndLB, err := m.EOS.GetComposedIndexValue(state, 0)
+	if err != nil {
+		return fmt.Errorf("failed to generate lower bound composed index, err: %v", err)
+	}
+	stateAndRndUB, err := m.EOS.GetComposedIndexValue(state, uint64(18446744073709551615))
+	if err != nil {
+		return fmt.Errorf("failed to generate upper bound composed index, err: %v", err)
+	}
+	fmt.Println("LB: ", stateAndRndLB, "UB: ", stateAndRndUB)
+	req.LowerBound = stateAndRndLB
+	req.UpperBound = stateAndRndUB
+	return err
+}
+
+func (m *BennyfiContract) GetRoundsbyManagerAndId(manager interface{}) ([]Round, error) {
+	request := &eos.GetTableRowsRequest{}
+	err := m.FilterRoundsbyManagerAndId(request, manager)
+	if err != nil {
+		return nil, err
+	}
+	return m.GetRoundsReq(request)
+}
+
+func (m *BennyfiContract) FilterRoundsbyManagerAndId(req *eos.GetTableRowsRequest, manager interface{}) error {
+
+	req.Index = "8"
+	req.KeyType = "i128"
+	req.Reverse = true
+	mgrAndRndLB, err := m.EOS.GetComposedIndexValue(manager, 0)
+	if err != nil {
+		return fmt.Errorf("failed to generate lower bound composed index, err: %v", err)
+	}
+	mgrAndRndUB, err := m.EOS.GetComposedIndexValue(manager, uint64(18446744073709551615))
+	if err != nil {
+		return fmt.Errorf("failed to generate upper bound composed index, err: %v", err)
+	}
+	fmt.Println("LB: ", mgrAndRndLB, "UB: ", mgrAndRndUB)
+	req.LowerBound = mgrAndRndLB
+	req.UpperBound = mgrAndRndUB
+	return err
+}
+
 func (m *BennyfiContract) GetEntries() ([]Entry, error) {
 
 	return m.GetEntriesReq(&eos.GetTableRowsRequest{})
