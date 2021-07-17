@@ -306,16 +306,10 @@ func (m *BennyfiContract) TstLapseTime(roundId uint64) (string, error) {
 	return m.ExecAction(eos.AN(m.ContractName), "tstlapsetime", actionData)
 }
 
-func (m *BennyfiContract) ReceiveRand(actor eos.AccountName, roundId uint64, randomNumbers []uint64) (string, error) {
+func (m *BennyfiContract) ReceiveRand(actor eos.AccountName, roundId uint64, randomNumber string) (string, error) {
 	actionData := make(map[string]interface{})
 	actionData["assoc_id"] = roundId
-
-	proofs := make([]map[string]interface{}, 0, len(randomNumbers))
-	for _, randomNumber := range randomNumbers {
-		proofs = append(proofs, createEOSProof(randomNumber))
-	}
-	actionData["proofs"] = proofs
-
+	actionData["random"] = randomNumber
 	return m.ExecAction(actor, "receiverand", actionData)
 }
 
