@@ -70,6 +70,20 @@ func (m *BennyfiContract) GetBalancesReq(req *eos.GetTableRowsRequest) ([]Balanc
 	return balances, nil
 }
 
+func (m *BennyfiContract) GetBalancesByAccount(account interface{}) ([]Balance, error) {
+	request := &eos.GetTableRowsRequest{}
+	m.FilterBalancesbyAccount(request, account)
+	return m.GetBalancesReq(request)
+}
+
+func (m *BennyfiContract) FilterBalancesbyAccount(req *eos.GetTableRowsRequest, account interface{}) {
+
+	req.Index = "3"
+	req.KeyType = "name"
+	req.LowerBound = fmt.Sprintf("%v", account)
+	req.UpperBound = fmt.Sprintf("%v", account)
+}
+
 func (m *BennyfiContract) GetBalance(tokenHolder eos.AccountName, symbol string) (*Balance, error) {
 
 	var balances []Balance
