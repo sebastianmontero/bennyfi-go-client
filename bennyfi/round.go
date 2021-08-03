@@ -215,14 +215,16 @@ func (m *Round) Clone() *Round {
 }
 
 type Entry struct {
-	EntryID      uint64          `json:"entry_id"`
-	RoundID      uint64          `json:"round_id"`
-	Position     uint64          `json:"position"`
-	Participant  eos.AccountName `json:"participant"`
-	EntryStake   string          `json:"entry_stake"`
-	ReturnAmount string          `json:"return_amount"`
-	EntryStatus  eos.Name        `json:"entry_status"`
-	EnteredDate  string          `json:"entered_date"`
+	EntryID       uint64          `json:"entry_id"`
+	RoundID       uint64          `json:"round_id"`
+	Position      uint64          `json:"position"`
+	Participant   eos.AccountName `json:"participant"`
+	EntryStake    string          `json:"entry_stake"`
+	Prize         string          `json:"prize"`
+	MinimumPayout string          `json:"minimum_payout"`
+	ReturnAmount  string          `json:"return_amount"`
+	EntryStatus   eos.Name        `json:"entry_status"`
+	EnteredDate   string          `json:"entered_date"`
 }
 
 func (m *BennyfiContract) NewTerm(term *Term) (string, error) {
