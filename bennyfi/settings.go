@@ -158,18 +158,56 @@ func (m *BennyfiContract) SetupConfigSettings(owner eos.AccountName, settings in
 	return nil
 }
 
-func (m *BennyfiContract) SetupConfigSetting(owner eos.AccountName, setting map[interface{}]interface{}) error {
+func (m *BennyfiContract) SetupConfigSetting(owner eos.AccountName, configSetting map[interface{}]interface{}) error {
 
-	fv, err := StringToSetting(setting["type"].(string), setting["value"].(string))
+	setting, err := GetConfigSetting(configSetting)
 	if err != nil {
 		return err
 	}
-	_, err = m.SetSetting(owner, setting["key"].(string), &fv)
+	_, err = m.SetSetting(owner, setting.Key, &setting.Values[0])
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (m *BennyfiContract) ProposeConfigSettings(proposerName interface{}, requested []eos.PermissionLevel, expireIn time.Duration, owner eos.AccountName, settings interface{}) error {
+	for _, value := range settings.([]interface{}) {
+		err := m.ProposeConfigSetting(proposerName, requested, expireIn, owner, value.(map[interface{}]interface{}))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *BennyfiContract) ProposeConfigSetting(proposerName interface{}, requested []eos.PermissionLevel, expireIn time.Duration, owner eos.AccountName, configSetting map[interface{}]interface{}) error {
+
+	setting, err := GetConfigSetting(configSetting)
+	if err != nil {
+		return err
+	}
+	_, err = m.ProposeSetSetting(proposerName, requested, expireIn, owner, setting.Key, &setting.Values[0])
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func GetConfigSetting(setting map[interface{}]interface{}) (*Setting, error) {
+
+	fv, err := StringToSetting(setting["type"].(string), setting["value"].(string))
+	if err != nil {
+		return nil, fmt.Errorf("failed parsing string setting to flex value, error: %v", err)
+	}
+	return &Setting{
+		Key: setting["key"].(string),
+		Values: []FlexValue{
+			fv,
+		},
+	}, nil
 }
 
 func StringToSetting(settingType, stringValue string) (FlexValue, error) {
