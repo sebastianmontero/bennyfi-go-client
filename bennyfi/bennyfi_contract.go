@@ -67,9 +67,14 @@ func (m *BennyfiContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) erro
 	openActions := []string{
 		"timedevents",
 		"timeoutrnds",
+		"mvfrmsavings",
+		"sellrex",
+		"withdrawrex",
 		"unlockrnds",
 		"redraw",
 		"unstakeopen",
+		"ustkulckrnds",
+		"ustktmdrnds",
 	}
 	err := m.EOS.CreateSimplePermission(m.ContractName, "open", publicKey)
 	if err != nil {

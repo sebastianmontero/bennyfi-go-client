@@ -30,18 +30,22 @@ import (
 )
 
 var (
-	RoundAcceptingEntries = eos.Name("acceptentrys")
-	RoundDrawing          = eos.Name("rounddrawing")
-	RoundOpen             = eos.Name("roundopen")
-	RoundClosed           = eos.Name("roundclosed")
-	RoundUnlocked         = eos.Name("rndunlocked")
-	RoundUnlockedUnstaked = eos.Name("rndunlckdutk")
-	RoundTimedOut         = eos.Name("rndtimedout")
-	RoundTimedOutUnstaked = eos.Name("rndtmdoututk")
-	EntryStaked           = eos.Name("entrystaked")
-	EntryReturnPaid       = eos.Name("returnpaid")
-	EntryUnstaked         = eos.Name("unstaked")
-	EntryEarlyExit        = eos.Name("earlyexit")
+	RoundAcceptingEntries  = eos.Name("acceptentrys")
+	RoundDrawing           = eos.Name("rounddrawing")
+	RoundOpen              = eos.Name("roundopen")
+	RoundClosed            = eos.Name("roundclosed")
+	RoundUnlocked          = eos.Name("rndunlocked")
+	RoundUnlockedUnstaked  = eos.Name("rndunlckdutk")
+	RoundTimedOut          = eos.Name("rndtimedout")
+	RoundTimedOutUnstaked  = eos.Name("rndtmdoututk")
+	RoundTypeManagerFunded = eos.Name("mgrfunded")
+	RoundTypeRexPool       = eos.Name("rexpool")
+	RexStateNotApplicable  = eos.Name("notaplicable")
+	RexStatePreRex         = eos.Name("prerex")
+	RexStateInSavings      = eos.Name("insavings")
+	RexStateInLockPeriod   = eos.Name("lockperiod")
+	RexStateSold           = eos.Name("sold")
+	RexStateWithdrawn      = eos.Name("withdrawn")
 )
 
 var microsecondsPerHr int64 = 60 * 60 * 1000000
@@ -85,35 +89,6 @@ func (m *Microseconds) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-type Term struct {
-	TermID              uint64          `json:"term_id"`
-	TermName            string          `json:"term_name"`
-	AllParticipantsPerc uint32          `json:"all_participants_perc_x100000"`
-	RoundManager        eos.AccountName `json:"round_manager"`
-	Beneficiary         eos.AccountName `json:"beneficiary"`
-	BeneficiaryPerc     uint32          `json:"beneficiary_perc_x100000"`
-	CreatedDate         string          `json:"created_date"`
-	UpdatedDate         string          `json:"updated_date"`
-}
-
-type NewTermArgs struct {
-	TermName            string          `json:"term_name"`
-	AllParticipantsPerc uint32          `json:"all_participants_perc_x100000"`
-	RoundManager        eos.AccountName `json:"round_manager"`
-	Beneficiary         eos.AccountName `json:"beneficiary"`
-	BeneficiaryPerc     uint32          `json:"beneficiary_perc_x100000"`
-}
-
-func TermToNewTermArgs(terms *Term) *NewTermArgs {
-	return &NewTermArgs{
-		TermName:            terms.TermName,
-		AllParticipantsPerc: terms.AllParticipantsPerc,
-		RoundManager:        terms.RoundManager,
-		Beneficiary:         terms.Beneficiary,
-		BeneficiaryPerc:     terms.BeneficiaryPerc,
-	}
-}
-
 type Winner struct {
 	Participant   eos.AccountName `json:"participant"`
 	Prize         string          `json:"prize"`
@@ -134,25 +109,33 @@ type Round struct {
 	RoundID                uint64          `json:"round_id"`
 	TermID                 uint64          `json:"term_id"`
 	RoundName              string          `json:"round_name"`
+	RoundType              eos.Name        `json:"round_type"`
 	StakingPeriod          *Microseconds   `json:"staking_period"`
 	EnrollmentTimeOut      *Microseconds   `json:"enrollment_time_out"`
 	NumParticipants        uint32          `json:"num_participants"`
 	EntryStake             string          `json:"entry_stake"`
 	TotalReward            string          `json:"total_reward"`
+	RexBalance             string          `json:"rex_balance"`
 	RewardTokenContract    eos.AccountName `json:"reward_token_contract"`
 	NumParticipantsEntered uint32          `json:"num_participants_entered"`
 	NumClaimedReturns      uint32          `json:"num_claimed_returns"`
 	NumUnstaked            uint32          `json:"num_unstaked"`
 	NumEarlyExits          uint32          `json:"num_early_exits"`
 	CurrentState           eos.Name        `json:"current_state"`
+	RexState               eos.Name        `json:"rex_state"`
 	TotalDeposits          string          `json:"total_deposits"`
 	Winners                Winners         `json:"winners"`
+	Beneficiary            eos.AccountName `json:"beneficiary"`
 	BeneficiaryReward      string          `json:"beneficiary_reward"`
 	MinParticipantReward   string          `json:"min_participant_reward"`
 	TotalEarlyExitStake    string          `json:"total_early_exit_stake"`
 	TotalEarlyExitReward   string          `json:"total_early_exit_reward"`
 	RoundManager           eos.AccountName `json:"round_manager"`
+	ClosedTime             string          `json:"closed_time"`
 	StakedTime             string          `json:"staked_time"`
+	MovedFromSavingsTime   string          `json:"moved_from_savings_time"`
+	StakeEndTime           string          `json:"stake_end_time"`
+	EnrollmentTimeEnd      string          `json:"enrollment_time_end"`
 	CreatedDate            string          `json:"created_date"`
 	UpdatedDate            string          `json:"updated_date"`
 }
@@ -190,56 +173,36 @@ func (m *Round) Clone() *Round {
 		RoundID:                m.RoundID,
 		TermID:                 m.TermID,
 		RoundName:              m.RoundName,
+		RoundType:              m.RoundType,
 		StakingPeriod:          m.StakingPeriod,
 		EnrollmentTimeOut:      m.EnrollmentTimeOut,
 		NumParticipants:        m.NumParticipants,
 		EntryStake:             m.EntryStake,
 		TotalReward:            m.TotalReward,
+		RexBalance:             m.RexBalance,
 		RewardTokenContract:    m.RewardTokenContract,
 		NumParticipantsEntered: m.NumParticipantsEntered,
 		NumClaimedReturns:      m.NumClaimedReturns,
 		NumUnstaked:            m.NumUnstaked,
 		NumEarlyExits:          m.NumEarlyExits,
 		CurrentState:           m.CurrentState,
+		RexState:               m.RexState,
 		TotalDeposits:          m.TotalDeposits,
 		Winners:                m.Winners,
+		Beneficiary:            m.Beneficiary,
 		BeneficiaryReward:      m.BeneficiaryReward,
 		MinParticipantReward:   m.MinParticipantReward,
 		TotalEarlyExitStake:    m.TotalEarlyExitStake,
 		TotalEarlyExitReward:   m.TotalEarlyExitReward,
 		RoundManager:           m.RoundManager,
+		ClosedTime:             m.ClosedTime,
 		StakedTime:             m.StakedTime,
+		MovedFromSavingsTime:   m.MovedFromSavingsTime,
+		StakeEndTime:           m.StakeEndTime,
+		EnrollmentTimeEnd:      m.EnrollmentTimeEnd,
 		CreatedDate:            m.CreatedDate,
 		UpdatedDate:            m.UpdatedDate,
 	}
-}
-
-type Entry struct {
-	EntryID       uint64          `json:"entry_id"`
-	RoundID       uint64          `json:"round_id"`
-	Position      uint64          `json:"position"`
-	Participant   eos.AccountName `json:"participant"`
-	EntryStake    string          `json:"entry_stake"`
-	Prize         string          `json:"prize"`
-	MinimumPayout string          `json:"minimum_payout"`
-	ReturnAmount  string          `json:"return_amount"`
-	EntryStatus   eos.Name        `json:"entry_status"`
-	EnteredDate   string          `json:"entered_date"`
-}
-
-func (m *BennyfiContract) NewTerm(term *Term) (string, error) {
-	return m.NewTermFromTermArgs(TermToNewTermArgs(term))
-}
-
-func (m *BennyfiContract) NewTermFromTermArgs(termArgs *NewTermArgs) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["round_manager"] = termArgs.RoundManager
-	actionData["term_name"] = termArgs.TermName
-	actionData["all_participants_perc_x100000"] = termArgs.AllParticipantsPerc
-	actionData["beneficiary"] = termArgs.Beneficiary
-	actionData["beneficiary_perc_x100000"] = termArgs.BeneficiaryPerc
-
-	return m.ExecAction(termArgs.RoundManager, "newterm", actionData)
 }
 
 func (m *BennyfiContract) NewRound(round *Round) (string, error) {
@@ -260,42 +223,50 @@ func (m *BennyfiContract) NewRoundFromRoundArgs(roundArgs *NewRoundArgs) (string
 	return m.ExecAction(roundArgs.RoundManager, "newround", actionData)
 }
 
-func (m *BennyfiContract) EnterRound(roundId uint64, participant eos.AccountName) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["round_id"] = roundId
-	actionData["participant"] = participant
-
-	return m.ExecAction(participant, "enterround", actionData)
-}
-
-func (m *BennyfiContract) ClaimReturn(entryId uint64, claimer eos.AccountName) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["entry_id"] = entryId
-	return m.ExecAction(claimer, "claimreturn", actionData)
-}
-
-func (m *BennyfiContract) Unstake(entryId uint64, permissionLevel interface{}) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["entry_id"] = entryId
-	return m.ExecAction(permissionLevel, "unstake", actionData)
-}
-
-func (m *BennyfiContract) UnstakeOpen(entryId uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["entry_id"] = entryId
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unstakeopen", actionData)
-}
-
 func (m *BennyfiContract) TimedEvents() (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "timedevents", nil)
 }
 
-func (m *BennyfiContract) TimeoutRounds() (string, error) {
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "timeoutrnds", nil)
+func (m *BennyfiContract) TimeoutRounds(callCounter uint64) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["call_counter"] = callCounter
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "timeoutrnds", actionData)
 }
 
-func (m *BennyfiContract) UnlockRounds() (string, error) {
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unlockrnds", nil)
+func (m *BennyfiContract) MoveFromSavings(callCounter uint64) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["call_counter"] = callCounter
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "mvfrmsavings", actionData)
+}
+
+func (m *BennyfiContract) SellRex(callCounter uint64) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["call_counter"] = callCounter
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "sellrex", actionData)
+}
+
+func (m *BennyfiContract) WithdrawRex(callCounter uint64) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["call_counter"] = callCounter
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "withdrawrex", actionData)
+}
+
+func (m *BennyfiContract) UnlockRounds(callCounter uint64) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["call_counter"] = callCounter
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unlockrnds", actionData)
+}
+
+func (m *BennyfiContract) UnstakeUnlockedRounds(callCounter uint64) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["call_counter"] = callCounter
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "ustkulckrnds", actionData)
+}
+
+func (m *BennyfiContract) UnstakeTimedoutRounds(callCounter uint64) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["call_counter"] = callCounter
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "ustktmdrnds", actionData)
 }
 
 func (m *BennyfiContract) Redraw() (string, error) {
@@ -313,47 +284,6 @@ func (m *BennyfiContract) ReceiveRand(actor eos.AccountName, roundId uint64, ran
 	actionData["assoc_id"] = roundId
 	actionData["random"] = randomNumber
 	return m.ExecAction(actor, "receiverand", actionData)
-}
-
-func (m *BennyfiContract) GetTerms() ([]Term, error) {
-	return m.GetTermsReq(nil)
-}
-
-func (m *BennyfiContract) GetTermsbyManager(termManager eos.AccountName) ([]Term, error) {
-	request := &eos.GetTableRowsRequest{
-		Index:      "2",
-		KeyType:    "name",
-		LowerBound: string(termManager),
-	}
-	return m.GetTermsReq(request)
-}
-
-func (m *BennyfiContract) GetLastTerm() (*Term, error) {
-	terms, err := m.GetTermsReq(&eos.GetTableRowsRequest{
-		Reverse: true,
-		Limit:   1,
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(terms) > 0 {
-		return &terms[0], nil
-	}
-	return nil, nil
-}
-
-func (m *BennyfiContract) GetTermsReq(req *eos.GetTableRowsRequest) ([]Term, error) {
-
-	var terms []Term
-	if req == nil {
-		req = &eos.GetTableRowsRequest{}
-	}
-	req.Table = "terms"
-	err := m.GetTableRows(*req, &terms)
-	if err != nil {
-		return nil, fmt.Errorf("get table rows %v", err)
-	}
-	return terms, nil
 }
 
 func (m *BennyfiContract) GetRounds() ([]Round, error) {
@@ -494,153 +424,6 @@ func (m *BennyfiContract) FilterRoundsbyManagerAndId(req *eos.GetTableRowsReques
 	req.LowerBound = mgrAndRndLB
 	req.UpperBound = mgrAndRndUB
 	return err
-}
-
-func (m *BennyfiContract) GetEntries() ([]Entry, error) {
-
-	return m.GetEntriesReq(&eos.GetTableRowsRequest{})
-}
-
-func (m *BennyfiContract) GetEntriesbyParticipant(participant eos.AccountName) ([]Entry, error) {
-	request := &eos.GetTableRowsRequest{}
-	m.FilterEntriesbyParticipant(request, participant)
-	return m.GetEntriesReq(request)
-}
-
-func (m *BennyfiContract) FilterEntriesbyParticipant(req *eos.GetTableRowsRequest, participant eos.AccountName) {
-	req.Index = "4"
-	req.KeyType = "name"
-	req.LowerBound = string(participant)
-	req.UpperBound = string(participant)
-}
-
-func (m *BennyfiContract) GetEntriesbyRound(roundID uint64) ([]Entry, error) {
-	request := &eos.GetTableRowsRequest{}
-	m.FilterEntriesbyRound(request, roundID)
-	return m.GetEntriesReq(request)
-}
-
-func (m *BennyfiContract) FilterEntriesbyRound(req *eos.GetTableRowsRequest, roundID uint64) {
-
-	req.Index = "5"
-	req.KeyType = "i64"
-	req.LowerBound = strconv.FormatUint(roundID, 10)
-	req.UpperBound = strconv.FormatUint(roundID, 10)
-
-}
-
-func (m *BennyfiContract) GetEntriesbyStatus(status eos.Name) ([]Entry, error) {
-	request := &eos.GetTableRowsRequest{}
-	m.FilterEntriesbyStatus(request, status)
-	return m.GetEntriesReq(request)
-}
-
-func (m *BennyfiContract) FilterEntriesbyStatus(req *eos.GetTableRowsRequest, status eos.Name) {
-
-	req.Index = "2"
-	req.KeyType = "name"
-	req.LowerBound = string(status)
-	req.UpperBound = string(status)
-}
-
-func (m *BennyfiContract) GetEntriesbyRoundAndPos(roundID uint64, pos uint64) ([]Entry, error) {
-	request := &eos.GetTableRowsRequest{}
-	err := m.FilterEntriesbyRoundAndPos(request, roundID, pos)
-	if err != nil {
-		return nil, err
-	}
-	return m.GetEntriesReq(request)
-}
-
-func (m *BennyfiContract) FilterEntriesbyRoundAndPos(req *eos.GetTableRowsRequest, roundID uint64, pos uint64) error {
-
-	req.Index = "7"
-	req.KeyType = "i128"
-	rndAndPos, err := m.EOS.GetComposedIndexValue(roundID, pos)
-	if err != nil {
-		return fmt.Errorf("failed to generate composed index, err: %v", err)
-	}
-	req.LowerBound = rndAndPos
-	req.UpperBound = rndAndPos
-	return err
-}
-
-func (m *BennyfiContract) GetEntriesbyRoundAndStatus(roundID uint64, status eos.Name) ([]Entry, error) {
-	request := &eos.GetTableRowsRequest{}
-	err := m.FilterEntriesbyRoundAndStatus(request, roundID, status)
-	if err != nil {
-		return nil, err
-	}
-	return m.GetEntriesReq(request)
-}
-
-func (m *BennyfiContract) FilterEntriesbyRoundAndStatus(req *eos.GetTableRowsRequest, roundID uint64, status eos.Name) error {
-
-	req.Index = "8"
-	req.KeyType = "i128"
-	rndAndStatus, err := m.EOS.GetComposedIndexValue(roundID, status)
-	if err != nil {
-		return fmt.Errorf("failed to generate composed index, err: %v", err)
-	}
-	req.LowerBound = rndAndStatus
-	req.UpperBound = rndAndStatus
-	return err
-}
-
-func (m *BennyfiContract) GetEntryByParticipantAndRound(participant eos.AccountName, roundID uint64) (*Entry, error) {
-	entries, err := m.GetEntriesbyParticipant(participant)
-	if err != nil {
-		return nil, err
-	}
-	for _, entry := range entries {
-		if entry.RoundID == roundID {
-			return &entry, nil
-		}
-	}
-	return nil, nil
-}
-
-func (m *BennyfiContract) GetLastEntry() (*Entry, error) {
-	entries, err := m.GetEntriesReq(&eos.GetTableRowsRequest{
-		Reverse: true,
-		Limit:   1,
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(entries) > 0 {
-		return &entries[0], nil
-	}
-	return nil, nil
-}
-
-func (m *BennyfiContract) GetEntryById(entryID uint64) (*Entry, error) {
-	entries, err := m.GetEntriesReq(&eos.GetTableRowsRequest{
-		LowerBound: strconv.FormatUint(entryID, 10),
-		UpperBound: strconv.FormatUint(entryID, 10),
-		Limit:      1,
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(entries) > 0 {
-		return &entries[0], nil
-	}
-	return nil, nil
-}
-
-func (m *BennyfiContract) GetEntriesReq(req *eos.GetTableRowsRequest) ([]Entry, error) {
-
-	var entries []Entry
-	if req == nil {
-		req = &eos.GetTableRowsRequest{}
-	}
-	req.Table = "entries"
-	err := m.GetTableRows(*req, &entries)
-	if err != nil {
-		return nil, fmt.Errorf("get table rows %v", err)
-	}
-	return entries, nil
 }
 
 func createEOSProof(randomNumber uint64) map[string]interface{} {
