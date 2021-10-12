@@ -32,7 +32,11 @@ import (
 	"github.com/sebastianmontero/eos-go-toolbox/util"
 )
 
-var PercentageAdjustment = float64(10000000)
+var (
+	PercentageAdjustment       = float64(10000000)
+	PAUSED               int64 = 1
+	UNPAUSED             int64 = 0
+)
 
 type BennyfiContract struct {
 	*contract.Contract
@@ -87,6 +91,12 @@ func (m *BennyfiContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) erro
 		}
 	}
 	return nil
+}
+
+func (m *BennyfiContract) Pause(pause int64) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["pause"] = pause
+	return m.ExecAction(eos.AN(m.ContractName), "pause", actionData)
 }
 
 func CalculatePercentage(amount interface{}, percentage int64) (eos.Asset, error) {

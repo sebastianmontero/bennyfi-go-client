@@ -34,6 +34,7 @@ type Term struct {
 	RoundManager        eos.AccountName `json:"round_manager"`
 	Beneficiary         eos.AccountName `json:"beneficiary"`
 	RoundType           eos.Name        `json:"round_type"`
+	RoundAccess         eos.Name        `json:"round_access"`
 	BeneficiaryPerc     uint32          `json:"beneficiary_perc_x100000"`
 	CreatedDate         string          `json:"created_date"`
 	UpdatedDate         string          `json:"updated_date"`
@@ -45,6 +46,7 @@ type NewTermArgs struct {
 	RoundManager        eos.AccountName `json:"round_manager"`
 	Beneficiary         eos.AccountName `json:"beneficiary"`
 	RoundType           eos.Name        `json:"round_type"`
+	RoundAccess         eos.Name        `json:"round_access"`
 	BeneficiaryPerc     uint32          `json:"beneficiary_perc_x100000"`
 }
 
@@ -55,6 +57,7 @@ func TermToNewTermArgs(terms *Term) *NewTermArgs {
 		RoundManager:        terms.RoundManager,
 		Beneficiary:         terms.Beneficiary,
 		RoundType:           terms.RoundType,
+		RoundAccess:         terms.RoundAccess,
 		BeneficiaryPerc:     terms.BeneficiaryPerc,
 	}
 }
@@ -70,6 +73,7 @@ func (m *BennyfiContract) NewTermFromTermArgs(termArgs *NewTermArgs) (string, er
 	actionData["all_participants_perc_x100000"] = termArgs.AllParticipantsPerc
 	actionData["beneficiary"] = termArgs.Beneficiary
 	actionData["round_type"] = termArgs.RoundType
+	actionData["round_access"] = termArgs.RoundAccess
 	actionData["beneficiary_perc_x100000"] = termArgs.BeneficiaryPerc
 
 	return m.ExecAction(termArgs.RoundManager, "newterm", actionData)

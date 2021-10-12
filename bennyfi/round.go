@@ -40,6 +40,8 @@ var (
 	RoundTimedOutUnstaked  = eos.Name("rndtmdoututk")
 	RoundTypeManagerFunded = eos.Name("mgrfunded")
 	RoundTypeRexPool       = eos.Name("rexpool")
+	RoundAccessPrivate     = eos.Name("private")
+	RoundAccessPublic      = eos.Name("public")
 	RexStateNotApplicable  = eos.Name("notaplicable")
 	RexStatePreRex         = eos.Name("prerex")
 	RexStateInSavings      = eos.Name("insavings")
@@ -110,6 +112,7 @@ type Round struct {
 	TermID                 uint64          `json:"term_id"`
 	RoundName              string          `json:"round_name"`
 	RoundType              eos.Name        `json:"round_type"`
+	RoundAccess            eos.Name        `json:"round_access"`
 	StakingPeriod          *Microseconds   `json:"staking_period"`
 	EnrollmentTimeOut      *Microseconds   `json:"enrollment_time_out"`
 	NumParticipants        uint32          `json:"num_participants"`
@@ -174,6 +177,7 @@ func (m *Round) Clone() *Round {
 		TermID:                 m.TermID,
 		RoundName:              m.RoundName,
 		RoundType:              m.RoundType,
+		RoundAccess:            m.RoundAccess,
 		StakingPeriod:          m.StakingPeriod,
 		EnrollmentTimeOut:      m.EnrollmentTimeOut,
 		NumParticipants:        m.NumParticipants,
