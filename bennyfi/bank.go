@@ -36,6 +36,34 @@ type Balance struct {
 	TokenContract eos.AccountName `json:"token_contract"`
 }
 
+func (m *Balance) GetLiquidBalance() eos.Asset {
+	liquidBalance, err := eos.NewAssetFromString(m.LiquidBalance)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse liquid balance: %v to asset", m.LiquidBalance))
+	}
+	return liquidBalance
+}
+
+func (m *Balance) GetStakedBalance() eos.Asset {
+	stakedBalance, err := eos.NewAssetFromString(m.StakedBalance)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse staked balance: %v to asset", m.StakedBalance))
+	}
+	return stakedBalance
+}
+
+func (m *Balance) HasLiquidBalance() bool {
+	return m.GetLiquidBalance().Amount > 0
+}
+
+func (m *Balance) HasStakedBalance() bool {
+	return m.GetStakedBalance().Amount > 0
+}
+
+func (m *Balance) HasBalance() bool {
+	return m.HasLiquidBalance() || m.HasStakedBalance()
+}
+
 func (m *BennyfiContract) Withdraw(from eos.AccountName, quantity eos.Asset) (string, error) {
 	actionData := make(map[string]interface{})
 	actionData["from"] = eos.Name(from)

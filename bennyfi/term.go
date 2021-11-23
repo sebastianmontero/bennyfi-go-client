@@ -28,37 +28,49 @@ import (
 )
 
 type Term struct {
-	TermID              uint64          `json:"term_id"`
-	TermName            string          `json:"term_name"`
-	AllParticipantsPerc uint32          `json:"all_participants_perc_x100000"`
-	RoundManager        eos.AccountName `json:"round_manager"`
-	Beneficiary         eos.AccountName `json:"beneficiary"`
-	RoundType           eos.Name        `json:"round_type"`
-	RoundAccess         eos.Name        `json:"round_access"`
-	BeneficiaryPerc     uint32          `json:"beneficiary_perc_x100000"`
-	CreatedDate         string          `json:"created_date"`
-	UpdatedDate         string          `json:"updated_date"`
+	TermID                  uint64                  `json:"term_id"`
+	TermName                string                  `json:"term_name"`
+	RoundManager            eos.AccountName         `json:"round_manager"`
+	Beneficiary             eos.AccountName         `json:"beneficiary"`
+	RoundType               eos.Name                `json:"round_type"`
+	RoundAccess             eos.Name                `json:"round_access"`
+	DistributionDefinitions DistributionDefinitions `json:"distribution_definitions"`
+	CreatedDate             string                  `json:"created_date"`
+	UpdatedDate             string                  `json:"updated_date"`
+}
+
+func (m *Term) UpsertDistributionDef(name string, definition *DistributionDefinition) {
+	if m.DistributionDefinitions == nil {
+		m.DistributionDefinitions = make(DistributionDefinitions, 0, 1)
+	}
+	m.DistributionDefinitions.Upsert(name, definition)
+}
+
+func (m *Term) RemoveDistributionDef(name string) {
+	m.DistributionDefinitions.Remove(name)
+}
+
+func (m *Term) ClearDistributionDefs() {
+	m.DistributionDefinitions = nil
 }
 
 type NewTermArgs struct {
-	TermName            string          `json:"term_name"`
-	AllParticipantsPerc uint32          `json:"all_participants_perc_x100000"`
-	RoundManager        eos.AccountName `json:"round_manager"`
-	Beneficiary         eos.AccountName `json:"beneficiary"`
-	RoundType           eos.Name        `json:"round_type"`
-	RoundAccess         eos.Name        `json:"round_access"`
-	BeneficiaryPerc     uint32          `json:"beneficiary_perc_x100000"`
+	TermName                string                  `json:"term_name"`
+	RoundManager            eos.AccountName         `json:"round_manager"`
+	Beneficiary             eos.AccountName         `json:"beneficiary"`
+	RoundType               eos.Name                `json:"round_type"`
+	RoundAccess             eos.Name                `json:"round_access"`
+	DistributionDefinitions DistributionDefinitions `json:"distribution_definitions"`
 }
 
 func TermToNewTermArgs(terms *Term) *NewTermArgs {
 	return &NewTermArgs{
-		TermName:            terms.TermName,
-		AllParticipantsPerc: terms.AllParticipantsPerc,
-		RoundManager:        terms.RoundManager,
-		Beneficiary:         terms.Beneficiary,
-		RoundType:           terms.RoundType,
-		RoundAccess:         terms.RoundAccess,
-		BeneficiaryPerc:     terms.BeneficiaryPerc,
+		TermName:                terms.TermName,
+		RoundManager:            terms.RoundManager,
+		Beneficiary:             terms.Beneficiary,
+		RoundType:               terms.RoundType,
+		RoundAccess:             terms.RoundAccess,
+		DistributionDefinitions: terms.DistributionDefinitions,
 	}
 }
 
@@ -70,11 +82,10 @@ func (m *BennyfiContract) NewTermFromTermArgs(termArgs *NewTermArgs) (string, er
 	actionData := make(map[string]interface{})
 	actionData["round_manager"] = termArgs.RoundManager
 	actionData["term_name"] = termArgs.TermName
-	actionData["all_participants_perc_x100000"] = termArgs.AllParticipantsPerc
 	actionData["beneficiary"] = termArgs.Beneficiary
 	actionData["round_type"] = termArgs.RoundType
 	actionData["round_access"] = termArgs.RoundAccess
-	actionData["beneficiary_perc_x100000"] = termArgs.BeneficiaryPerc
+	actionData["distribution_definitions"] = termArgs.DistributionDefinitions
 
 	return m.ExecAction(termArgs.RoundManager, "newterm", actionData)
 }
