@@ -21,6 +21,12 @@
 // THE SOFTWARE.
 package bennyfi
 
+import (
+	"fmt"
+
+	eos "github.com/eoscanada/eos-go"
+)
+
 type Return struct {
 	Prize              string `json:"prize"`
 	MinimumPayout      string `json:"minimum_payout"`
@@ -33,6 +39,34 @@ type ReturnEntry struct {
 }
 
 type Returns []*ReturnEntry
+
+func (m *Return) GetPrize() eos.Asset {
+	prize, err := eos.NewAssetFromString(m.Prize)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse prize: %v to asset", m.Prize))
+	}
+	return prize
+}
+
+func (m *Return) GetMinimumPayout() eos.Asset {
+	minPayout, err := eos.NewAssetFromString(m.MinimumPayout)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse minimum payout: %v to asset", m.MinimumPayout))
+	}
+	return minPayout
+}
+
+func (m *Return) GetEarlyExitReturnFee() eos.Asset {
+	earlyExitFee, err := eos.NewAssetFromString(m.EarlyExitReturnFee)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse early exit return fee: %v to asset", m.EarlyExitReturnFee))
+	}
+	return earlyExitFee
+}
+
+func (m *Return) GetTotalReturn() eos.Asset {
+	return m.GetPrize().Add(m.GetMinimumPayout())
+}
 
 func (m Returns) FindPos(key string) int {
 	for i, def := range m {

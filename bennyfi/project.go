@@ -27,6 +27,11 @@ import (
 	eos "github.com/eoscanada/eos-go"
 )
 
+var (
+	ProjectAttrName        = "PROJECT_NAME"
+	ProjectAttrArtifactCID = "ARTIFACT_CID"
+)
+
 type Attribute struct {
 	Key   string     `json:"key"`
 	Value *FlexValue `json:"value"`
@@ -111,16 +116,16 @@ func (m *BennyfiContract) GetLastProject() (*Project, error) {
 	return nil, nil
 }
 
-func (m *BennyfiContract) GetRoundsByAuthorizerAndId(authorizer interface{}) ([]Project, error) {
+func (m *BennyfiContract) GetProjectsByAuthorizerAndId(authorizer interface{}, projectIDUpperBound uint64) ([]Project, error) {
 	request := &eos.GetTableRowsRequest{}
-	err := m.FilterRoundsByAuthorizerAndId(request, authorizer)
+	err := m.FilterProjectsByAuthorizerAndId(request, authorizer, projectIDUpperBound)
 	if err != nil {
 		return nil, err
 	}
 	return m.GetProjectsReq(request)
 }
 
-func (m *BennyfiContract) FilterRoundsByAuthorizerAndId(req *eos.GetTableRowsRequest, authorizer interface{}) error {
+func (m *BennyfiContract) FilterProjectsByAuthorizerAndId(req *eos.GetTableRowsRequest, authorizer interface{}, projectIDUpperBound uint64) error {
 
 	req.Index = "2"
 	req.KeyType = "i128"
@@ -129,7 +134,10 @@ func (m *BennyfiContract) FilterRoundsByAuthorizerAndId(req *eos.GetTableRowsReq
 	if err != nil {
 		return fmt.Errorf("failed to generate lower bound composed index, err: %v", err)
 	}
-	authAndRndUB, err := m.EOS.GetComposedIndexValue(authorizer, uint64(18446744073709551615))
+	if projectIDUpperBound == 0 {
+		projectIDUpperBound = 18446744073709551615
+	}
+	authAndRndUB, err := m.EOS.GetComposedIndexValue(authorizer, projectIDUpperBound)
 	if err != nil {
 		return fmt.Errorf("failed to generate upper bound composed index, err: %v", err)
 	}
@@ -139,16 +147,16 @@ func (m *BennyfiContract) FilterRoundsByAuthorizerAndId(req *eos.GetTableRowsReq
 	return err
 }
 
-func (m *BennyfiContract) GetRoundsByBeneficiaryAndId(beneficiary interface{}) ([]Project, error) {
+func (m *BennyfiContract) GetProjectsByBeneficiaryAndId(beneficiary interface{}, projectIDUpperBound uint64) ([]Project, error) {
 	request := &eos.GetTableRowsRequest{}
-	err := m.FilterRoundsByBeneficiaryAndId(request, beneficiary)
+	err := m.FilterProjectsByBeneficiaryAndId(request, beneficiary, projectIDUpperBound)
 	if err != nil {
 		return nil, err
 	}
 	return m.GetProjectsReq(request)
 }
 
-func (m *BennyfiContract) FilterRoundsByBeneficiaryAndId(req *eos.GetTableRowsRequest, beneficiary interface{}) error {
+func (m *BennyfiContract) FilterProjectsByBeneficiaryAndId(req *eos.GetTableRowsRequest, beneficiary interface{}, projectIDUpperBound uint64) error {
 
 	req.Index = "3"
 	req.KeyType = "i128"
@@ -157,7 +165,10 @@ func (m *BennyfiContract) FilterRoundsByBeneficiaryAndId(req *eos.GetTableRowsRe
 	if err != nil {
 		return fmt.Errorf("failed to generate lower bound composed index, err: %v", err)
 	}
-	beneAndRndUB, err := m.EOS.GetComposedIndexValue(beneficiary, uint64(18446744073709551615))
+	if projectIDUpperBound == 0 {
+		projectIDUpperBound = 18446744073709551615
+	}
+	beneAndRndUB, err := m.EOS.GetComposedIndexValue(beneficiary, projectIDUpperBound)
 	if err != nil {
 		return fmt.Errorf("failed to generate upper bound composed index, err: %v", err)
 	}
