@@ -159,6 +159,11 @@ func (m *BennyfiContract) SetupConfigSettings(owner eos.AccountName, settings in
 
 func (m *BennyfiContract) SetupConfigSetting(owner eos.AccountName, configSetting map[interface{}]interface{}) error {
 
+	_, err := m.Pause(UNPAUSED)
+	if err != nil {
+		return err
+	}
+
 	setting, err := GetConfigSetting(configSetting)
 	if err != nil {
 		return err
