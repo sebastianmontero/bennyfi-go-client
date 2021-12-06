@@ -134,6 +134,14 @@ type Round struct {
 	UpdatedDate              string                   `json:"updated_date"`
 }
 
+func (m *Round) GetTotalDeposits() eos.Asset {
+	totalDeposits, err := eos.NewAssetFromString(m.TotalDeposits)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse total deposits: %v to asset", m.TotalDeposits))
+	}
+	return totalDeposits
+}
+
 func (m *Round) NumEntriesToClose() uint32 {
 	return m.NumParticipants - m.NumParticipantsEntered
 }
