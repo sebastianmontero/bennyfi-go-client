@@ -278,6 +278,19 @@ func (m *NFTContract) GetAssetsReq(owner eos.AccountName, req *eos.GetTableRowsR
 	return assets, nil
 }
 
+func (m *NFTContract) GetAssetOwnersReq(req *eos.GetTableByScopeRequest) (*service.TableScopesResp, error) {
+
+	if req == nil {
+		req = &eos.GetTableByScopeRequest{}
+	}
+	req.Table = "assets"
+	resp, err := m.GetTableScopes(*req)
+	if err != nil {
+		return nil, fmt.Errorf("get table scopes %v", err)
+	}
+	return resp, nil
+}
+
 func (m *NFTContract) GetCollectionByName(collection eos.Name) (*Collection, error) {
 	collections, err := m.GetCollectionsReq(&eos.GetTableRowsRequest{
 		LowerBound: string(collection),
