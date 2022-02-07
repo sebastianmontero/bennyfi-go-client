@@ -27,6 +27,17 @@ import (
 	eos "github.com/eoscanada/eos-go"
 )
 
+var (
+	TokenRoleFee    = "fee"
+	TokenRoleStake  = "stake"
+	TokenRoleReward = "reward"
+	TokenRoleValues = map[string]bool{
+		TokenRoleFee:    true,
+		TokenRoleReward: true,
+		TokenRoleStake:  true,
+	}
+)
+
 type TokenLimits struct {
 	MinValue string `json:"min_value"`
 	MaxValue string `json:"max_value"`

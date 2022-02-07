@@ -109,6 +109,7 @@ type Round struct {
 	StakingPeriod            *Microseconds            `json:"staking_period"`
 	EnrollmentTimeOut        *Microseconds            `json:"enrollment_time_out"`
 	NumParticipants          uint32                   `json:"num_participants"`
+	RoundFee                 string                   `json:"round_fee"`
 	EntryStake               string                   `json:"entry_stake"`
 	Rewards                  Rewards                  `json:"rewards"`
 	RexBalance               string                   `json:"rex_balance"`
@@ -205,6 +206,7 @@ type NewRoundArgs struct {
 	StakingPeriodHrs     uint32          `json:"staking_period_hrs"`
 	EnrollmentTimeOutHrs uint32          `json:"enrollment_time_out_hrs"`
 	NumParticipants      uint32          `json:"num_participants"`
+	RoundFee             string          `json:"round_fee"`
 	EntryStake           string          `json:"entry_stake"`
 	Rewards              RewardsArg      `json:"rewards"`
 	RoundManager         eos.AccountName `json:"round_manager"`
@@ -218,6 +220,7 @@ func RoundToNewRoundArgs(round *Round) *NewRoundArgs {
 		StakingPeriodHrs:     uint32(round.StakingPeriod.Hrs()),
 		EnrollmentTimeOutHrs: uint32(round.EnrollmentTimeOut.Hrs()),
 		NumParticipants:      round.NumParticipants,
+		RoundFee:             round.RoundFee,
 		EntryStake:           round.EntryStake,
 		Rewards:              round.Rewards.ToRewardsArg(),
 		RoundManager:         round.RoundManager,
@@ -235,6 +238,7 @@ func (m *Round) Clone() *Round {
 		StakingPeriod:            m.StakingPeriod,
 		EnrollmentTimeOut:        m.EnrollmentTimeOut,
 		NumParticipants:          m.NumParticipants,
+		RoundFee:                 m.RoundFee,
 		EntryStake:               m.EntryStake,
 		Rewards:                  m.Rewards.Clone(),
 		RexBalance:               m.RexBalance,
@@ -271,6 +275,7 @@ func (m *BennyfiContract) NewRoundFromRoundArgs(roundArgs *NewRoundArgs) (string
 	actionData["round_name"] = roundArgs.RoundName
 	actionData["term_id"] = roundArgs.TermID
 	actionData["project_id"] = roundArgs.ProjectID
+	actionData["round_fee"] = roundArgs.RoundFee
 	actionData["entry_stake"] = roundArgs.EntryStake
 	actionData["rewards"] = roundArgs.Rewards
 	actionData["num_participants"] = roundArgs.NumParticipants

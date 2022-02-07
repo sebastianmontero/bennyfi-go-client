@@ -41,6 +41,57 @@ type Setting struct {
 	UpdatedDate eos.BlockTimestamp `json:"updated_date"`
 }
 
+func (m *Setting) ValueCount() int {
+	return len(m.Values)
+}
+
+func (m *Setting) Get(pos int) (FlexValue, error) {
+	if pos < m.ValueCount() {
+		return m.Values[0], nil
+	}
+	return FlexValue{}, fmt.Errorf("setting has no value at pos: %v, value count: %v", pos, m.ValueCount())
+}
+
+func (m *Setting) GetAsName(pos int) (eos.Name, error) {
+	v, err := m.Get(pos)
+	if err != nil {
+		return eos.Name(""), err
+	}
+	return v.Name()
+}
+
+func (m *Setting) GetAsString(pos int) (string, error) {
+	v, err := m.Get(pos)
+	if err != nil {
+		return "", err
+	}
+	return v.String(), nil
+}
+
+func (m *Setting) GetAsTimePoint(pos int) (eos.TimePoint, error) {
+	v, err := m.Get(pos)
+	if err != nil {
+		return eos.TimePoint(0), err
+	}
+	return v.TimePoint()
+}
+
+func (m *Setting) GetAsAsset(pos int) (eos.Asset, error) {
+	v, err := m.Get(pos)
+	if err != nil {
+		return eos.Asset{}, err
+	}
+	return v.Asset()
+}
+
+func (m *Setting) GetAsInt64(pos int) (int64, error) {
+	v, err := m.Get(pos)
+	if err != nil {
+		return 0, err
+	}
+	return v.Int64()
+}
+
 func (m *BennyfiContract) setter(owner eos.AccountName,
 	key string, flexValue *FlexValue, action eos.ActionName) (string, error) {
 	actionData := m.getSetterData(owner, key, flexValue)
