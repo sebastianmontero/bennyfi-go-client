@@ -46,12 +46,12 @@ func (c *InvalidTypeError) Error() string {
 type AttributeMap map[string]*AtomicAttribute
 
 type AtomicAttribute struct {
-	*eos.BaseVariant
+	eos.BaseVariant
 }
 
 func NewAtomicAttribute(typeId string, value interface{}) *AtomicAttribute {
 	return &AtomicAttribute{
-		&eos.BaseVariant{
+		eos.BaseVariant{
 			TypeID: AtomicAttributeVariant.TypeID(typeId),
 			Impl:   value,
 		},
@@ -71,6 +71,8 @@ func ToAtomicAttribute(value interface{}) *AtomicAttribute {
 		return NewAtomicAttribute("FLOAT_VEC", v)
 	case []float64:
 		return NewAtomicAttribute("DOUBLE_VEC", v)
+	case string:
+		return NewAtomicAttribute("string", v)
 	default:
 		return NewAtomicAttribute(fmt.Sprintf("%T", v), v)
 	}
@@ -79,7 +81,7 @@ func ToAtomicAttribute(value interface{}) *AtomicAttribute {
 func (m *AtomicAttribute) InvalidTypeError(expectedType string) *InvalidTypeError {
 	return &InvalidTypeError{
 		Label:        fmt.Sprintf("received an unexpected type %T for variant %T", m.Impl, m),
-		ExpectedType: "int8",
+		ExpectedType: expectedType,
 		Attribute:    m,
 	}
 }

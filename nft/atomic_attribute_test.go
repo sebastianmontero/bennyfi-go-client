@@ -12,12 +12,22 @@ func TestToAtomicAttribute(t *testing.T) {
 	int8Val := int8(8)
 	actual := nft.ToAtomicAttribute(int8Val)
 	expected := nft.NewAtomicAttribute("int8", int8Val)
+	assert.Assert(t, actual.IsEqual(expected))
+
+	uint16Val := uint16(1)
+	actual = nft.ToAtomicAttribute(uint16Val)
+	expected = nft.NewAtomicAttribute("uint16", uint16Val)
 
 	assert.Assert(t, actual.IsEqual(expected))
 
 	uint64Val := uint64(10)
 	actual = nft.ToAtomicAttribute(uint64Val)
 	expected = nft.NewAtomicAttribute("uint64", uint64Val)
+	assert.Assert(t, actual.IsEqual(expected))
+
+	stringVal := "hola"
+	actual = nft.ToAtomicAttribute(stringVal)
+	expected = nft.NewAtomicAttribute("string", stringVal)
 
 	assert.Assert(t, actual.IsEqual(expected))
 
