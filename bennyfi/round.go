@@ -154,6 +154,18 @@ func (m *Round) UpsertDistribution(name string, distribution *Distribution) {
 	m.Distributions.Upsert(name, distribution)
 }
 
+func (m *Round) AssignWinnerPrizes(distName string, dist *Distribution) error {
+	winnersEntry := m.Winners.Find(distName)
+	if winnersEntry == nil {
+		return fmt.Errorf("failed assigning winner prizes, there is no winners array for distribution name: %v", distName)
+	}
+	err := winnersEntry.Value.AssignPrizes(dist.WinnerPrizes)
+	if err != nil {
+		return fmt.Errorf("failed assigning winner prizes for dist: %v, error: %v", distName, err)
+	}
+	return nil
+}
+
 func (m *Round) RemoveDistribution(name string) {
 	m.Distributions.Remove(name)
 }

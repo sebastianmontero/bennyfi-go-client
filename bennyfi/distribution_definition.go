@@ -21,10 +21,54 @@
 // THE SOFTWARE.
 package bennyfi
 
+import (
+	"fmt"
+	"math"
+
+	eos "github.com/eoscanada/eos-go"
+	"github.com/sebastianmontero/eos-go-toolbox/util"
+)
+
 type DistributionDefinition struct {
-	AllParticipantsPerc uint32 `json:"all_participants_perc_x100000"`
-	BeneficiaryPerc     uint32 `json:"beneficiary_perc_x100000"`
-	RoundManagerPerc    uint32 `json:"round_manager_perc_x100000"`
+	AllParticipantsPerc uint32   `json:"all_participants_perc_x100000"`
+	BeneficiaryPerc     uint32   `json:"beneficiary_perc_x100000"`
+	RoundManagerPerc    uint32   `json:"round_manager_perc_x100000"`
+	WinnersPerc         []uint32 `json:"winners_perc_x100000"`
+}
+
+func (m *DistributionDefinition) GetNumWinners() int {
+	return len(m.WinnersPerc)
+}
+
+func (m *DistributionDefinition) CalculateDistribution(totalReward eos.Asset, numParticipantsEntered uint32) *Distribution {
+
+	precisionAdj := math.Pow(10, float64(totalReward.Precision))
+	percAdj := float64(10000000)
+	reward := float64(totalReward.Amount) / precisionAdj
+	rewardToAllParticipants := reward * float64((float64(m.AllParticipantsPerc) / percAdj))
+	rewardToBeneficiary := reward * float64((float64(m.BeneficiaryPerc) / percAdj))
+	feeToManager := reward * float64((float64(m.RoundManagerPerc) / percAdj))
+	minParticipantReward := eos.Asset{Amount: eos.Int64((rewardToAllParticipants / float64(numParticipantsEntered)) * float64(precisionAdj)), Symbol: totalReward.Symbol}
+	beneficiaryReward := eos.Asset{Amount: eos.Int64(rewardToBeneficiary * float64(precisionAdj)), Symbol: totalReward.Symbol}
+	managerFee := eos.Asset{Amount: eos.Int64(feeToManager * float64(precisionAdj)), Symbol: totalReward.Symbol}
+	winnerPrize := totalReward.Sub(beneficiaryReward).Sub(managerFee).Sub(util.MultiplyAsset(minParticipantReward, int64(numParticipantsEntered)))
+	remaining := winnerPrize
+	winnerPrizeAdj := float64(winnerPrize.Amount) / precisionAdj
+	winnerPrizes := make([]string, 0, m.GetNumWinners())
+	for _, winnerPerc := range m.WinnersPerc {
+		prizeAmount := winnerPrizeAdj * float64((float64(winnerPerc) / percAdj))
+		prize := eos.Asset{Amount: eos.Int64(prizeAmount * float64(precisionAdj)), Symbol: totalReward.Symbol}
+		remaining = remaining.Sub(prize)
+		winnerPrizes = append(winnerPrizes, prize.String())
+	}
+	firstPrize, _ := eos.NewAssetFromString(winnerPrizes[0])
+	winnerPrizes[0] = firstPrize.Add(remaining).String()
+	return &Distribution{
+		WinnerPrizes:         winnerPrizes,
+		BeneficiaryReward:    beneficiaryReward.String(),
+		MinParticipantReward: minParticipantReward.String(),
+		RoundManagerFee:      managerFee.String(),
+	}
 }
 
 type DistributionDefinitionEntry struct {
@@ -77,4 +121,21 @@ func (p *DistributionDefinitions) Remove(key string) *DistributionDefinitionEntr
 		return def
 	}
 	return nil
+}
+
+func (p *DistributionDefinitions) GetNumWinners(key string) int {
+
+	entry := p.Find(key)
+	if entry == nil {
+		panic(fmt.Sprintf("there is no distribution definition for key: %v", key))
+	}
+	return entry.Value.GetNumWinners()
+}
+
+func (p *DistributionDefinitions) GetTotalNumWinners() int {
+	total := 0
+	for _, entry := range *p {
+		total += entry.Value.GetNumWinners()
+	}
+	return total
 }

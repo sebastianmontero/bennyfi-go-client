@@ -28,18 +28,10 @@ import (
 )
 
 type Distribution struct {
-	AmountToWinner       string `json:"amount_to_winner"`
-	BeneficiaryReward    string `json:"beneficiary_reward"`
-	RoundManagerFee      string `json:"round_manager_fee"`
-	MinParticipantReward string `json:"min_participant_reward"`
-}
-
-func (m *Distribution) GetAmountToWinner() eos.Asset {
-	amountToWinner, err := eos.NewAssetFromString(m.AmountToWinner)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse amount to winner: %v to asset", m.AmountToWinner))
-	}
-	return amountToWinner
+	BeneficiaryReward    string   `json:"beneficiary_reward"`
+	RoundManagerFee      string   `json:"round_manager_fee"`
+	MinParticipantReward string   `json:"min_participant_reward"`
+	WinnerPrizes         []string `json:"winner_prizes"`
 }
 
 func (m *Distribution) GetBeneficiaryReward() eos.Asset {
@@ -64,6 +56,21 @@ func (m *Distribution) GetMinParticipantReward() eos.Asset {
 		panic(fmt.Sprintf("Unable to parse min participant reward: %v to asset", m.MinParticipantReward))
 	}
 	return minParticipantReward
+}
+
+func (m *Distribution) GetNumWinners() uint32 {
+	return uint32(len(m.WinnerPrizes))
+}
+
+func (m *Distribution) GetWinnerPrize(pos uint32) eos.Asset {
+	if pos >= m.GetNumWinners() {
+		panic(fmt.Sprintf("There is no winner for pos: %v number of winners are: %v", pos, m.GetNumWinners()))
+	}
+	winnerPrize, err := eos.NewAssetFromString(m.WinnerPrizes[pos])
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse winner prize: %v to asset", m.WinnerPrizes[pos]))
+	}
+	return winnerPrize
 }
 
 type DistributionEntry struct {

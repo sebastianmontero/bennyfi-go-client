@@ -64,6 +64,16 @@ func (m DistributionWinners) Find(account interface{}) *Winner {
 	return nil
 }
 
+func (m DistributionWinners) AssignPrizes(prizes []string) error {
+	if len(m) != len(prizes) {
+		return fmt.Errorf("failed assigning prizes, the numnber of winners: %v is different from the number of prizes: %v", len(m), len(prizes))
+	}
+	for i, prize := range prizes {
+		m[i].Prize = prize
+	}
+	return nil
+}
+
 type DistributionWinnersEntry struct {
 	Key   string              `json:"key"`
 	Value DistributionWinners `json:"value"`
@@ -100,7 +110,13 @@ func (p *Winners) Upsert(key string, winner *Winner) {
 	m := *p
 	pos := m.FindPos(key)
 	if pos >= 0 {
-		m[pos].Value = append(m[pos].Value, winner)
+		winners := m[pos].Value
+		p := winners.FindPos(winner.Participant)
+		if p >= 0 {
+			winners[p] = winner
+		} else {
+			m[pos].Value = append(winners, winner)
+		}
 	} else {
 		m = append(m, &DistributionWinnersEntry{
 			Key: key,
