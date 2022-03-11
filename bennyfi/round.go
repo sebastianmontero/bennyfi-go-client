@@ -99,6 +99,10 @@ func (m *Microseconds) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+func (m *Microseconds) String() string {
+	return m.Microseconds
+}
+
 type Round struct {
 	RoundID                  uint64                   `json:"round_id"`
 	TermID                   uint64                   `json:"term_id"`
