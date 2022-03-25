@@ -39,7 +39,7 @@ type Term struct {
 	UpdatedDate             string                  `json:"updated_date"`
 }
 
-func (m *Term) UpsertDistributionDef(name string, definition *DistributionDefinition) {
+func (m *Term) UpsertDistributionDef(name string, definition interface{}) {
 	if m.DistributionDefinitions == nil {
 		m.DistributionDefinitions = make(DistributionDefinitions, 0, 1)
 	}

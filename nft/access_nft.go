@@ -2,82 +2,34 @@ package nft
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/eoscanada/eos-go"
+	"github.com/sebastianmontero/bennyfi-go-client/nft/marble"
 )
 
 const (
-	NFTAttrName                  = "name"
-	NFTAttrAccessLevel           = "access level"
-	NFTAttrAllowedParallelRounds = "allowed parallel rounds"
-	NFTTemplateSchema            = eos.Name("accessnfttmp")
+	NFTAttrAccessLevel = eos.Name("accesslevel")
 )
 
 type AccessNFT struct {
-	Contract           eos.AccountName
-	Collection         eos.Name
-	CollectionNameAttr string
-	NFT                *NFTContract
+	Contract eos.AccountName
+	Group    eos.Name
+	NFT      *marble.MarbleNFTContract
 }
 
-func (m *AccessNFT) SetupAccessNFTCollection() error {
+func (m *AccessNFT) SetupAccessNFTGroup() error {
 
-	createCollectionArgs := &CreateCollectionArgs{
-		BaseCollection: &BaseCollection{
-			CollectionName:     m.Collection,
-			Author:             m.Contract,
-			AllowNotify:        0,
-			AuthorizedAccounts: []eos.AccountName{m.Contract},
-			NotifyAccounts:     []eos.AccountName{},
-		},
-		MarketFee: 0.10,
-		Data:      AttributeMap{NFTAttrName: ToAtomicAttribute(m.CollectionNameAttr)},
+	args := marble.NewGroupArgs{
+		Title:       "Access NFT",
+		Description: "Access NFT",
+		GroupName:   m.Group,
+		Manager:     m.Contract,
+		SupplyCap:   1000,
 	}
-	_, err := m.NFT.CreateCollection(createCollectionArgs)
+	_, err := m.NFT.NewGroup(&args, m.Contract)
 	if err != nil {
-		return fmt.Errorf("failed creating %v collection: %v", m.Collection, err)
-	}
-
-	createSchemaArgs := &CreateSchemaArgs{
-		AuthorizedCreator: m.Contract,
-		CollectionName:    m.Collection,
-		SchemaName:        NFTTemplateSchema,
-		Format: []*Format{
-			{
-				Name: NFTAttrName,
-				Type: "string",
-			},
-			{
-				Name: NFTAttrAccessLevel,
-				Type: "uint64",
-			},
-			{
-				Name: NFTAttrAllowedParallelRounds,
-				Type: "uint16",
-			},
-		},
-	}
-	_, err = m.NFT.CreateSchema(createSchemaArgs)
-	if err != nil {
-		return fmt.Errorf("failed creating access nft template schema: %v", err)
-	}
-
-	createTemplateArgs := &CreateTemplateArgs{
-		AuthorizedCreator: m.Contract,
-		CollectionName:    m.Collection,
-		BaseTemplate: &BaseTemplate{
-			SchemaName:   NFTTemplateSchema,
-			Transferable: 1,
-			Burnable:     0,
-			MaxSupply:    0,
-		},
-		ImmutableData: AttributeMap{
-			NFTAttrName: ToAtomicAttribute(m.CollectionNameAttr),
-		},
-	}
-	_, err = m.NFT.CreateTemplate(createTemplateArgs)
-	if err != nil {
-		return fmt.Errorf("failed creating access nft template: %v", err)
+		return fmt.Errorf("failed creating %v nft group: %v", m.Group, err)
 	}
 
 	return nil
@@ -105,29 +57,53 @@ func (m *AccessNFTMintArgs) String() string {
 }
 
 func (m *AccessNFT) Mint(args *AccessNFTMintArgs) error {
-	fmt.Println("Getting access NFT template...")
-	template, err := m.NFT.GetTemplate(m.Collection)
+	fmt.Printf("Checking if account: %v already has an access NFT...\n", args.Owner)
+	items, err := m.NFT.GetItemsByOwnerAndGroup(args.Owner, m.Group)
 	if err != nil {
-		return fmt.Errorf("failed getting template for collection: %v, error: %v", m.Collection, err)
+		return err
 	}
-	fmt.Println("template: ", template.TemplateId)
-	mintAssetArgs := &MintAssetArgs{
-		AuthorizedMinter: m.Contract,
-		BaseAsset: &BaseAsset{
-			CollectionName: m.Collection,
-			SchemaName:     NFTTemplateSchema,
-			TemplateId:     template.TemplateId,
-		},
-		NewAssetOwner: args.Owner,
-		ImmutableData: AttributeMap{
-			NFTAttrAccessLevel:           ToAtomicAttribute(args.AccessLevel),
-			NFTAttrAllowedParallelRounds: ToAtomicAttribute(args.AllowedParallelRounds),
-		},
+	if len(items) == 0 {
+		fmt.Printf("Account: %v does not have an access NFT, minting...\n", args.Owner)
+		mintArgs := &marble.MintItemArgs{
+			To:    args.Owner,
+			Group: m.Group,
+		}
+		_, err = m.NFT.MintItem(mintArgs, m.Contract)
+
+		if err != nil {
+			return fmt.Errorf("failed miniting item: %v, error: %v", mintArgs, err)
+		}
+
+		fmt.Printf("Minted getting access NFT for account: %v...\n", args.Owner)
+		items, err = m.NFT.GetItemsByOwnerAndGroup(args.Owner, m.Group)
+		if err != nil {
+			return err
+		}
 	}
-	_, err = m.NFT.MintAsset(mintAssetArgs)
+	item := items[0]
+	fmt.Printf("Adding access level attribute with value: %v to item: %v with owner: %v...\n", args.AccessLevel, item, args.Owner)
+	newAttrArgs := &marble.NewAttributeArgs{
+		Serial:        item.Serial,
+		AttributeName: NFTAttrAccessLevel,
+		InitialPoints: int64(args.AccessLevel),
+	}
+	_, err = m.NFT.NewAttribute(newAttrArgs, m.Contract)
+
 	if err != nil {
-		return fmt.Errorf("failed minting NFT asset: %v, error: %v", args, err)
+		if strings.Contains(err.Error(), "shared attributes already exists") {
+			fmt.Printf("Item: %v already has access level attribute\n", item)
+		} else {
+			return fmt.Errorf("failed adding access level attr: %v, error: %v", newAttrArgs, err)
+		}
 	}
 	return nil
 
+}
+
+func (m *AccessNFT) GetAccessNFTGroup() (*marble.Group, error) {
+	return m.NFT.GetGroupByName(m.Group)
+}
+
+func (m *AccessNFT) GetAccessNFTs(owner eos.AccountName) ([]*marble.Item, error) {
+	return m.NFT.GetItemsByOwnerAndGroup(owner, m.Group)
 }

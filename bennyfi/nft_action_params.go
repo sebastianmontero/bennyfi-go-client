@@ -22,55 +22,32 @@
 package bennyfi
 
 import (
+	"encoding/json"
 	"fmt"
-
-	eos "github.com/eoscanada/eos-go"
 )
 
-type BaseWinner struct {
-	Participant   eos.AccountName `json:"participant"`
-	EntryPosition uint64          `json:"entry_position"`
+type NFTActionParams struct {
+	TermId          uint64 `json:"term_id"`
+	TermName        string `json:"term_name"`
+	ProjectId       uint64 `json:"project_id"`
+	RoundId         uint64 `json:"round_id"`
+	RoundName       string `json:"round_name"`
+	NumParticipants uint32 `json:"num_participants"`
+	Beneficiary     string `json:"beneficiary"`
+	CollectionName  string `json:"collection_name"`
+	Recipient       string `json:"recipient"`
+	Amount          uint16 `json:"amount"`
 }
 
-func (m *BaseWinner) IsWinner(account interface{}) bool {
-	return fmt.Sprintf("%v", m.Participant) == fmt.Sprintf("%v", account)
-}
-
-func NewBaseWinner(participant eos.AccountName, entryPosition uint64) *BaseWinner {
-	return &BaseWinner{
-		Participant:   participant,
-		EntryPosition: entryPosition,
-	}
-}
-
-type WinnerFT struct {
-	*BaseWinner
-	Prize string `json:"prize"`
-}
-
-func (m *WinnerFT) GetPrize() eos.Asset {
-	prize, err := eos.NewAssetFromString(m.Prize)
+func (m *NFTActionParams) ToMap() map[string]interface{} {
+	jsonStr, err := json.Marshal(m)
 	if err != nil {
-		panic(fmt.Sprintf("Unable to parse prize: %v to asset", m.Prize))
+		panic(fmt.Sprintf("failed transforming NFTActionParams to map, error marshalling: %v", err))
 	}
-	return prize
-}
-
-func NewWinnerFT(participant eos.AccountName, prize string, entryPosition uint64) *WinnerFT {
-	return &WinnerFT{
-		BaseWinner: NewBaseWinner(participant, entryPosition),
-		Prize:      prize,
+	var paramsMap map[string]interface{}
+	err = json.Unmarshal([]byte(jsonStr), &paramsMap)
+	if err != nil {
+		panic(fmt.Sprintf("failed transforming NFTActionParams to map, error unmarshalling: %v", err))
 	}
-}
-
-type WinnerNFT struct {
-	*BaseWinner
-	Prize uint16 `json:"prize"`
-}
-
-func NewWinnerNFT(participant eos.AccountName, prize uint16, entryPosition uint64) *WinnerNFT {
-	return &WinnerNFT{
-		BaseWinner: NewBaseWinner(participant, entryPosition),
-		Prize:      prize,
-	}
+	return paramsMap
 }

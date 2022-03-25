@@ -23,54 +23,76 @@ package bennyfi
 
 import (
 	"fmt"
-
-	eos "github.com/eoscanada/eos-go"
 )
 
-type BaseWinner struct {
-	Participant   eos.AccountName `json:"participant"`
-	EntryPosition uint64          `json:"entry_position"`
+type ConfigEntry struct {
+	Key   string     `json:"key"`
+	Value *FlexValue `json:"value"`
 }
 
-func (m *BaseWinner) IsWinner(account interface{}) bool {
-	return fmt.Sprintf("%v", m.Participant) == fmt.Sprintf("%v", account)
+type Config []*ConfigEntry
+
+func (m Config) HasConfig() bool {
+	return len(m) > 0
 }
 
-func NewBaseWinner(participant eos.AccountName, entryPosition uint64) *BaseWinner {
-	return &BaseWinner{
-		Participant:   participant,
-		EntryPosition: entryPosition,
+func (m Config) FindPos(key string) int {
+	for i, def := range m {
+		if def.Key == key {
+			return i
+		}
 	}
+	return -1
 }
 
-type WinnerFT struct {
-	*BaseWinner
-	Prize string `json:"prize"`
-}
-
-func (m *WinnerFT) GetPrize() eos.Asset {
-	prize, err := eos.NewAssetFromString(m.Prize)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse prize: %v to asset", m.Prize))
+func (m Config) FindEntry(key string) *ConfigEntry {
+	pos := m.FindPos(key)
+	if pos >= 0 {
+		return m[pos]
 	}
-	return prize
+	return nil
 }
 
-func NewWinnerFT(participant eos.AccountName, prize string, entryPosition uint64) *WinnerFT {
-	return &WinnerFT{
-		BaseWinner: NewBaseWinner(participant, entryPosition),
-		Prize:      prize,
+func (m Config) Find(key string) *FlexValue {
+	entry := m.FindEntry(key)
+	if entry != nil {
+		return entry.Value
 	}
+	return nil
 }
 
-type WinnerNFT struct {
-	*BaseWinner
-	Prize uint16 `json:"prize"`
-}
-
-func NewWinnerNFT(participant eos.AccountName, prize uint16, entryPosition uint64) *WinnerNFT {
-	return &WinnerNFT{
-		BaseWinner: NewBaseWinner(participant, entryPosition),
-		Prize:      prize,
+func (m Config) Get(key string) *FlexValue {
+	v := m.Find(key)
+	if v == nil {
+		panic(fmt.Sprintf("Config param with key: %v does not exist", key))
 	}
+	return v
+}
+
+func (p *Config) Upsert(key string, value *FlexValue) {
+	m := *p
+	pos := m.FindPos(key)
+	entry := &ConfigEntry{
+		Key:   key,
+		Value: value,
+	}
+	if pos >= 0 {
+		m[pos] = entry
+	} else {
+		m = append(m, entry)
+	}
+	*p = m
+}
+
+func (p *Config) Remove(key string) *ConfigEntry {
+	m := *p
+	pos := m.FindPos(key)
+	if pos >= 0 {
+		def := m[pos]
+		m[pos] = m[len(m)-1]
+		m = m[:len(m)-1]
+		*p = m
+		return def
+	}
+	return nil
 }

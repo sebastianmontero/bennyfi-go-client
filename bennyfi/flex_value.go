@@ -53,10 +53,10 @@ var FlexValueVariant = eos.NewVariantDefinition([]eos.VariantType{
 	{Name: "string", Type: ""},
 	{Name: "asset", Type: eos.Asset{}}, //(*eos.Asset)(nil)}, // Syntax for pointer to a type, could be any struct
 	{Name: "time_point", Type: eos.TimePoint(0)},
-	{Name: "microseconds", Type: Microseconds{}},
+	// {Name: "microseconds", Type: Microseconds{}},
 	{Name: "int64", Type: int64(0)},
 	{Name: "uint32", Type: uint32(0)},
-	{Name: "uint64", Type: uint64(0)},
+	// {Name: "uint64", Type: uint64(0)},
 	{Name: "checksum256", Type: eos.Checksum256([]byte("0"))},
 })
 
@@ -94,9 +94,9 @@ func FlexValueFromTimePoint(value eos.TimePoint) *FlexValue {
 	return NewFlexValue("time_point", value)
 }
 
-func FlexValueFromMicroseconds(value Microseconds) *FlexValue {
-	return NewFlexValue("microseconds", value)
-}
+// func FlexValueFromMicroseconds(value Microseconds) *FlexValue {
+// 	return NewFlexValue("microseconds", value)
+// }
 
 func FlexValueFromInt64(value int64) *FlexValue {
 	return NewFlexValue("int64", value)
@@ -106,9 +106,9 @@ func FlexValueFromUint32(value uint32) *FlexValue {
 	return NewFlexValue("uint32", value)
 }
 
-func FlexValueFromUint64(value uint64) *FlexValue {
-	return NewFlexValue("uint64", value)
-}
+// func FlexValueFromUint64(value uint64) *FlexValue {
+// 	return NewFlexValue("uint64", value)
+// }
 
 func FlexValueFromChecksum(value eos.Checksum256) *FlexValue {
 	return NewFlexValue("checksum256", value)
@@ -118,12 +118,12 @@ func (fv *FlexValue) String() string {
 	switch v := fv.Impl.(type) {
 	case eos.Name:
 		return string(v)
-	case int64, uint32, uint64:
+	case int64, uint32:
 		return fmt.Sprint(v)
 	case eos.Asset:
 		return v.String()
-	case Microseconds:
-		return v.String()
+	// case Microseconds:
+	// 	return v.String()
 	case string:
 		return v
 	case eos.TimePoint:
@@ -136,101 +136,101 @@ func (fv *FlexValue) String() string {
 }
 
 // TimePoint returns a eos.TimePoint value of found content
-func (fv *FlexValue) TimePoint() (eos.TimePoint, error) {
+func (fv *FlexValue) TimePoint() eos.TimePoint {
 	switch v := fv.Impl.(type) {
 	case eos.TimePoint:
-		return v, nil
+		return v
 	default:
-		return 0, &InvalidTypeError{
+		panic(&InvalidTypeError{
 			Label:        fmt.Sprintf("received an unexpected type %T for variant %T", v, fv),
 			ExpectedType: "eos.TimePoint",
-			FlexValue:    fv,
-		}
+			Value:        fv,
+		})
 	}
 }
 
 // Asset returns a string value of found content or it panics
-func (fv *FlexValue) Asset() (eos.Asset, error) {
+func (fv *FlexValue) Asset() eos.Asset {
 	switch v := fv.Impl.(type) {
 	case eos.Asset:
-		return v, nil
+		return v
 	default:
-		return eos.Asset{}, &InvalidTypeError{
+		panic(&InvalidTypeError{
 			Label:        fmt.Sprintf("received an unexpected type %T for variant %T", v, fv),
 			ExpectedType: "eos.Asset",
-			FlexValue:    fv,
-		}
+			Value:        fv,
+		})
 	}
 }
 
 // Name returns a eos.Name value of found content or it panics
-func (fv *FlexValue) Name() (eos.Name, error) {
+func (fv *FlexValue) Name() eos.Name {
 	switch v := fv.Impl.(type) {
 	case eos.Name:
-		return v, nil
+		return v
 	case string:
-		return eos.Name(v), nil
+		return eos.Name(v)
 	default:
-		return eos.Name(""), &InvalidTypeError{
+		panic(&InvalidTypeError{
 			Label:        fmt.Sprintf("received an unexpected type %T for variant %T", v, fv),
 			ExpectedType: "eos.Name",
-			FlexValue:    fv,
-		}
+			Value:        fv,
+		})
 	}
 }
 
-func (fv *FlexValue) Microseconds() (Microseconds, error) {
-	switch v := fv.Impl.(type) {
-	case Microseconds:
-		return v, nil
-	default:
-		return Microseconds{}, &InvalidTypeError{
-			Label:        fmt.Sprintf("received an unexpected type %T for variant %T", v, fv),
-			ExpectedType: "Microseconds",
-			FlexValue:    fv,
-		}
-	}
-}
+// func (fv *FlexValue) Microseconds() (Microseconds, error) {
+// 	switch v := fv.Impl.(type) {
+// 	case Microseconds:
+// 		return v, nil
+// 	default:
+// 		return Microseconds{}, &InvalidTypeError{
+// 			Label:        fmt.Sprintf("received an unexpected type %T for variant %T", v, fv),
+// 			ExpectedType: "Microseconds",
+// 			Value:        fv,
+// 		}
+// 	}
+// }
 
 // Int64 returns a string value of found content or it panics
-func (fv *FlexValue) Int64() (int64, error) {
+func (fv *FlexValue) Int64() int64 {
 	switch v := fv.Impl.(type) {
 	case int64:
-		return v, nil
+		return v
 	default:
-		return -1000000, &InvalidTypeError{
+		panic(&InvalidTypeError{
 			Label:        fmt.Sprintf("received an unexpected type %T for variant %T", v, fv),
 			ExpectedType: "int64",
-			FlexValue:    fv,
-		}
+			Value:        fv,
+		})
 	}
 }
 
-func (fv *FlexValue) Uint32() (uint32, error) {
+func (fv *FlexValue) Uint32() uint32 {
 	switch v := fv.Impl.(type) {
 	case uint32:
-		return v, nil
+		return v
 	default:
-		return 0, &InvalidTypeError{
+		panic(&InvalidTypeError{
 			Label:        fmt.Sprintf("received an unexpected type %T for variant %T", v, fv),
 			ExpectedType: "uint32",
-			FlexValue:    fv,
-		}
+			Value:        fv,
+		})
 	}
 }
 
-func (fv *FlexValue) Uint64() (uint64, error) {
-	switch v := fv.Impl.(type) {
-	case uint64:
-		return v, nil
-	default:
-		return 0, &InvalidTypeError{
-			Label:        fmt.Sprintf("received an unexpected type %T for variant %T", v, fv),
-			ExpectedType: "uint64",
-			FlexValue:    fv,
-		}
-	}
-}
+// func (fv *FlexValue) Uint64() (uint64, error) {
+// 	switch v := fv.Impl.(type) {
+// 	case uint64:
+// 		return v, nil
+// 	default:
+// 		return 0, &InvalidTypeError{
+// 			Label:        fmt.Sprintf("received an unexpected type %T for variant %T", v, fv),
+// 			ExpectedType: "uint64",
+// 			Value:        fv,
+// 		}
+// 	}
+// }
 
 // IsEqual evaluates if the two FlexValues have the same types and values (deep compare)
 func (fv *FlexValue) IsEqual(fv2 *FlexValue) bool {

@@ -30,32 +30,39 @@ import (
 )
 
 var (
-	RoundPending               = eos.Name("pending")
-	RoundAcceptingEntries      = eos.Name("acceptentrys")
-	RoundDrawing               = eos.Name("rounddrawing")
-	RoundOpen                  = eos.Name("roundopen")
-	RoundClosed                = eos.Name("roundclosed")
-	RoundUnlocked              = eos.Name("rndunlocked")
-	RoundUnlockedUnstaked      = eos.Name("rndunlckdutk")
-	RoundTimedOut              = eos.Name("rndtimedout")
-	RoundTimedOutUnstaked      = eos.Name("rndtmdoututk")
-	RoundTypeManagerFunded     = eos.Name("mgrfunded")
-	RoundTypeRexPool           = eos.Name("rexpool")
-	RoundAccessPrivate         = eos.Name("private")
-	RoundAccessPublic          = eos.Name("public")
-	RexStateNotApplicable      = eos.Name("notaplicable")
-	RexStatePreRex             = eos.Name("prerex")
-	RexStateInSavings          = eos.Name("insavings")
-	RexStateInLockPeriod       = eos.Name("lockperiod")
-	RexStateSold               = eos.Name("sold")
-	RexStateWithdrawn          = eos.Name("withdrawn")
-	RewardFundingStatePending  = eos.Name("pending")
-	RewardFundingStateFunded   = eos.Name("funded")
-	RewardFundingStateRefunded = eos.Name("refunded")
-	RewardFundingStateCommited = eos.Name("commited")
-	RewardFundingStateRex      = eos.Name("rex")
-	DistributionMain           = "main"
-	DistributionProjectToken   = "project-token"
+	RoundPending                     = eos.Name("pending")
+	RoundAcceptingEntries            = eos.Name("acceptentrys")
+	RoundDrawing                     = eos.Name("rounddrawing")
+	RoundOpen                        = eos.Name("roundopen")
+	RoundClosed                      = eos.Name("roundclosed")
+	RoundUnlocked                    = eos.Name("rndunlocked")
+	RoundTimedOut                    = eos.Name("rndtimedout")
+	RoundStakeStateNotStarted        = eos.Name("notstarted")
+	RoundStakeStateStaked            = eos.Name("staked")
+	RoundStakeStateUnstakingTimedOut = eos.Name("unstakingtmo")
+	RoundStakeStateUnstakingUnlocked = eos.Name("unstakingulk")
+	RoundStakeStateUnstaked          = eos.Name("unstaked")
+	VestingStateNotApplicable        = eos.Name("notaplicable")
+	VestingStateNotStarted           = eos.Name("notstarted")
+	VestingStateVesting              = eos.Name("vesting")
+	VestingStateVesting1             = eos.Name("vesting1") //used for entries to enable handling the different vesting cycles
+	VestingStateVesting2             = eos.Name("vesting2")
+	VestingStateFinished             = eos.Name("finished")
+	RoundTypeManagerFunded           = eos.Name("mgrfunded")
+	RoundTypeRexPool                 = eos.Name("rexpool")
+	RoundAccessPrivate               = eos.Name("private")
+	RoundAccessPublic                = eos.Name("public")
+	RexStateNotApplicable            = eos.Name("notaplicable")
+	RexStatePreRex                   = eos.Name("prerex")
+	RexStateInSavings                = eos.Name("insavings")
+	RexStateInLockPeriod             = eos.Name("lockperiod")
+	RexStateSold                     = eos.Name("sold")
+	RexStateWithdrawn                = eos.Name("withdrawn")
+	RewardFundingStatePending        = eos.Name("pending")
+	RewardFundingStateFunded         = eos.Name("funded")
+	RewardFundingStateRefunded       = eos.Name("refunded")
+	RewardFundingStateCommited       = eos.Name("commited")
+	RewardFundingStateRex            = eos.Name("rex")
 )
 
 var microsecondsPerHr int64 = 60 * 60 * 1000000
@@ -121,8 +128,12 @@ type Round struct {
 	NumClaimedReturns        uint32                   `json:"num_claimed_returns"`
 	NumUnstaked              uint32                   `json:"num_unstaked"`
 	NumEarlyExits            uint32                   `json:"num_early_exits"`
+	VestingCycle             uint16                   `json:"vesting_cycle"`
+	NumVested                uint16                   `json:"num_vested"`
 	CurrentState             eos.Name                 `json:"current_state"`
 	RexState                 eos.Name                 `json:"rex_state"`
+	StakeState               eos.Name                 `json:"stake_state"`
+	VestingState             eos.Name                 `json:"vesting_state"`
 	TotalDeposits            string                   `json:"total_deposits"`
 	Winners                  Winners                  `json:"winners"`
 	Beneficiary              eos.AccountName          `json:"beneficiary"`
@@ -135,6 +146,7 @@ type Round struct {
 	MovedFromSavingsTime     string                   `json:"moved_from_savings_time"`
 	StakeEndTime             string                   `json:"stake_end_time"`
 	EnrollmentTimeEnd        string                   `json:"enrollment_time_end"`
+	NextVestingTime          string                   `json:"next_vesting_time"`
 	CreatedDate              string                   `json:"created_date"`
 	UpdatedDate              string                   `json:"updated_date"`
 }
@@ -151,7 +163,7 @@ func (m *Round) NumEntriesToClose() uint32 {
 	return m.NumParticipants - m.NumParticipantsEntered
 }
 
-func (m *Round) UpsertDistribution(name string, distribution *Distribution) {
+func (m *Round) UpsertDistribution(name string, distribution interface{}) {
 	if m.Distributions == nil {
 		m.Distributions = make(Distributions, 0, 1)
 	}
@@ -163,7 +175,7 @@ func (m *Round) AssignWinnerPrizes(distName string, dist *Distribution) error {
 	if winnersEntry == nil {
 		return fmt.Errorf("failed assigning winner prizes, there is no winners array for distribution name: %v", distName)
 	}
-	err := winnersEntry.Value.AssignPrizes(dist.WinnerPrizes)
+	err := winnersEntry.Value.AssignPrizes(dist)
 	if err != nil {
 		return fmt.Errorf("failed assigning winner prizes for dist: %v, error: %v", distName, err)
 	}
@@ -174,7 +186,7 @@ func (m *Round) RemoveDistribution(name string) {
 	m.Distributions.Remove(name)
 }
 
-func (m *Round) UpsertReward(name string, reward *Reward) {
+func (m *Round) UpsertReward(name string, reward interface{}) {
 	if m.Rewards == nil {
 		m.Rewards = make(Rewards, 0, 1)
 	}
@@ -196,7 +208,7 @@ func (m *Round) RemoveEarlyExitRewardFee(name string) {
 	m.TotalEarlyExitRewardFees.Remove(name)
 }
 
-func (m *Round) UpsertWinner(name string, winner *Winner) {
+func (m *Round) UpsertWinner(name string, winner interface{}) {
 	if m.Winners == nil {
 		m.Winners = make(Winners, 0, 1)
 	}
@@ -224,7 +236,7 @@ type NewRoundArgs struct {
 	NumParticipants      uint32          `json:"num_participants"`
 	RoundFee             string          `json:"round_fee"`
 	EntryStake           string          `json:"entry_stake"`
-	Rewards              RewardsArg      `json:"rewards"`
+	FTRewards            FTRewardsArg    `json:"ft_rewards"`
 	RoundManager         eos.AccountName `json:"round_manager"`
 }
 
@@ -238,7 +250,7 @@ func RoundToNewRoundArgs(round *Round) *NewRoundArgs {
 		NumParticipants:      round.NumParticipants,
 		RoundFee:             round.RoundFee,
 		EntryStake:           round.EntryStake,
-		Rewards:              round.Rewards.ToRewardsArg(),
+		FTRewards:            round.Rewards.ToFTRewardsArg(),
 		RoundManager:         round.RoundManager,
 	}
 }
@@ -262,8 +274,12 @@ func (m *Round) Clone() *Round {
 		NumClaimedReturns:        m.NumClaimedReturns,
 		NumUnstaked:              m.NumUnstaked,
 		NumEarlyExits:            m.NumEarlyExits,
+		VestingCycle:             m.VestingCycle,
+		NumVested:                m.NumVested,
 		CurrentState:             m.CurrentState,
 		RexState:                 m.RexState,
+		StakeState:               m.StakeState,
+		VestingState:             m.VestingState,
 		TotalDeposits:            m.TotalDeposits,
 		Winners:                  m.Winners,
 		Beneficiary:              m.Beneficiary,
@@ -276,6 +292,7 @@ func (m *Round) Clone() *Round {
 		MovedFromSavingsTime:     m.MovedFromSavingsTime,
 		StakeEndTime:             m.StakeEndTime,
 		EnrollmentTimeEnd:        m.EnrollmentTimeEnd,
+		NextVestingTime:          m.NextVestingTime,
 		CreatedDate:              m.CreatedDate,
 		UpdatedDate:              m.UpdatedDate,
 	}
@@ -293,11 +310,10 @@ func (m *BennyfiContract) NewRoundFromRoundArgs(roundArgs *NewRoundArgs) (string
 	actionData["project_id"] = roundArgs.ProjectID
 	actionData["round_fee"] = roundArgs.RoundFee
 	actionData["entry_stake"] = roundArgs.EntryStake
-	actionData["rewards"] = roundArgs.Rewards
+	actionData["ft_rewards"] = roundArgs.FTRewards
 	actionData["num_participants"] = roundArgs.NumParticipants
 	actionData["staking_period_hrs"] = roundArgs.StakingPeriodHrs
 	actionData["enrollment_time_out_hrs"] = roundArgs.EnrollmentTimeOutHrs
-
 	return m.ExecAction(roundArgs.RoundManager, "newround", actionData)
 }
 
@@ -357,6 +373,12 @@ func (m *BennyfiContract) UnstakeTimedoutRounds(callCounter uint64) (string, err
 
 func (m *BennyfiContract) Redraw() (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "redraw", nil)
+}
+
+func (m *BennyfiContract) VestingRounds(callCounter uint64) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["call_counter"] = callCounter
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "vestingrnds", actionData)
 }
 
 func (m *BennyfiContract) TstLapseTime(roundId uint64) (string, error) {

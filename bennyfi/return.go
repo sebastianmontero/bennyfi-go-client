@@ -25,22 +25,17 @@ import (
 	"fmt"
 
 	eos "github.com/eoscanada/eos-go"
+	"github.com/sebastianmontero/bennyfi-go-client/util/utype"
 )
 
-type Return struct {
+type ReturnsFT struct {
 	Prize              string `json:"prize"`
 	MinimumPayout      string `json:"minimum_payout"`
+	AmountPaidOut      string `json:"amount_paid_out"`
 	EarlyExitReturnFee string `json:"early_exit_return_fee"`
 }
 
-type ReturnEntry struct {
-	Key   string  `json:"key"`
-	Value *Return `json:"value"`
-}
-
-type Returns []*ReturnEntry
-
-func (m *Return) GetPrize() eos.Asset {
+func (m *ReturnsFT) GetPrize() eos.Asset {
 	prize, err := eos.NewAssetFromString(m.Prize)
 	if err != nil {
 		panic(fmt.Sprintf("Unable to parse prize: %v to asset", m.Prize))
@@ -48,7 +43,7 @@ func (m *Return) GetPrize() eos.Asset {
 	return prize
 }
 
-func (m *Return) GetMinimumPayout() eos.Asset {
+func (m *ReturnsFT) GetMinimumPayout() eos.Asset {
 	minPayout, err := eos.NewAssetFromString(m.MinimumPayout)
 	if err != nil {
 		panic(fmt.Sprintf("Unable to parse minimum payout: %v to asset", m.MinimumPayout))
@@ -56,7 +51,15 @@ func (m *Return) GetMinimumPayout() eos.Asset {
 	return minPayout
 }
 
-func (m *Return) GetEarlyExitReturnFee() eos.Asset {
+func (m *ReturnsFT) GetAmountPaidOut() eos.Asset {
+	amountPaidOut, err := eos.NewAssetFromString(m.AmountPaidOut)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse amount paid out: %v to asset", m.AmountPaidOut))
+	}
+	return amountPaidOut
+}
+
+func (m *ReturnsFT) GetEarlyExitReturnFee() eos.Asset {
 	earlyExitFee, err := eos.NewAssetFromString(m.EarlyExitReturnFee)
 	if err != nil {
 		panic(fmt.Sprintf("Unable to parse early exit return fee: %v to asset", m.EarlyExitReturnFee))
@@ -64,11 +67,90 @@ func (m *Return) GetEarlyExitReturnFee() eos.Asset {
 	return earlyExitFee
 }
 
-func (m *Return) GetTotalReturn() eos.Asset {
+func (m *ReturnsFT) GetTotalReturn() eos.Asset {
 	return m.GetPrize().Add(m.GetMinimumPayout())
 }
 
-func (m Returns) FindPos(key string) int {
+type ReturnsNFT struct {
+	Prize         uint16 `json:"prize"`
+	MinimumPayout uint16 `json:"minimum_payout"`
+	AmountPaidOut uint16 `json:"amount_paid_out"`
+}
+
+func (m *ReturnsNFT) GetTotalReturn() uint16 {
+	return m.Prize + m.MinimumPayout
+}
+
+var ReturnsVariant = eos.NewVariantDefinition([]eos.VariantType{
+	{Name: "ReturnsFT", Type: &ReturnsFT{}},
+	{Name: "ReturnsNFT", Type: &ReturnsNFT{}},
+})
+
+func GetReturnsVariants() *eos.VariantDefinition {
+	return ReturnsVariant
+}
+
+type Returns struct {
+	eos.BaseVariant
+}
+
+func NewReturn(value interface{}) *Returns {
+	return &Returns{
+		BaseVariant: eos.BaseVariant{
+			TypeID: GetReturnsVariants().TypeID(utype.TypeName(value)),
+			Impl:   value,
+		}}
+}
+
+func (m *Returns) ReturnsNFT() *ReturnsNFT {
+	switch v := m.Impl.(type) {
+	case *ReturnsNFT:
+		return v
+	default:
+		panic(&InvalidTypeError{
+			Label:        fmt.Sprintf("received an unexpected type %T for value: %v of variant %T", v, v, m),
+			ExpectedType: "ReturnsNFT",
+			Value:        m,
+		})
+	}
+}
+
+func (m *Returns) ReturnsFT() *ReturnsFT {
+	switch v := m.Impl.(type) {
+	case *ReturnsFT:
+		return v
+	default:
+		panic(&InvalidTypeError{
+			Label:        fmt.Sprintf("received1 an unexpected type %T for value: %v of variant %T", v, v, m),
+			ExpectedType: "ReturnsFT",
+			Value:        m,
+		})
+	}
+}
+
+// MarshalJSON translates to []byte
+func (m *Returns) MarshalJSON() ([]byte, error) {
+	return m.BaseVariant.MarshalJSON(ReturnsVariant)
+}
+
+// UnmarshalJSON translates WinnerVariant
+func (m *Returns) UnmarshalJSON(data []byte) error {
+	return m.BaseVariant.UnmarshalJSON(data, ReturnsVariant)
+}
+
+// UnmarshalBinary ...
+func (m *Returns) UnmarshalBinary(decoder *eos.Decoder) error {
+	return m.BaseVariant.UnmarshalBinaryVariant(decoder, ReturnsVariant)
+}
+
+type ReturnsEntry struct {
+	Key   string   `json:"key"`
+	Value *Returns `json:"value"`
+}
+
+type ReturnEntries []*ReturnsEntry
+
+func (m ReturnEntries) FindPos(key string) int {
 	for i, def := range m {
 		if def.Key == key {
 			return i
@@ -77,7 +159,7 @@ func (m Returns) FindPos(key string) int {
 	return -1
 }
 
-func (m Returns) Find(key string) *ReturnEntry {
+func (m ReturnEntries) Find(key string) *ReturnsEntry {
 	pos := m.FindPos(key)
 	if pos >= 0 {
 		return m[pos]
@@ -85,12 +167,28 @@ func (m Returns) Find(key string) *ReturnEntry {
 	return nil
 }
 
-func (p *Returns) Upsert(key string, ret *Return) {
+func (m ReturnEntries) FindFT(key string) *ReturnsFT {
+	v := m.Find(key)
+	if v != nil {
+		return v.Value.ReturnsFT()
+	}
+	return nil
+}
+
+func (m ReturnEntries) FindNFT(key string) *ReturnsNFT {
+	v := m.Find(key)
+	if v != nil {
+		return v.Value.ReturnsNFT()
+	}
+	return nil
+}
+
+func (p *ReturnEntries) Upsert(key string, ret interface{}) {
 	m := *p
 	pos := m.FindPos(key)
-	defEntry := &ReturnEntry{
+	defEntry := &ReturnsEntry{
 		Key:   key,
-		Value: ret,
+		Value: NewReturn(ret),
 	}
 	if pos >= 0 {
 		m[pos] = defEntry
@@ -100,7 +198,7 @@ func (p *Returns) Upsert(key string, ret *Return) {
 	*p = m
 }
 
-func (p *Returns) Remove(key string) *ReturnEntry {
+func (p *ReturnEntries) Remove(key string) *ReturnsEntry {
 	m := *p
 	pos := m.FindPos(key)
 	if pos >= 0 {

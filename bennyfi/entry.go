@@ -36,19 +36,20 @@ var (
 )
 
 type Entry struct {
-	EntryID     uint64          `json:"entry_id"`
-	RoundID     uint64          `json:"round_id"`
-	Position    uint64          `json:"position"`
-	Participant eos.AccountName `json:"participant"`
-	EntryStake  string          `json:"entry_stake"`
-	Returns     Returns         `json:"returns"`
-	EntryStatus eos.Name        `json:"entry_status"`
-	EnteredDate string          `json:"entered_date"`
+	EntryID      uint64          `json:"entry_id"`
+	RoundID      uint64          `json:"round_id"`
+	Position     uint64          `json:"position"`
+	Participant  eos.AccountName `json:"participant"`
+	EntryStake   string          `json:"entry_stake"`
+	Returns      ReturnEntries   `json:"returns"`
+	EntryStatus  eos.Name        `json:"entry_status"`
+	VestingState eos.Name        `json:"vesting_state"`
+	EnteredDate  string          `json:"entered_date"`
 }
 
-func (m *Entry) UpsertReturn(name string, ret *Return) {
+func (m *Entry) UpsertReturn(name string, ret interface{}) {
 	if m.Returns == nil {
-		m.Returns = make(Returns, 0, 1)
+		m.Returns = make(ReturnEntries, 0, 1)
 	}
 	m.Returns.Upsert(name, ret)
 }
@@ -81,6 +82,12 @@ func (m *BennyfiContract) UnstakeOpen(entryId uint64) (string, error) {
 	actionData := make(map[string]interface{})
 	actionData["entry_id"] = entryId
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unstakeopen", actionData)
+}
+
+func (m *BennyfiContract) Vesting(entryId uint64, permissionLevel interface{}) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["entry_id"] = entryId
+	return m.ExecAction(permissionLevel, "vesting", actionData)
 }
 
 func (m *BennyfiContract) GetEntries() ([]Entry, error) {

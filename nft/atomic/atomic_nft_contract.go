@@ -19,7 +19,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-package nft
+package atomic
 
 import (
 	"fmt"
@@ -176,12 +176,12 @@ func (m *MintAssetArgs) Asset() *Asset {
 	}
 }
 
-type NFTContract struct {
+type AtomicNFTContract struct {
 	*contract.Contract
 }
 
-func NewNFTContract(eos *service.EOS, contractName string) *NFTContract {
-	return &NFTContract{
+func NewAtomicNFTContract(eos *service.EOS, contractName string) *AtomicNFTContract {
+	return &AtomicNFTContract{
 		&contract.Contract{
 			EOS:          eos,
 			ContractName: contractName,
@@ -189,7 +189,7 @@ func NewNFTContract(eos *service.EOS, contractName string) *NFTContract {
 	}
 }
 
-func (m *NFTContract) ExecAction(permissionLevel interface{}, action string, actionData interface{}) (string, error) {
+func (m *AtomicNFTContract) ExecAction(permissionLevel interface{}, action string, actionData interface{}) (string, error) {
 	resp, err := m.Contract.ExecAction(permissionLevel, action, actionData)
 	if err != nil {
 		return "", err
@@ -197,33 +197,33 @@ func (m *NFTContract) ExecAction(permissionLevel interface{}, action string, act
 	return fmt.Sprintf("Tx ID: %v", resp.TransactionID), nil
 }
 
-func (m *NFTContract) Init() (string, error) {
+func (m *AtomicNFTContract) Init() (string, error) {
 	return m.ExecAction(m.ContractName, "init", nil)
 }
 
-func (m *NFTContract) CreateCollection(collection *CreateCollectionArgs) (string, error) {
+func (m *AtomicNFTContract) CreateCollection(collection *CreateCollectionArgs) (string, error) {
 	return m.ExecAction(collection.Author, "createcol", collection)
 }
 
-func (m *NFTContract) CreateSchema(schema *CreateSchemaArgs) (string, error) {
+func (m *AtomicNFTContract) CreateSchema(schema *CreateSchemaArgs) (string, error) {
 	return m.ExecAction(schema.AuthorizedCreator, "createschema", schema)
 }
 
-func (m *NFTContract) CreateTemplate(template *CreateTemplateArgs) (string, error) {
+func (m *AtomicNFTContract) CreateTemplate(template *CreateTemplateArgs) (string, error) {
 	return m.ExecAction(template.AuthorizedCreator, "createtempl", template)
 }
 
-func (m *NFTContract) MintAsset(asset *MintAssetArgs) (string, error) {
+func (m *AtomicNFTContract) MintAsset(asset *MintAssetArgs) (string, error) {
 	return m.ExecAction(asset.AuthorizedMinter, "mintasset", asset)
 }
 
-func (m *NFTContract) EditCollectionFormats(formats []*Format) (string, error) {
+func (m *AtomicNFTContract) EditCollectionFormats(formats []*Format) (string, error) {
 	actionData := make(map[string]interface{})
 	actionData["collection_format_extension"] = formats
 	return m.ExecAction(m.ContractName, "admincoledit", formats)
 }
 
-func (m *NFTContract) InitCollectionFormats() (string, error) {
+func (m *AtomicNFTContract) InitCollectionFormats() (string, error) {
 	formats := []*Format{
 		{
 			Name: "name",
@@ -245,11 +245,11 @@ func (m *NFTContract) InitCollectionFormats() (string, error) {
 	return m.EditCollectionFormats(formats)
 }
 
-func (m *NFTContract) GetAssets(owner eos.AccountName) ([]Asset, error) {
+func (m *AtomicNFTContract) GetAssets(owner eos.AccountName) ([]Asset, error) {
 	return m.GetAssetsReq(owner, nil)
 }
 
-func (m *NFTContract) GetLastAsset(owner eos.AccountName) (*Asset, error) {
+func (m *AtomicNFTContract) GetLastAsset(owner eos.AccountName) (*Asset, error) {
 	assets, err := m.GetAssetsReq(owner, &eos.GetTableRowsRequest{
 		Reverse: true,
 		Limit:   1,
@@ -263,7 +263,7 @@ func (m *NFTContract) GetLastAsset(owner eos.AccountName) (*Asset, error) {
 	return nil, nil
 }
 
-func (m *NFTContract) GetAssetsReq(owner eos.AccountName, req *eos.GetTableRowsRequest) ([]Asset, error) {
+func (m *AtomicNFTContract) GetAssetsReq(owner eos.AccountName, req *eos.GetTableRowsRequest) ([]Asset, error) {
 
 	var assets []Asset
 	if req == nil {
@@ -278,7 +278,7 @@ func (m *NFTContract) GetAssetsReq(owner eos.AccountName, req *eos.GetTableRowsR
 	return assets, nil
 }
 
-func (m *NFTContract) GetAssetOwnersReq(req *eos.GetTableByScopeRequest) (*service.TableScopesResp, error) {
+func (m *AtomicNFTContract) GetAssetOwnersReq(req *eos.GetTableByScopeRequest) (*service.TableScopesResp, error) {
 
 	if req == nil {
 		req = &eos.GetTableByScopeRequest{}
@@ -291,7 +291,7 @@ func (m *NFTContract) GetAssetOwnersReq(req *eos.GetTableByScopeRequest) (*servi
 	return resp, nil
 }
 
-func (m *NFTContract) GetCollectionByName(collection eos.Name) (*Collection, error) {
+func (m *AtomicNFTContract) GetCollectionByName(collection eos.Name) (*Collection, error) {
 	collections, err := m.GetCollectionsReq(&eos.GetTableRowsRequest{
 		LowerBound: string(collection),
 		UpperBound: string(collection),
@@ -306,7 +306,7 @@ func (m *NFTContract) GetCollectionByName(collection eos.Name) (*Collection, err
 	return nil, nil
 }
 
-func (m *NFTContract) GetCollectionsReq(req *eos.GetTableRowsRequest) ([]Collection, error) {
+func (m *AtomicNFTContract) GetCollectionsReq(req *eos.GetTableRowsRequest) ([]Collection, error) {
 
 	var collections []Collection
 	if req == nil {
@@ -320,7 +320,7 @@ func (m *NFTContract) GetCollectionsReq(req *eos.GetTableRowsRequest) ([]Collect
 	return collections, nil
 }
 
-func (m *NFTContract) GetTemplate(collection eos.Name) (*Template, error) {
+func (m *AtomicNFTContract) GetTemplate(collection eos.Name) (*Template, error) {
 	templates, err := m.GetTemplatesReq(collection, &eos.GetTableRowsRequest{
 		Limit: 1,
 	})
@@ -333,7 +333,7 @@ func (m *NFTContract) GetTemplate(collection eos.Name) (*Template, error) {
 	return nil, nil
 }
 
-func (m *NFTContract) GetTemplatesReq(collectionName eos.Name, req *eos.GetTableRowsRequest) ([]Template, error) {
+func (m *AtomicNFTContract) GetTemplatesReq(collectionName eos.Name, req *eos.GetTableRowsRequest) ([]Template, error) {
 
 	var templates []Template
 	if req == nil {
@@ -348,7 +348,7 @@ func (m *NFTContract) GetTemplatesReq(collectionName eos.Name, req *eos.GetTable
 	return templates, nil
 }
 
-func (m *NFTContract) GetSchemaByName(collection, schemaName eos.Name) (*Schema, error) {
+func (m *AtomicNFTContract) GetSchemaByName(collection, schemaName eos.Name) (*Schema, error) {
 	schemas, err := m.GetSchemasReq(collection, &eos.GetTableRowsRequest{
 		LowerBound: string(schemaName),
 		UpperBound: string(schemaName),
@@ -363,7 +363,7 @@ func (m *NFTContract) GetSchemaByName(collection, schemaName eos.Name) (*Schema,
 	return nil, nil
 }
 
-func (m *NFTContract) GetSchemasReq(collectionName eos.Name, req *eos.GetTableRowsRequest) ([]Schema, error) {
+func (m *AtomicNFTContract) GetSchemasReq(collectionName eos.Name, req *eos.GetTableRowsRequest) ([]Schema, error) {
 
 	var schemas []Schema
 	if req == nil {

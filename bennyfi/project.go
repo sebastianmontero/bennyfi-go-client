@@ -88,6 +88,10 @@ func (m *BennyfiContract) NewProject(projectArgs *NewProjectArgs) (string, error
 	return m.ExecAction(projectArgs.Authorizer, "newproject", actionData)
 }
 
+func (m *BennyfiContract) NewProjectFromProject(project *Project) (string, error) {
+	return m.NewProject(project.ToNewProjectArgs())
+}
+
 func (m *BennyfiContract) GetProjectsReq(req *eos.GetTableRowsRequest) ([]Project, error) {
 
 	var projects []Project

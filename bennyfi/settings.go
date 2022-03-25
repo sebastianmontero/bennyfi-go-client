@@ -57,7 +57,7 @@ func (m *Setting) GetAsName(pos int) (eos.Name, error) {
 	if err != nil {
 		return eos.Name(""), err
 	}
-	return v.Name()
+	return v.Name(), nil
 }
 
 func (m *Setting) GetAsString(pos int) (string, error) {
@@ -73,7 +73,7 @@ func (m *Setting) GetAsTimePoint(pos int) (eos.TimePoint, error) {
 	if err != nil {
 		return eos.TimePoint(0), err
 	}
-	return v.TimePoint()
+	return v.TimePoint(), nil
 }
 
 func (m *Setting) GetAsAsset(pos int) (eos.Asset, error) {
@@ -81,7 +81,7 @@ func (m *Setting) GetAsAsset(pos int) (eos.Asset, error) {
 	if err != nil {
 		return eos.Asset{}, err
 	}
-	return v.Asset()
+	return v.Asset(), nil
 }
 
 func (m *Setting) GetAsInt64(pos int) (int64, error) {
@@ -89,7 +89,7 @@ func (m *Setting) GetAsInt64(pos int) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return v.Int64()
+	return v.Int64(), nil
 }
 
 func (m *BennyfiContract) setter(owner eos.AccountName,
@@ -286,6 +286,17 @@ func StringToSetting(settingType, stringValue string) (FlexValue, error) {
 				Impl:   int64(i),
 			},
 		}, nil
+	} else if settingType == "uint32" {
+		i, err := strconv.ParseUint(stringValue, 10, 32)
+		if err != nil {
+			return FlexValue{}, fmt.Errorf("cannot convert settings value to uint32: %v", err)
+		}
+		return FlexValue{
+			BaseVariant: eos.BaseVariant{
+				TypeID: GetVariants().TypeID("uint32"),
+				Impl:   i,
+			},
+		}, nil
 	} else if settingType == "asset" {
 		a, err := eos.NewAssetFromString(stringValue)
 		if err != nil {
@@ -302,15 +313,4 @@ func StringToSetting(settingType, stringValue string) (FlexValue, error) {
 		return FlexValue{}, fmt.Errorf("not yet supported")
 	}
 	return FlexValue{}, fmt.Errorf("unsupported settings data type: %v", settingType)
-}
-
-// InvalidTypeError is used the type of a FlexValue doesn't match expectations
-type InvalidTypeError struct {
-	Label        string
-	ExpectedType string
-	FlexValue    *FlexValue
-}
-
-func (c *InvalidTypeError) Error() string {
-	return fmt.Sprintf("received an unexpected type %T for metadata variant %T", c.ExpectedType, c.FlexValue)
 }

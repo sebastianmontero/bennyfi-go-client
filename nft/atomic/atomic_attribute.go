@@ -1,4 +1,4 @@
-package nft
+package atomic
 
 import (
 	"fmt"
