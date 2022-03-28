@@ -107,9 +107,12 @@ func (m *VestingConfig) calculate(amount int64, paidOut int64, startTime, vestin
 	} else {
 		cycle = elapsed_time.Microseconds() / (int64(m.GetPeriod()) * microsecondsPerHr)
 	}
+	if cycle > int64(m.TotalCycles()) {
+		panic(fmt.Sprintf("failed to calculate vesting amount, cycle: %v, can not be greater than total cycles: %v", cycle, m.TotalCycles()))
+	}
 	percentage := int64(m.GetPercentage()) * cycle
 	if percentage > int64(PercentageAdjustment) {
-		panic(fmt.Sprintf("failed to calculate vesting amount, percentage can not be greater than 100, cycle: %v, percentage: %v", cycle, percentage))
+		percentage = int64(PercentageAdjustment)
 	}
 	vesting := (amount * percentage / int64(PercentageAdjustment)) - paidOut
 
@@ -145,6 +148,16 @@ func (m *VestingContext) IncreaseCycle() {
 	for _, tracker := range m.VestingConfigs {
 		tracker.IncreaseCycle()
 	}
+}
+
+func (m *VestingContext) GetOrderedVestingConfigs() []*VestingTracker {
+	ordered := make([]*VestingTracker, 0)
+	for _, distName := range OrderedDistributionNames {
+		if vt, ok := m.VestingConfigs[distName]; ok {
+			ordered = append(ordered, vt)
+		}
+	}
+	return ordered
 }
 
 type VestingTracker struct {
