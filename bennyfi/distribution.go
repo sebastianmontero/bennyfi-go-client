@@ -34,6 +34,8 @@ type IDistribution interface {
 	PaidTotalRoundManagerFee()
 	PaidRoundManagerFee(amount interface{})
 	Paid()
+	HasBeneficiaryReward() bool
+	HasRoundManagerFee() bool
 }
 
 type DistributionFT struct {
@@ -43,6 +45,14 @@ type DistributionFT struct {
 	RoundManagerFeePaid   string   `json:"round_manager_fee_paid"`
 	MinParticipantReward  string   `json:"min_participant_reward"`
 	WinnerPrizes          []string `json:"winner_prizes"`
+}
+
+func (m *DistributionFT) HasBeneficiaryReward() bool {
+	return m.GetBeneficiaryReward().Amount > 0
+}
+
+func (m *DistributionFT) HasRoundManagerFee() bool {
+	return m.GetRoundManagerFee().Amount > 0
 }
 
 func (m *DistributionFT) GetBeneficiaryReward() eos.Asset {
@@ -140,6 +150,14 @@ type DistributionNFT struct {
 	WinnerPrizes          []uint16 `json:"winner_prizes"`
 }
 
+func (m *DistributionNFT) HasBeneficiaryReward() bool {
+	return m.BeneficiaryReward > 0
+}
+
+func (m *DistributionNFT) HasRoundManagerFee() bool {
+	return m.RoundManagerFee > 0
+}
+
 func (m *DistributionNFT) PaidTotalBeneficiaryReward() {
 	m.BeneficiaryRewardPaid = m.BeneficiaryReward
 }
@@ -210,6 +228,14 @@ func (m *Distribution) PaidRoundManagerFee(amount interface{}) {
 
 func (m *Distribution) Paid() {
 	m.Impl.(IDistribution).Paid()
+}
+
+func (m *Distribution) HasBeneficiaryReward() bool {
+	return m.Impl.(IDistribution).HasBeneficiaryReward()
+}
+
+func (m *Distribution) HasRoundManagerFee() bool {
+	return m.Impl.(IDistribution).HasRoundManagerFee()
 }
 
 func (m *Distribution) DistributionNFT() *DistributionNFT {

@@ -28,11 +28,19 @@ import (
 	"github.com/sebastianmontero/bennyfi-go-client/util/utype"
 )
 
+type IReturn interface {
+	HasReturns() bool
+}
+
 type ReturnsFT struct {
 	Prize              string `json:"prize"`
 	MinimumPayout      string `json:"minimum_payout"`
 	AmountPaidOut      string `json:"amount_paid_out"`
 	EarlyExitReturnFee string `json:"early_exit_return_fee"`
+}
+
+func (m *ReturnsFT) HasReturns() bool {
+	return m.GetTotalReturn().Amount > 0
 }
 
 func (m *ReturnsFT) GetPrize() eos.Asset {
@@ -71,14 +79,44 @@ func (m *ReturnsFT) GetTotalReturn() eos.Asset {
 	return m.GetPrize().Add(m.GetMinimumPayout())
 }
 
+func (m *ReturnsFT) PaidTotalAmount() {
+	m.AmountPaidOut = m.GetTotalReturn().String()
+}
+
+func (m *ReturnsFT) PaidAmount(amount interface{}) {
+	amnt := amount.(eos.Asset)
+	paid := m.GetAmountPaidOut().Add(amnt)
+	if paid.Amount > m.GetTotalReturn().Amount {
+		panic(fmt.Sprintf("Total Paid amount: %v is greater than round manager fee: %v, current payment: %v", paid, m.GetTotalReturn(), amount))
+	}
+	m.AmountPaidOut = paid.String()
+}
+
 type ReturnsNFT struct {
 	Prize         uint16 `json:"prize"`
 	MinimumPayout uint16 `json:"minimum_payout"`
 	AmountPaidOut uint16 `json:"amount_paid_out"`
 }
 
+func (m *ReturnsNFT) HasReturns() bool {
+	return m.GetTotalReturn() > 0
+}
+
 func (m *ReturnsNFT) GetTotalReturn() uint16 {
 	return m.Prize + m.MinimumPayout
+}
+
+func (m *ReturnsNFT) PaidTotalAmount() {
+	m.AmountPaidOut = m.GetTotalReturn()
+}
+
+func (m *ReturnsNFT) PaidAmount(amount interface{}) {
+	amnt := amount.(uint16)
+	paid := m.AmountPaidOut + amnt
+	if paid > m.GetTotalReturn() {
+		panic(fmt.Sprintf("Total Paid amount: %v is greater than round manager fee: %v, current payment: %v", paid, m.GetTotalReturn(), amount))
+	}
+	m.AmountPaidOut = paid
 }
 
 var ReturnsVariant = eos.NewVariantDefinition([]eos.VariantType{
@@ -100,6 +138,10 @@ func NewReturn(value interface{}) *Returns {
 			TypeID: GetReturnsVariants().TypeID(utype.TypeName(value)),
 			Impl:   value,
 		}}
+}
+
+func (m *Returns) HasReturns() bool {
+	return m.Impl.(IReturn).HasReturns()
 }
 
 func (m *Returns) ReturnsNFT() *ReturnsNFT {

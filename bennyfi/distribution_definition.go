@@ -338,3 +338,7 @@ func (m DistributionDefinitions) GetVestingTrackers() VestingTrackers {
 	}
 	return trackers
 }
+
+func (m DistributionDefinitions) GetVestingContext(cycle uint16, startTime string) *VestingContext {
+	return m.GetVestingTrackers().GetContextForCycle(cycle, startTime)
+}

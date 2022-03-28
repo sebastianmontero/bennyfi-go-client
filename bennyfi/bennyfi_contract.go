@@ -40,6 +40,7 @@ var (
 
 type BennyfiContract struct {
 	*contract.Contract
+	callCounter uint64
 }
 
 func NewBennyfiContract(eos *service.EOS, contractName string) *BennyfiContract {
@@ -48,7 +49,13 @@ func NewBennyfiContract(eos *service.EOS, contractName string) *BennyfiContract 
 			EOS:          eos,
 			ContractName: contractName,
 		},
+		0,
 	}
+}
+
+func (m *BennyfiContract) NextCallCounter() uint64 {
+	m.callCounter++
+	return m.callCounter
 }
 
 func (m *BennyfiContract) ExecAction(permissionLevel interface{}, action string, actionData interface{}) (string, error) {
@@ -100,11 +107,11 @@ func (m *BennyfiContract) Pause(pause uint32) (string, error) {
 	return m.ExecAction(eos.AN(m.ContractName), "pause", actionData)
 }
 
-func CalculatePercentage(amount interface{}, percentage uint32) (eos.Asset, error) {
+func CalculatePercentage(amount interface{}, percentage uint32) eos.Asset {
 	amnt, err := util.ToAsset(amount)
 	if err != nil {
-		return eos.Asset{}, err
+		panic(fmt.Sprintf("failed to calculate percentage, could not parse amount: %v", amount))
 	}
 	perctAmnt := float64(amnt.Amount) * float64((float64(percentage) / PercentageAdjustment))
-	return eos.Asset{Amount: eos.Int64(perctAmnt), Symbol: amnt.Symbol}, nil
+	return eos.Asset{Amount: eos.Int64(perctAmnt), Symbol: amnt.Symbol}
 }

@@ -26,6 +26,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/eoscanada/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/util"
 )
 
@@ -79,10 +80,50 @@ func (m *VestingConfig) TotalCycles() uint32 {
 	return uint32(math.Ceil(PercentageAdjustment / float64(m.GetPercentage())))
 }
 
+func (m *VestingConfig) CalculateForAsset(amount eos.Asset, paidOut eos.Asset, startTime, vestingTime time.Time) eos.Asset {
+	vesting := m.calculate(int64(amount.Amount), int64(paidOut.Amount), startTime, vestingTime)
+	return eos.Asset{Amount: eos.Int64(vesting), Symbol: amount.Symbol}
+}
+
+func (m *VestingConfig) CalculateForUint16(amount uint16, paidOut uint16, startTime, vestingTime time.Time) uint16 {
+	return uint16(m.calculate(int64(amount), int64(paidOut), startTime, vestingTime))
+}
+
+func (m *VestingConfig) calculate(amount int64, paidOut int64, startTime, vestingTime time.Time) int64 {
+	remaining := amount - paidOut
+	if remaining <= 0 {
+		panic(fmt.Sprintf("failed to calculate vesting amount, it has already been completly paid out amount: %v, paid out: %v", amount, paidOut))
+	}
+	elapsed_time := vestingTime.Sub(startTime)
+	if elapsed_time.Microseconds() < 0 {
+		panic(fmt.Sprintf("failed to calculate vesting amount, elapsed time must be positive, got: %v", elapsed_time))
+	}
+	cycle := int64(0)
+	if m.GetPeriod() == 0 {
+		if elapsed_time > 0 {
+			panic(fmt.Sprintf("failed to calculate vesting amount, for period 0, elapsed time must be 0, got: %v", elapsed_time))
+		}
+		cycle = 1
+	} else {
+		cycle = elapsed_time.Microseconds() / (int64(m.GetPeriod()) * microsecondsPerHr)
+	}
+	percentage := int64(m.GetPercentage()) * cycle
+	if percentage > int64(PercentageAdjustment) {
+		panic(fmt.Sprintf("failed to calculate vesting amount, percentage can not be greater than 100, cycle: %v, percentage: %v", cycle, percentage))
+	}
+	vesting := (amount * percentage / int64(PercentageAdjustment)) - paidOut
+
+	if remaining < vesting {
+		vesting = remaining
+	}
+	return vesting
+}
+
 type VestingContext struct {
 	VestingConfigs map[string]*VestingTracker
 	VestingCycle   uint16
 	VestingTime    time.Time
+	IsLastCycle    bool
 }
 
 func (m *VestingContext) HasConfigs() bool {
@@ -94,7 +135,7 @@ func (m *VestingContext) Process(time time.Time, tracker *VestingTracker) {
 		return
 	}
 	if !m.HasConfigs() || time.Before(m.VestingTime) {
-		m.VestingConfigs = make(map[string]*VestingTracker, 0)
+		m.VestingConfigs = make(map[string]*VestingTracker)
 		m.VestingTime = time
 	}
 	m.VestingConfigs[tracker.DistName] = tracker
@@ -115,6 +156,11 @@ type VestingTracker struct {
 func (m *VestingTracker) HasNextVestingTime() bool {
 	return m.Cycle+1 <= uint16(m.VestingConfig.TotalCycles())
 }
+
+func (m *VestingTracker) IsLastCycle() bool {
+	return m.Cycle >= uint16(m.VestingConfig.TotalCycles())
+}
+
 func (m *VestingTracker) GetNextVestingTime(startTime time.Time) time.Time {
 	return startTime.Add(time.Hour * (time.Duration(m.VestingConfig.GetPeriod() * uint32(m.Cycle+1))))
 }
@@ -131,15 +177,16 @@ func (m VestingTrackers) GetContextForCycle(cycle uint16, startTime string) *Ves
 	}
 	var context *VestingContext
 	for c := uint16(1); c <= cycle; c++ {
-		context = m.FindNext(st)
+		context = m.findNext(st)
 		if !context.HasConfigs() {
 			panic(fmt.Sprintf("There is no vesting cycle: %v, max vesting cycle:%v", cycle, c-1))
 		}
 	}
+	context.IsLastCycle = !m.findNext(st).HasConfigs()
 	return context
 }
 
-func (m VestingTrackers) FindNext(startTime time.Time) *VestingContext {
+func (m VestingTrackers) findNext(startTime time.Time) *VestingContext {
 	context := &VestingContext{}
 	for _, tracker := range m {
 		if tracker.HasNextVestingTime() {

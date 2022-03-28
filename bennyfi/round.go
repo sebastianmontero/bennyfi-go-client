@@ -25,8 +25,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
 	eos "github.com/eoscanada/eos-go"
+	"github.com/sebastianmontero/eos-go-toolbox/util"
 )
 
 var (
@@ -63,6 +65,7 @@ var (
 	RewardFundingStateRefunded       = eos.Name("refunded")
 	RewardFundingStateCommited       = eos.Name("commited")
 	RewardFundingStateRex            = eos.Name("rex")
+	RexLockPeriodDays                = 5
 )
 
 var microsecondsPerHr int64 = 60 * 60 * 1000000
@@ -227,6 +230,66 @@ func (m *Round) UpdateFundingState(dist string, state eos.Name) {
 	m.Rewards.UpdateFundingState(dist, state)
 }
 
+func (m *Round) CalculateReturns(entryOwner eos.AccountName, distName string, isEarlyExit bool, earlyExitFeePerc uint32) interface{} {
+
+	if IsFTDistribution(distName) {
+		dist := m.Distributions.FindFT(distName)
+		minParticipantReward := dist.GetMinParticipantReward()
+		winner := m.Winners.FindWinnerFT(distName, entryOwner)
+		winnerPrize := eos.Asset{Amount: 0, Symbol: minParticipantReward.Symbol}
+		if winner != nil {
+			winnerPrize = winner.GetPrize()
+		}
+		earlyExitRewardFee := CalculatePercentage(winnerPrize, earlyExitFeePerc)
+		if isEarlyExit {
+			winnerPrize = winnerPrize.Sub(earlyExitRewardFee)
+			earlyExitRewardFee = earlyExitRewardFee.Add(minParticipantReward)
+			minParticipantReward = eos.Asset{Amount: 0, Symbol: minParticipantReward.Symbol}
+		}
+		return &ReturnsFT{
+			Prize:              winnerPrize.String(),
+			MinimumPayout:      minParticipantReward.String(),
+			EarlyExitReturnFee: earlyExitRewardFee.String(),
+			AmountPaidOut:      eos.Asset{Amount: 0, Symbol: winnerPrize.Symbol}.String(),
+		}
+	} else {
+		dist := m.Distributions.FindNFT(distName)
+		winner := m.Winners.FindWinnerNFT(distName, entryOwner)
+		winnerPrize := uint16(0)
+		if winner != nil {
+			winnerPrize = winner.Prize
+		}
+		return &ReturnsNFT{
+			Prize:         winnerPrize,
+			MinimumPayout: dist.MinParticipantReward,
+		}
+	}
+}
+
+func (m *Round) CalculateRexLockPeriodTime() time.Time {
+	stakedTime, err := util.ToTime(m.StakedTime)
+	if err != nil {
+		panic(fmt.Sprintf("failed to calculate Rex Lock Period Time, could not parse staked time: %v, error: %v", m.StakedTime, err))
+	}
+	return stakedTime.Add(time.Hour * time.Duration(m.StakingPeriod.Hrs()-int64(24*RexLockPeriodDays)))
+}
+
+func (m *Round) CalculateSellRexTime() time.Time {
+	movedFromSavingsTime, err := util.ToTime(m.MovedFromSavingsTime)
+	if err != nil {
+		panic(fmt.Sprintf("failed to calculate Sell Rex Time, could not parse moved from savings time: %v, error: %v", m.MovedFromSavingsTime, err))
+	}
+	return movedFromSavingsTime.Add(time.Hour * time.Duration(24*RexLockPeriodDays))
+}
+
+func (m *Round) CalculateUnlockTime() time.Time {
+	stakedTime, err := util.ToTime(m.StakedTime)
+	if err != nil {
+		panic(fmt.Sprintf("failed to calculate Unlock Time, could not parse staked time: %v, error: %v", m.StakedTime, err))
+	}
+	return stakedTime.Add(time.Hour * time.Duration(m.StakingPeriod.Hrs()))
+}
+
 type NewRoundArgs struct {
 	TermID               uint64          `json:"term_id"`
 	ProjectID            uint64          `json:"project_id"`
@@ -384,6 +447,7 @@ func (m *BennyfiContract) VestingRounds(callCounter uint64) (string, error) {
 func (m *BennyfiContract) TstLapseTime(roundId uint64) (string, error) {
 	actionData := make(map[string]interface{})
 	actionData["round_id"] = roundId
+	actionData["call_counter"] = m.NextCallCounter()
 	return m.ExecAction(eos.AN(m.ContractName), "tstlapsetime", actionData)
 }
 
