@@ -296,6 +296,16 @@ func (m Rewards) UpdateFundingStateAll(state eos.Name) {
 	}
 }
 
+func (m Rewards) IsFundingPending() bool {
+	for _, def := range m {
+		r := def.Value
+		if r.GetFundingState() == RewardFundingStatePending {
+			return true
+		}
+	}
+	return false
+}
+
 func (m Rewards) UpdateFundingState(dist string, state eos.Name) {
 	m.Find(dist).Value.SetFundingState(state)
 }
