@@ -26,6 +26,7 @@ import (
 
 	eos "github.com/eoscanada/eos-go"
 	"github.com/sebastianmontero/bennyfi-go-client/util/utype"
+	"github.com/sebastianmontero/eos-go-toolbox/err"
 )
 
 type IReturn interface {
@@ -149,7 +150,7 @@ func (m *Returns) ReturnsNFT() *ReturnsNFT {
 	case *ReturnsNFT:
 		return v
 	default:
-		panic(&InvalidTypeError{
+		panic(&err.InvalidTypeError{
 			Label:        fmt.Sprintf("received an unexpected type %T for value: %v of variant %T", v, v, m),
 			ExpectedType: "ReturnsNFT",
 			Value:        m,
@@ -162,7 +163,7 @@ func (m *Returns) ReturnsFT() *ReturnsFT {
 	case *ReturnsFT:
 		return v
 	default:
-		panic(&InvalidTypeError{
+		panic(&err.InvalidTypeError{
 			Label:        fmt.Sprintf("received1 an unexpected type %T for value: %v of variant %T", v, v, m),
 			ExpectedType: "ReturnsFT",
 			Value:        m,

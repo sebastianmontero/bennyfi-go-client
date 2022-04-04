@@ -27,6 +27,7 @@ import (
 
 	eos "github.com/eoscanada/eos-go"
 	"github.com/sebastianmontero/bennyfi-go-client/util/utype"
+	"github.com/sebastianmontero/eos-go-toolbox/err"
 	"github.com/sebastianmontero/eos-go-toolbox/util"
 )
 
@@ -180,7 +181,7 @@ func (m *DistributionDefinition) DistributionDefinitionNFT() *DistributionDefini
 	case *DistributionDefinitionNFT:
 		return v
 	default:
-		panic(&InvalidTypeError{
+		panic(&err.InvalidTypeError{
 			Label:        fmt.Sprintf("received an unexpected type %T for value: %v of variant %T", v, v, m),
 			ExpectedType: "DistributionDefinitionNFT",
 			Value:        m,
@@ -193,7 +194,7 @@ func (m *DistributionDefinition) DistributionDefinitionFT() *DistributionDefinit
 	case *DistributionDefinitionFT:
 		return v
 	default:
-		panic(&InvalidTypeError{
+		panic(&err.InvalidTypeError{
 			Label:        fmt.Sprintf("received an unexpected type %T for value: %v of variant %T", v, v, m),
 			ExpectedType: "DistributionDefinitionFT",
 			Value:        m,

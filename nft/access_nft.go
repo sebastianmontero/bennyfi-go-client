@@ -2,7 +2,6 @@ package nft
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/eoscanada/eos-go"
 	"github.com/sebastianmontero/bennyfi-go-client/nft/marble"
@@ -15,6 +14,7 @@ const (
 type AccessNFT struct {
 	Contract eos.AccountName
 	Group    eos.Name
+	Frame    eos.Name
 	NFT      *marble.MarbleNFTContract
 }
 
@@ -30,6 +30,24 @@ func (m *AccessNFT) SetupAccessNFTGroup() error {
 	_, err := m.NFT.NewGroup(&args, m.Contract)
 	if err != nil {
 		return fmt.Errorf("failed creating %v nft group: %v", m.Group, err)
+	}
+
+	return nil
+}
+
+func (m *AccessNFT) SetupAccessNFTFrame() error {
+
+	args := marble.Frame{
+		FrameName:   m.Frame,
+		Group:       m.Group,
+		DefaultTags: make(marble.Tags),
+		DefaultAttributes: marble.Attributes{
+			NFTAttrAccessLevel: 100,
+		},
+	}
+	_, err := m.NFT.NewFrame(&args, m.Contract)
+	if err != nil {
+		return fmt.Errorf("failed creating %v frame: %v", m.Frame, err)
 	}
 
 	return nil
@@ -64,37 +82,15 @@ func (m *AccessNFT) Mint(args *AccessNFTMintArgs) error {
 	}
 	if len(items) == 0 {
 		fmt.Printf("Account: %v does not have an access NFT, minting...\n", args.Owner)
-		mintArgs := &marble.MintItemArgs{
-			To:    args.Owner,
-			Group: m.Group,
-		}
-		_, err = m.NFT.MintItem(mintArgs, m.Contract)
+		buildArgs := marble.NewQuickBuildArgs(m.Frame, args.Owner)
+		buildArgs.OverrideAttributes[NFTAttrAccessLevel] = int64(args.AccessLevel)
+		_, err = m.NFT.QuickBuild(buildArgs, m.Contract)
 
 		if err != nil {
-			return fmt.Errorf("failed miniting item: %v, error: %v", mintArgs, err)
+			return fmt.Errorf("failed building item: %v, error: %v", buildArgs, err)
 		}
-
-		fmt.Printf("Minted getting access NFT for account: %v...\n", args.Owner)
-		items, err = m.NFT.GetItemsByOwnerAndGroup(args.Owner, m.Group)
-		if err != nil {
-			return err
-		}
-	}
-	item := items[0]
-	fmt.Printf("Adding access level attribute with value: %v to item: %v with owner: %v...\n", args.AccessLevel, item, args.Owner)
-	newAttrArgs := &marble.NewAttributeArgs{
-		Serial:        item.Serial,
-		AttributeName: NFTAttrAccessLevel,
-		InitialPoints: int64(args.AccessLevel),
-	}
-	_, err = m.NFT.NewAttribute(newAttrArgs, m.Contract)
-
-	if err != nil {
-		if strings.Contains(err.Error(), "shared attributes already exists") {
-			fmt.Printf("Item: %v already has access level attribute\n", item)
-		} else {
-			return fmt.Errorf("failed adding access level attr: %v, error: %v", newAttrArgs, err)
-		}
+	} else {
+		fmt.Printf("Account: %v already has an access NFT\n", args.Owner)
 	}
 	return nil
 

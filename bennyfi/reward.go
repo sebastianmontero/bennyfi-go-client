@@ -26,6 +26,7 @@ import (
 
 	eos "github.com/eoscanada/eos-go"
 	"github.com/sebastianmontero/bennyfi-go-client/util/utype"
+	"github.com/sebastianmontero/eos-go-toolbox/err"
 )
 
 type IReward interface {
@@ -133,7 +134,7 @@ func (m *Reward) RewardNFT() *RewardNFT {
 	case *RewardNFT:
 		return v
 	default:
-		panic(&InvalidTypeError{
+		panic(&err.InvalidTypeError{
 			Label:        fmt.Sprintf("received an unexpected type %T for value: %v of variant %T", v, v, m),
 			ExpectedType: "RewardNFT",
 			Value:        m,
@@ -146,7 +147,7 @@ func (m *Reward) RewardFT() *RewardFT {
 	case *RewardFT:
 		return v
 	default:
-		panic(&InvalidTypeError{
+		panic(&err.InvalidTypeError{
 			Label:        fmt.Sprintf("received1 an unexpected type %T for value: %v of variant %T", v, v, m),
 			ExpectedType: "RewardFT",
 			Value:        m,

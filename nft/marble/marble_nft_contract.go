@@ -151,6 +151,32 @@ func NewInitArgs(initialAdmin eos.AccountName) *InitArgs {
 	}
 }
 
+type Tags map[eos.Name]string
+type Attributes map[eos.Name]int64
+
+type Frame struct {
+	FrameName         eos.Name   `json:"frame_name"`
+	Group             eos.Name   `json:"group"`
+	DefaultTags       Tags       `json:"default_tags"`
+	DefaultAttributes Attributes `json:"default_attributes"`
+}
+
+type QuickBuildArgs struct {
+	FrameName          eos.Name        `json:"frame_name"`
+	To                 eos.AccountName `json:"to"`
+	OverrideTags       Tags            `json:"override_tags"`
+	OverrideAttributes Attributes      `json:"override_attributes"`
+}
+
+func NewQuickBuildArgs(frameName eos.Name, to eos.AccountName) *QuickBuildArgs {
+	return &QuickBuildArgs{
+		FrameName:          frameName,
+		To:                 to,
+		OverrideTags:       make(Tags),
+		OverrideAttributes: make(Attributes),
+	}
+}
+
 type MarbleNFTContract struct {
 	*contract.Contract
 }
@@ -180,12 +206,37 @@ func (m *MarbleNFTContract) NewGroup(args *NewGroupArgs, admin eos.AccountName) 
 	return m.ExecAction(admin, "newgroup", args)
 }
 
+func (m *MarbleNFTContract) SetGroupManager(groupName eos.Name, newManager eos.AccountName, memo string, manager eos.AccountName) (string, error) {
+	data := map[string]interface{}{
+		"group_name":  groupName,
+		"new_manager": newManager,
+		"memo":        memo,
+	}
+	return m.ExecAction(manager, "setmanager", data)
+}
+
 func (m *MarbleNFTContract) MintItem(args *MintItemArgs, manager eos.AccountName) (string, error) {
 	return m.ExecAction(manager, "mintitem", args)
 }
 
 func (m *MarbleNFTContract) NewAttribute(args *NewAttributeArgs, manager eos.AccountName) (string, error) {
 	return m.ExecAction(manager, "newattribute", args)
+}
+
+func (m *MarbleNFTContract) NewFrame(frame *Frame, manager eos.AccountName) (string, error) {
+	return m.ExecAction(manager, "newframe", frame)
+}
+
+func (m *MarbleNFTContract) QuickBuild(args *QuickBuildArgs, manager eos.AccountName) (string, error) {
+	return m.ExecAction(manager, "quickbuild", args)
+}
+
+func (m *MarbleNFTContract) RemoveFrame(frameName eos.Name, memo string, manager eos.AccountName) (string, error) {
+	data := map[string]interface{}{
+		"frame_name": frameName,
+		"memo":       memo,
+	}
+	return m.ExecAction(manager, "rmvframe", data)
 }
 
 func (m *MarbleNFTContract) GetItems() ([]*Item, error) {
@@ -297,6 +348,35 @@ func (m *MarbleNFTContract) GetGroupsReq(req *eos.GetTableRowsRequest) ([]*Group
 		return nil, fmt.Errorf("get table rows %v", err)
 	}
 	return groups, nil
+}
+
+func (m *MarbleNFTContract) GetFrameByName(frame eos.Name) (*Frame, error) {
+	frames, err := m.GetFramesReq(&eos.GetTableRowsRequest{
+		LowerBound: string(frame),
+		UpperBound: string(frame),
+		Limit:      1,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(frames) > 0 {
+		return frames[0], nil
+	}
+	return nil, nil
+}
+
+func (m *MarbleNFTContract) GetFramesReq(req *eos.GetTableRowsRequest) ([]*Frame, error) {
+
+	var frames []*Frame
+	if req == nil {
+		req = &eos.GetTableRowsRequest{}
+	}
+	req.Table = "frames"
+	err := m.GetTableRows(*req, &frames)
+	if err != nil {
+		return nil, fmt.Errorf("get table rows %v", err)
+	}
+	return frames, nil
 }
 
 func (m *MarbleNFTContract) GetAttribute(serial uint64, attr eos.Name) (*Attribute, error) {

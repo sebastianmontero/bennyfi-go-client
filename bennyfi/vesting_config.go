@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/eoscanada/eos-go"
+	"github.com/sebastianmontero/eos-go-toolbox/dto"
 	"github.com/sebastianmontero/eos-go-toolbox/util"
 )
 
@@ -54,11 +55,11 @@ func NewVestingConfig(period, percentage uint32) *VestingConfig {
 		Config: Config{
 			{
 				Key:   VestingPeriod,
-				Value: FlexValueFromUint32(period),
+				Value: dto.FlexValueFromUint32(period),
 			},
 			{
 				Key:   VestingPercentage,
-				Value: FlexValueFromUint32(percentage),
+				Value: dto.FlexValueFromUint32(percentage),
 			},
 		},
 	}

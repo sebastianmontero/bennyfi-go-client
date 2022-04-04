@@ -39,16 +39,13 @@ var (
 )
 
 type BennyfiContract struct {
-	*contract.Contract
+	*contract.SettingsContract
 	callCounter uint64
 }
 
 func NewBennyfiContract(eos *service.EOS, contractName string) *BennyfiContract {
 	return &BennyfiContract{
-		&contract.Contract{
-			EOS:          eos,
-			ContractName: contractName,
-		},
+		contract.NewSettingsContract(eos, contractName),
 		0,
 	}
 }

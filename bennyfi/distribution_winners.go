@@ -5,6 +5,7 @@ import (
 
 	eos "github.com/eoscanada/eos-go"
 	"github.com/sebastianmontero/bennyfi-go-client/util/utype"
+	"github.com/sebastianmontero/eos-go-toolbox/err"
 )
 
 type IDistributionWinners interface {
@@ -177,7 +178,7 @@ func (m *DistributionWinners) DistributionWinnersNFT() DistributionWinnersNFT {
 	case DistributionWinnersNFT:
 		return v
 	default:
-		panic(&InvalidTypeError{
+		panic(&err.InvalidTypeError{
 			Label:        fmt.Sprintf("received an unexpected type %T for value: %v of variant %T", v, v, m),
 			ExpectedType: "DistributionWinnersNFT",
 			Value:        m,
@@ -190,7 +191,7 @@ func (m *DistributionWinners) DistributionWinnersFT() DistributionWinnersFT {
 	case DistributionWinnersFT:
 		return v
 	default:
-		panic(&InvalidTypeError{
+		panic(&err.InvalidTypeError{
 			Label:        fmt.Sprintf("received an unexpected type %T for value: %v of variant %T", v, v, m),
 			ExpectedType: "DistributionWinnersFT",
 			Value:        m,

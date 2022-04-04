@@ -25,6 +25,7 @@ import (
 	"fmt"
 
 	eos "github.com/eoscanada/eos-go"
+	"github.com/sebastianmontero/eos-go-toolbox/dto"
 )
 
 var (
@@ -33,8 +34,8 @@ var (
 )
 
 type Attribute struct {
-	Key   string     `json:"key"`
-	Value *FlexValue `json:"value"`
+	Key   string         `json:"key"`
+	Value *dto.FlexValue `json:"value"`
 }
 
 type Attributes []*Attribute

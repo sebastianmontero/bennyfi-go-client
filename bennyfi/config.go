@@ -23,11 +23,13 @@ package bennyfi
 
 import (
 	"fmt"
+
+	"github.com/sebastianmontero/eos-go-toolbox/dto"
 )
 
 type ConfigEntry struct {
-	Key   string     `json:"key"`
-	Value *FlexValue `json:"value"`
+	Key   string         `json:"key"`
+	Value *dto.FlexValue `json:"value"`
 }
 
 type Config []*ConfigEntry
@@ -53,7 +55,7 @@ func (m Config) FindEntry(key string) *ConfigEntry {
 	return nil
 }
 
-func (m Config) Find(key string) *FlexValue {
+func (m Config) Find(key string) *dto.FlexValue {
 	entry := m.FindEntry(key)
 	if entry != nil {
 		return entry.Value
@@ -61,7 +63,7 @@ func (m Config) Find(key string) *FlexValue {
 	return nil
 }
 
-func (m Config) Get(key string) *FlexValue {
+func (m Config) Get(key string) *dto.FlexValue {
 	v := m.Find(key)
 	if v == nil {
 		panic(fmt.Sprintf("Config param with key: %v does not exist", key))
@@ -69,7 +71,7 @@ func (m Config) Get(key string) *FlexValue {
 	return v
 }
 
-func (p *Config) Upsert(key string, value *FlexValue) {
+func (p *Config) Upsert(key string, value *dto.FlexValue) {
 	m := *p
 	pos := m.FindPos(key)
 	entry := &ConfigEntry{

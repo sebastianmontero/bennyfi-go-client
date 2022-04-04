@@ -24,19 +24,21 @@ package bennyfi
 import (
 	"encoding/json"
 	"fmt"
+
+	eos "github.com/eoscanada/eos-go"
 )
 
 type NFTActionParams struct {
-	TermId          uint64 `json:"term_id"`
-	TermName        string `json:"term_name"`
-	ProjectId       uint64 `json:"project_id"`
-	RoundId         uint64 `json:"round_id"`
-	RoundName       string `json:"round_name"`
-	NumParticipants uint32 `json:"num_participants"`
-	Beneficiary     string `json:"beneficiary"`
-	CollectionName  string `json:"collection_name"`
-	Recipient       string `json:"recipient"`
-	Amount          uint16 `json:"amount"`
+	TermId          uint64          `json:"term_id"`
+	TermName        string          `json:"term_name"`
+	ProjectId       uint64          `json:"project_id"`
+	RoundId         uint64          `json:"round_id"`
+	RoundName       string          `json:"round_name"`
+	NumParticipants uint32          `json:"num_participants"`
+	Beneficiary     eos.AccountName `json:"beneficiary"`
+	CollectionName  eos.Name        `json:"collection_name"`
+	Recipient       eos.AccountName `json:"recipient"`
+	Amount          uint16          `json:"amount"`
 }
 
 func (m *NFTActionParams) ToMap() map[string]interface{} {
@@ -49,5 +51,8 @@ func (m *NFTActionParams) ToMap() map[string]interface{} {
 	if err != nil {
 		panic(fmt.Sprintf("failed transforming NFTActionParams to map, error unmarshalling: %v", err))
 	}
+	// paramsMap["beneficiary"] = string(m.Beneficiary)
+	// paramsMap["collection_name"] = string(m.CollectionName)
+	// paramsMap["recipient"] = string(m.Recipient)
 	return paramsMap
 }
