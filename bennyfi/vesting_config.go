@@ -47,7 +47,7 @@ func NewNoVestingConfig() *VestingConfig {
 }
 
 func NewImmediateVestingConfig() *VestingConfig {
-	return NewVestingConfig(0, uint32(PercentageAdjustment))
+	return NewVestingConfig(0, uint32(util.PercentageAdjustment))
 }
 
 func NewVestingConfig(period, percentage uint32) *VestingConfig {
@@ -78,7 +78,7 @@ func (m *VestingConfig) GetPercentage() uint32 {
 }
 
 func (m *VestingConfig) TotalCycles() uint32 {
-	return uint32(math.Ceil(PercentageAdjustment / float64(m.GetPercentage())))
+	return uint32(math.Ceil(util.PercentageAdjustment / float64(m.GetPercentage())))
 }
 
 func (m *VestingConfig) CalculateForAsset(amount eos.Asset, paidOut eos.Asset, startTime, vestingTime time.Time) eos.Asset {
@@ -112,10 +112,10 @@ func (m *VestingConfig) calculate(amount int64, paidOut int64, startTime, vestin
 		panic(fmt.Sprintf("failed to calculate vesting amount, cycle: %v, can not be greater than total cycles: %v", cycle, m.TotalCycles()))
 	}
 	percentage := int64(m.GetPercentage()) * cycle
-	if percentage > int64(PercentageAdjustment) {
-		percentage = int64(PercentageAdjustment)
+	if percentage > int64(util.PercentageAdjustment) {
+		percentage = int64(util.PercentageAdjustment)
 	}
-	vesting := (amount * percentage / int64(PercentageAdjustment)) - paidOut
+	vesting := (amount * percentage / int64(util.PercentageAdjustment)) - paidOut
 
 	if remaining < vesting {
 		vesting = remaining

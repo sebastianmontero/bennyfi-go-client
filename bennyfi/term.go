@@ -28,15 +28,17 @@ import (
 )
 
 type Term struct {
-	TermID                  uint64                  `json:"term_id"`
-	TermName                string                  `json:"term_name"`
-	RoundManager            eos.AccountName         `json:"round_manager"`
-	Beneficiary             eos.AccountName         `json:"beneficiary"`
-	RoundType               eos.Name                `json:"round_type"`
-	RoundAccess             eos.Name                `json:"round_access"`
-	DistributionDefinitions DistributionDefinitions `json:"distribution_definitions"`
-	CreatedDate             string                  `json:"created_date"`
-	UpdatedDate             string                  `json:"updated_date"`
+	TermID                   uint64                  `json:"term_id"`
+	TermName                 string                  `json:"term_name"`
+	RoundManager             eos.AccountName         `json:"round_manager"`
+	Beneficiary              eos.AccountName         `json:"beneficiary"`
+	RoundType                eos.Name                `json:"round_type"`
+	RoundAccess              eos.Name                `json:"round_access"`
+	BeneficiaryEntryFeePerc  uint32                  `json:"beneficiary_entry_fee_perc_x100000"`
+	RoundManagerEntryFeePerc uint32                  `json:"round_manager_entry_fee_perc_x100000"`
+	DistributionDefinitions  DistributionDefinitions `json:"distribution_definitions"`
+	CreatedDate              string                  `json:"created_date"`
+	UpdatedDate              string                  `json:"updated_date"`
 }
 
 func (m *Term) UpsertDistributionDef(name string, definition interface{}) {
@@ -55,22 +57,26 @@ func (m *Term) ClearDistributionDefs() {
 }
 
 type NewTermArgs struct {
-	TermName                string                  `json:"term_name"`
-	RoundManager            eos.AccountName         `json:"round_manager"`
-	Beneficiary             eos.AccountName         `json:"beneficiary"`
-	RoundType               eos.Name                `json:"round_type"`
-	RoundAccess             eos.Name                `json:"round_access"`
-	DistributionDefinitions DistributionDefinitions `json:"distribution_definitions"`
+	RoundManager             eos.AccountName         `json:"round_manager"`
+	TermName                 string                  `json:"term_name"`
+	RoundType                eos.Name                `json:"round_type"`
+	RoundAccess              eos.Name                `json:"round_access"`
+	Beneficiary              eos.AccountName         `json:"beneficiary"`
+	BeneficiaryEntryFeePerc  uint32                  `json:"beneficiary_entry_fee_perc_x100000"`
+	RoundManagerEntryFeePerc uint32                  `json:"round_manager_entry_fee_perc_x100000"`
+	DistributionDefinitions  DistributionDefinitions `json:"distribution_definitions"`
 }
 
 func TermToNewTermArgs(terms *Term) *NewTermArgs {
 	return &NewTermArgs{
-		TermName:                terms.TermName,
-		RoundManager:            terms.RoundManager,
-		Beneficiary:             terms.Beneficiary,
-		RoundType:               terms.RoundType,
-		RoundAccess:             terms.RoundAccess,
-		DistributionDefinitions: terms.DistributionDefinitions,
+		TermName:                 terms.TermName,
+		RoundManager:             terms.RoundManager,
+		Beneficiary:              terms.Beneficiary,
+		RoundType:                terms.RoundType,
+		RoundAccess:              terms.RoundAccess,
+		BeneficiaryEntryFeePerc:  terms.BeneficiaryEntryFeePerc,
+		RoundManagerEntryFeePerc: terms.RoundManagerEntryFeePerc,
+		DistributionDefinitions:  terms.DistributionDefinitions,
 	}
 }
 
@@ -85,6 +91,8 @@ func (m *BennyfiContract) NewTermFromTermArgs(termArgs *NewTermArgs) (string, er
 	actionData["beneficiary"] = termArgs.Beneficiary
 	actionData["round_type"] = termArgs.RoundType
 	actionData["round_access"] = termArgs.RoundAccess
+	actionData["beneficiary_entry_fee_perc_x100000"] = termArgs.BeneficiaryEntryFeePerc
+	actionData["round_manager_entry_fee_perc_x100000"] = termArgs.RoundManagerEntryFeePerc
 	actionData["distribution_definitions"] = termArgs.DistributionDefinitions
 
 	return m.ExecAction(termArgs.RoundManager, "newterm", actionData)

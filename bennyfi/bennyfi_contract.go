@@ -29,13 +29,11 @@ import (
 	"github.com/eoscanada/eos-go/ecc"
 	"github.com/sebastianmontero/eos-go-toolbox/contract"
 	"github.com/sebastianmontero/eos-go-toolbox/service"
-	"github.com/sebastianmontero/eos-go-toolbox/util"
 )
 
 var (
-	PercentageAdjustment        = float64(10000000)
-	PAUSED               uint32 = 1
-	UNPAUSED             uint32 = 0
+	PAUSED   uint32 = 1
+	UNPAUSED uint32 = 0
 )
 
 type BennyfiContract struct {
@@ -102,13 +100,4 @@ func (m *BennyfiContract) Pause(pause uint32) (string, error) {
 	actionData := make(map[string]interface{})
 	actionData["pause"] = pause
 	return m.ExecAction(eos.AN(m.ContractName), "pause", actionData)
-}
-
-func CalculatePercentage(amount interface{}, percentage uint32) eos.Asset {
-	amnt, err := util.ToAsset(amount)
-	if err != nil {
-		panic(fmt.Sprintf("failed to calculate percentage, could not parse amount: %v", amount))
-	}
-	perctAmnt := float64(amnt.Amount) * float64((float64(percentage) / PercentageAdjustment))
-	return eos.Asset{Amount: eos.Int64(perctAmnt), Symbol: amnt.Symbol}
 }

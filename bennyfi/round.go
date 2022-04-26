@@ -24,6 +24,7 @@ package bennyfi
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"strconv"
 	"time"
 
@@ -123,7 +124,9 @@ type Round struct {
 	StakingPeriod            *Microseconds            `json:"staking_period"`
 	EnrollmentTimeOut        *Microseconds            `json:"enrollment_time_out"`
 	NumParticipants          uint32                   `json:"num_participants"`
-	RoundFee                 string                   `json:"round_fee"`
+	ParticipantEntryFee      string                   `json:"participant_entry_fee"`
+	RoundManagerEntryFee     string                   `json:"round_manager_entry_fee"`
+	BeneficiaryEntryFee      string                   `json:"beneficiary_entry_fee"`
 	EntryStake               string                   `json:"entry_stake"`
 	Rewards                  Rewards                  `json:"rewards"`
 	RexBalance               string                   `json:"rex_balance"`
@@ -160,6 +163,42 @@ func (m *Round) GetTotalDeposits() eos.Asset {
 		panic(fmt.Sprintf("Unable to parse total deposits: %v to asset", m.TotalDeposits))
 	}
 	return totalDeposits
+}
+
+func (m *Round) GetEntryStake() eos.Asset {
+	entryStake, err := eos.NewAssetFromString(m.EntryStake)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse entry stake: %v to asset", m.EntryStake))
+	}
+	return entryStake
+}
+
+func (m *Round) GetRoundManagerEntryFee() eos.Asset {
+	roundManagerEntryFee, err := eos.NewAssetFromString(m.RoundManagerEntryFee)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse round manager entry fee: %v to asset", m.RoundManagerEntryFee))
+	}
+	return roundManagerEntryFee
+}
+
+func (m *Round) GetBeneficiaryEntryFee() eos.Asset {
+	beneficiaryEntryFee, err := eos.NewAssetFromString(m.BeneficiaryEntryFee)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse beneficiary entry fee: %v to asset", m.BeneficiaryEntryFee))
+	}
+	return beneficiaryEntryFee
+}
+
+func (m *Round) GetParticipantEntryFee() eos.Asset {
+	participantEntryFee, err := eos.NewAssetFromString(m.ParticipantEntryFee)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse participant entry fee: %v to asset", m.ParticipantEntryFee))
+	}
+	return participantEntryFee
+}
+
+func (m *Round) GetTotalEntryFee() eos.Asset {
+	return m.GetBeneficiaryEntryFee().Add(m.GetRoundManagerEntryFee()).Add(util.MultiplyAsset(m.GetParticipantEntryFee(), int64(m.NumParticipants)))
 }
 
 func (m *Round) NumEntriesToClose() uint32 {
@@ -230,6 +269,36 @@ func (m *Round) UpdateFundingState(dist string, state eos.Name) {
 	m.Rewards.UpdateFundingState(dist, state)
 }
 
+func (m *Round) CalculateEntryFee(settings *EntryFeeSettings) eos.Asset {
+	if m.RoundType == RoundTypeManagerFunded {
+		// fmt.Println("Manager funded entry fee: ", util.MultiplyAsset(settings.SelfFundedPerUser, int64(m.NumParticipants)))
+		return util.MultiplyAsset(settings.SelfFundedPerUser, int64(m.NumParticipants))
+	} else {
+
+		totalStake := util.MultiplyAsset(m.GetEntryStake(), int64(m.NumParticipants))
+		yield := util.CalculatePercentage(util.MultiplyAsset(totalStake, int64(m.StakingPeriod.Hrs())), settings.HourlyYield())
+		yieldUSD := util.DivideAssets(yield, settings.ValueTLOS)
+		yieldPerc := util.CalculatePercentage(yieldUSD, settings.PercOfYield)
+		entryFee := util.DivideAssets(yieldPerc, settings.ValueBENY)
+		adjustedEntryFee := util.AdjustPrecision(big.NewInt(int64(entryFee.Amount)), entryFee.Precision, settings.BENYToken.Precision)
+		// fmt.Printf("Entry fee values, total stake: %v, yield: %v, yieldUSD: %v, yieldPerc: %v, entryFee: %v, adjustedEntryFee: %v \n", totalStake, yield, yieldUSD, yieldPerc, entryFee, adjustedEntryFee)
+		return eos.Asset{Amount: eos.Int64(adjustedEntryFee.Int64()), Symbol: settings.BENYToken.Symbol}
+	}
+}
+
+func (m *Round) CalculateEntryFees(settings *EntryFeeSettings, term *Term) {
+	entryFee := m.CalculateEntryFee(settings)
+	roundManagerEntryFee := util.CalculatePercentage(entryFee, term.RoundManagerEntryFeePerc)
+	beneficiaryEntryFee := util.CalculatePercentage(entryFee, term.BeneficiaryEntryFeePerc)
+	participantEntryFee := entryFee.Sub(roundManagerEntryFee).Sub(beneficiaryEntryFee)
+	// fmt.Printf("Round manager percent fee: %v, beneficiary percent fee: %v\n", term.RoundManagerEntryFeePerc, term.BeneficiaryEntryFeePerc)
+	// fmt.Printf("Entryfee: %v, Beneficiary Entry fee: %v, Round Manager Entry fee: %v, Participant Entry Fee total: %v \n", entryFee, beneficiaryEntryFee, roundManagerEntryFee, participantEntryFee)
+	participantEntryFee = util.DivideAsset(participantEntryFee, uint64(m.NumParticipants))
+	m.RoundManagerEntryFee = roundManagerEntryFee.String()
+	m.BeneficiaryEntryFee = beneficiaryEntryFee.String()
+	m.ParticipantEntryFee = participantEntryFee.String()
+}
+
 func (m *Round) CalculateReturns(entryOwner eos.AccountName, distName string, isEarlyExit bool, earlyExitFeePerc uint32) interface{} {
 
 	if IsFTDistribution(distName) {
@@ -240,7 +309,7 @@ func (m *Round) CalculateReturns(entryOwner eos.AccountName, distName string, is
 		if winner != nil {
 			winnerPrize = winner.GetPrize()
 		}
-		earlyExitRewardFee := CalculatePercentage(winnerPrize, earlyExitFeePerc)
+		earlyExitRewardFee := util.CalculatePercentage(winnerPrize, earlyExitFeePerc)
 		if isEarlyExit {
 			winnerPrize = winnerPrize.Sub(earlyExitRewardFee)
 			earlyExitRewardFee = earlyExitRewardFee.Add(minParticipantReward)
@@ -291,16 +360,15 @@ func (m *Round) CalculateUnlockTime() time.Time {
 }
 
 type NewRoundArgs struct {
+	RoundManager         eos.AccountName `json:"round_manager"`
 	TermID               uint64          `json:"term_id"`
 	ProjectID            uint64          `json:"project_id"`
 	RoundName            string          `json:"round_name"`
-	StakingPeriodHrs     uint32          `json:"staking_period_hrs"`
-	EnrollmentTimeOutHrs uint32          `json:"enrollment_time_out_hrs"`
-	NumParticipants      uint32          `json:"num_participants"`
-	RoundFee             string          `json:"round_fee"`
 	EntryStake           string          `json:"entry_stake"`
 	FTRewards            FTRewardsArg    `json:"ft_rewards"`
-	RoundManager         eos.AccountName `json:"round_manager"`
+	NumParticipants      uint32          `json:"num_participants"`
+	StakingPeriodHrs     uint32          `json:"staking_period_hrs"`
+	EnrollmentTimeOutHrs uint32          `json:"enrollment_time_out_hrs"`
 }
 
 func RoundToNewRoundArgs(round *Round) *NewRoundArgs {
@@ -311,7 +379,6 @@ func RoundToNewRoundArgs(round *Round) *NewRoundArgs {
 		StakingPeriodHrs:     uint32(round.StakingPeriod.Hrs()),
 		EnrollmentTimeOutHrs: uint32(round.EnrollmentTimeOut.Hrs()),
 		NumParticipants:      round.NumParticipants,
-		RoundFee:             round.RoundFee,
 		EntryStake:           round.EntryStake,
 		FTRewards:            round.Rewards.ToFTRewardsArg(),
 		RoundManager:         round.RoundManager,
@@ -329,7 +396,9 @@ func (m *Round) Clone() *Round {
 		StakingPeriod:            m.StakingPeriod,
 		EnrollmentTimeOut:        m.EnrollmentTimeOut,
 		NumParticipants:          m.NumParticipants,
-		RoundFee:                 m.RoundFee,
+		ParticipantEntryFee:      m.ParticipantEntryFee,
+		RoundManagerEntryFee:     m.RoundManagerEntryFee,
+		BeneficiaryEntryFee:      m.BeneficiaryEntryFee,
 		EntryStake:               m.EntryStake,
 		Rewards:                  m.Rewards.Clone(),
 		RexBalance:               m.RexBalance,
@@ -371,7 +440,6 @@ func (m *BennyfiContract) NewRoundFromRoundArgs(roundArgs *NewRoundArgs) (string
 	actionData["round_name"] = roundArgs.RoundName
 	actionData["term_id"] = roundArgs.TermID
 	actionData["project_id"] = roundArgs.ProjectID
-	actionData["round_fee"] = roundArgs.RoundFee
 	actionData["entry_stake"] = roundArgs.EntryStake
 	actionData["ft_rewards"] = roundArgs.FTRewards
 	actionData["num_participants"] = roundArgs.NumParticipants
