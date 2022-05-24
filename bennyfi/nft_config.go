@@ -21,19 +21,12 @@
 // THE SOFTWARE.
 package bennyfi
 
-import "github.com/eoscanada/eos-go"
-
 var (
-	NFTStandard       = "nft_standard"
-	NFTCollectionName = "collection_name"
+	NFTStandard = "nft_standard"
 )
 
 type NFTConfig struct {
 	Config Config `json:"config"`
-}
-
-func (m *NFTConfig) GetCollectionName() eos.Name {
-	return m.Config.Get(NFTCollectionName).Name()
 }
 
 func (m *NFTConfig) GetNFTStandard() string {

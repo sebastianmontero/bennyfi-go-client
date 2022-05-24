@@ -36,7 +36,6 @@ type NFTActionParams struct {
 	RoundName       string          `json:"round_name"`
 	NumParticipants uint32          `json:"num_participants"`
 	Beneficiary     eos.AccountName `json:"beneficiary"`
-	CollectionName  eos.Name        `json:"collection_name"`
 	Recipient       eos.AccountName `json:"recipient"`
 	Amount          uint16          `json:"amount"`
 }
@@ -51,8 +50,5 @@ func (m *NFTActionParams) ToMap() map[string]interface{} {
 	if err != nil {
 		panic(fmt.Sprintf("failed transforming NFTActionParams to map, error unmarshalling: %v", err))
 	}
-	// paramsMap["beneficiary"] = string(m.Beneficiary)
-	// paramsMap["collection_name"] = string(m.CollectionName)
-	// paramsMap["recipient"] = string(m.Recipient)
 	return paramsMap
 }
