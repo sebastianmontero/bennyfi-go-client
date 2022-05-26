@@ -29,8 +29,8 @@ import (
 )
 
 var (
-	ProjectAttrName        = "PROJECT_NAME"
-	ProjectAttrArtifactCID = "ARTIFACT_CID"
+	ProjectAttrName        = "project_name"
+	ProjectAttrArtifactCID = "artifact_cid"
 )
 
 type Attribute struct {
