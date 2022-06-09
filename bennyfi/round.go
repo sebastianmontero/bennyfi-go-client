@@ -119,6 +119,8 @@ type Round struct {
 	TermID                   uint64                   `json:"term_id"`
 	ProjectID                uint64                   `json:"project_id"`
 	RoundName                string                   `json:"round_name"`
+	RoundDescription         string                   `json:"round_description"`
+	RoundCategory            eos.Name                 `json:"round_category"`
 	RoundType                eos.Name                 `json:"round_type"`
 	RoundAccess              eos.Name                 `json:"round_access"`
 	StakingPeriod            *Microseconds            `json:"staking_period"`
@@ -147,6 +149,7 @@ type Round struct {
 	TotalEarlyExitStake      string                   `json:"total_early_exit_stake"`
 	TotalEarlyExitRewardFees TotalEarlyExitRewardFees `json:"total_early_exit_reward_fees"`
 	RoundManager             eos.AccountName          `json:"round_manager"`
+	StartTime                string                   `json:"start_time"`
 	ClosedTime               string                   `json:"closed_time"`
 	StakedTime               string                   `json:"staked_time"`
 	MovedFromSavingsTime     string                   `json:"moved_from_savings_time"`
@@ -364,11 +367,14 @@ type NewRoundArgs struct {
 	TermID               uint64          `json:"term_id"`
 	ProjectID            uint64          `json:"project_id"`
 	RoundName            string          `json:"round_name"`
+	RoundDescription     string          `json:"round_description"`
+	RoundCategory        eos.Name        `json:"round_category"`
 	EntryStake           string          `json:"entry_stake"`
 	FTRewards            FTRewardsArg    `json:"ft_rewards"`
 	NumParticipants      uint32          `json:"num_participants"`
 	StakingPeriodHrs     uint32          `json:"staking_period_hrs"`
 	EnrollmentTimeOutHrs uint32          `json:"enrollment_time_out_hrs"`
+	StartTime            string          `json:"start_time"`
 }
 
 func RoundToNewRoundArgs(round *Round) *NewRoundArgs {
@@ -376,12 +382,15 @@ func RoundToNewRoundArgs(round *Round) *NewRoundArgs {
 		TermID:               round.TermID,
 		ProjectID:            round.ProjectID,
 		RoundName:            round.RoundName,
+		RoundDescription:     round.RoundDescription,
+		RoundCategory:        round.RoundCategory,
 		StakingPeriodHrs:     uint32(round.StakingPeriod.Hrs()),
 		EnrollmentTimeOutHrs: uint32(round.EnrollmentTimeOut.Hrs()),
 		NumParticipants:      round.NumParticipants,
 		EntryStake:           round.EntryStake,
 		FTRewards:            round.Rewards.ToFTRewardsArg(),
 		RoundManager:         round.RoundManager,
+		StartTime:            round.StartTime,
 	}
 }
 
@@ -391,6 +400,8 @@ func (m *Round) Clone() *Round {
 		TermID:                   m.TermID,
 		ProjectID:                m.ProjectID,
 		RoundName:                m.RoundName,
+		RoundDescription:         m.RoundDescription,
+		RoundCategory:            m.RoundCategory,
 		RoundType:                m.RoundType,
 		RoundAccess:              m.RoundAccess,
 		StakingPeriod:            m.StakingPeriod,
@@ -419,6 +430,7 @@ func (m *Round) Clone() *Round {
 		TotalEarlyExitStake:      m.TotalEarlyExitStake,
 		TotalEarlyExitRewardFees: m.TotalEarlyExitRewardFees,
 		RoundManager:             m.RoundManager,
+		StartTime:                m.StartTime,
 		ClosedTime:               m.ClosedTime,
 		StakedTime:               m.StakedTime,
 		MovedFromSavingsTime:     m.MovedFromSavingsTime,
@@ -438,6 +450,8 @@ func (m *BennyfiContract) NewRoundFromRoundArgs(roundArgs *NewRoundArgs) (string
 	actionData := make(map[string]interface{})
 	actionData["round_manager"] = roundArgs.RoundManager
 	actionData["round_name"] = roundArgs.RoundName
+	actionData["round_description"] = roundArgs.RoundDescription
+	actionData["round_category"] = roundArgs.RoundCategory
 	actionData["term_id"] = roundArgs.TermID
 	actionData["project_id"] = roundArgs.ProjectID
 	actionData["entry_stake"] = roundArgs.EntryStake
@@ -445,6 +459,7 @@ func (m *BennyfiContract) NewRoundFromRoundArgs(roundArgs *NewRoundArgs) (string
 	actionData["num_participants"] = roundArgs.NumParticipants
 	actionData["staking_period_hrs"] = roundArgs.StakingPeriodHrs
 	actionData["enrollment_time_out_hrs"] = roundArgs.EnrollmentTimeOutHrs
+	actionData["start_time"] = roundArgs.StartTime
 	return m.ExecAction(roundArgs.RoundManager, "newround", actionData)
 }
 

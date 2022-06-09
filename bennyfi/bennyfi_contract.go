@@ -101,3 +101,7 @@ func (m *BennyfiContract) Pause(pause uint32) (string, error) {
 	actionData["pause"] = pause
 	return m.ExecAction(eos.AN(m.ContractName), "pause", actionData)
 }
+
+func (m *BennyfiContract) Reset() (string, error) {
+	return m.ExecAction(eos.AN(m.ContractName), "reset", nil)
+}
