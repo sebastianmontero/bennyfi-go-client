@@ -159,3 +159,7 @@ func (m *MarbleAdaptorContract) GetRewardsReq(req *eos.GetTableRowsRequest) ([]*
 	}
 	return rewards, nil
 }
+
+func (m *MarbleAdaptorContract) Reset() (string, error) {
+	return m.ExecAction(eos.AN(m.ContractName), "reset", nil)
+}
