@@ -546,40 +546,32 @@ func (m *BennyfiContract) GetRounds() ([]Round, error) {
 	return m.GetRoundsReq(nil)
 }
 
-func (m *BennyfiContract) GetRoundsbyManager(roundManager eos.AccountName) ([]Round, error) {
-	request := &eos.GetTableRowsRequest{
-		Index:      "2",
-		KeyType:    "name",
-		LowerBound: string(roundManager),
-		UpperBound: string(roundManager),
+func (m *BennyfiContract) GetRoundsbyTermAndId(termId uint64) ([]Round, error) {
+	request := &eos.GetTableRowsRequest{}
+	err := m.FilterRoundsbyTermAndId(request, termId)
+	if err != nil {
+		return nil, err
 	}
 	return m.GetRoundsReq(request)
 }
 
-func (m *BennyfiContract) GetRoundsbyTerm(termID uint64) ([]Round, error) {
-	request := &eos.GetTableRowsRequest{}
-	m.FilterRoundsbyTerm(request, termID)
-	return m.GetRoundsReq(request)
-}
+func (m *BennyfiContract) FilterRoundsbyTermAndId(req *eos.GetTableRowsRequest, term uint64) error {
 
-func (m *BennyfiContract) FilterRoundsbyTerm(req *eos.GetTableRowsRequest, termID uint64) {
-	req.Index = "3"
-	req.KeyType = "i64"
-	req.LowerBound = strconv.FormatUint(termID, 10)
-	req.UpperBound = strconv.FormatUint(termID, 10)
-}
-
-func (m *BennyfiContract) GetRoundsbyState(state eos.Name) ([]Round, error) {
-	request := &eos.GetTableRowsRequest{}
-	m.FilterRoundsbyState(request, state)
-	return m.GetRoundsReq(request)
-}
-
-func (m *BennyfiContract) FilterRoundsbyState(req *eos.GetTableRowsRequest, state eos.Name) {
-	req.Index = "4"
-	req.KeyType = "name"
-	req.LowerBound = string(state)
-	req.UpperBound = req.LowerBound
+	req.Index = "15"
+	req.KeyType = "i128"
+	req.Reverse = true
+	termAndRndLB, err := m.EOS.GetComposedIndexValue(term, 0)
+	if err != nil {
+		return fmt.Errorf("failed to generate lower bound composed index, err: %v", err)
+	}
+	termAndRndUB, err := m.EOS.GetComposedIndexValue(term, uint64(18446744073709551615))
+	if err != nil {
+		return fmt.Errorf("failed to generate upper bound composed index, err: %v", err)
+	}
+	fmt.Println("LB: ", termAndRndLB, "UB: ", termAndRndUB)
+	req.LowerBound = termAndRndLB
+	req.UpperBound = termAndRndUB
+	return err
 }
 
 func (m *BennyfiContract) GetRound(roundID uint64) (*Round, error) {
@@ -636,7 +628,7 @@ func (m *BennyfiContract) GetRoundsbyStateAndId(state eos.Name) ([]Round, error)
 
 func (m *BennyfiContract) FilterRoundsbyStateAndId(req *eos.GetTableRowsRequest, state eos.Name) error {
 
-	req.Index = "7"
+	req.Index = "2"
 	req.KeyType = "i128"
 	req.Reverse = true
 	stateAndRndLB, err := m.EOS.GetComposedIndexValue(state, 0)
@@ -664,7 +656,7 @@ func (m *BennyfiContract) GetRoundsbyManagerAndId(manager interface{}) ([]Round,
 
 func (m *BennyfiContract) FilterRoundsbyManagerAndId(req *eos.GetTableRowsRequest, manager interface{}) error {
 
-	req.Index = "8"
+	req.Index = "3"
 	req.KeyType = "i128"
 	req.Reverse = true
 	mgrAndRndLB, err := m.EOS.GetComposedIndexValue(manager, 0)
@@ -675,7 +667,7 @@ func (m *BennyfiContract) FilterRoundsbyManagerAndId(req *eos.GetTableRowsReques
 	if err != nil {
 		return fmt.Errorf("failed to generate upper bound composed index, err: %v", err)
 	}
-	fmt.Println("LB: ", mgrAndRndLB, "UB: ", mgrAndRndUB)
+	// fmt.Println("LB: ", mgrAndRndLB, "UB: ", mgrAndRndUB)
 	req.LowerBound = mgrAndRndLB
 	req.UpperBound = mgrAndRndUB
 	return err

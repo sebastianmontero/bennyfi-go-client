@@ -40,10 +40,11 @@ func (m *AccessNFT) SetupAccessNFTFrame() error {
 	args := marble.Frame{
 		FrameName:   m.Frame,
 		Group:       m.Group,
-		DefaultTags: make(marble.Tags),
-		DefaultAttributes: marble.Attributes{
-			NFTAttrAccessLevel: 100,
-		},
+		DefaultTags: make(marble.Tags, 0),
+		DefaultAttributes: marble.Attributes{{
+			Key:   NFTAttrAccessLevel,
+			Value: 100,
+		}},
 	}
 	_, err := m.NFT.NewFrame(&args, m.Contract)
 	if err != nil {
@@ -83,7 +84,7 @@ func (m *AccessNFT) Mint(args *AccessNFTMintArgs) error {
 	if len(items) == 0 {
 		fmt.Printf("Account: %v does not have an access NFT, minting...\n", args.Owner)
 		buildArgs := marble.NewQuickBuildArgs(m.Frame, args.Owner)
-		buildArgs.OverrideAttributes[NFTAttrAccessLevel] = int64(args.AccessLevel)
+		buildArgs.OverrideAttributes = append(buildArgs.OverrideAttributes, &marble.AttributeEntry{Key: NFTAttrAccessLevel, Value: int64(args.AccessLevel)})
 		_, err = m.NFT.QuickBuild(buildArgs, m.Contract)
 
 		if err != nil {

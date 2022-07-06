@@ -151,8 +151,26 @@ func NewInitArgs(initialAdmin eos.AccountName) *InitArgs {
 	}
 }
 
-type Tags map[eos.Name]string
-type Attributes map[eos.Name]int64
+type TagEntry struct {
+	Key   eos.Name `json:"key"`
+	Value string   `json:"value"`
+}
+
+func (m *TagEntry) String() string {
+	return fmt.Sprintf("%v=%v", m.Key, m.Value)
+}
+
+type AttributeEntry struct {
+	Key   eos.Name `json:"key"`
+	Value int64    `json:"value"`
+}
+
+func (m *AttributeEntry) String() string {
+	return fmt.Sprintf("%v=%v", m.Key, m.Value)
+}
+
+type Tags []*TagEntry
+type Attributes []*AttributeEntry
 
 type Frame struct {
 	FrameName         eos.Name   `json:"frame_name"`
@@ -172,8 +190,8 @@ func NewQuickBuildArgs(frameName eos.Name, to eos.AccountName) *QuickBuildArgs {
 	return &QuickBuildArgs{
 		FrameName:          frameName,
 		To:                 to,
-		OverrideTags:       make(Tags),
-		OverrideAttributes: make(Attributes),
+		OverrideTags:       make(Tags, 0),
+		OverrideAttributes: make(Attributes, 0),
 	}
 }
 
