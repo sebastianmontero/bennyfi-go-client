@@ -56,6 +56,23 @@ func (m *Term) ClearDistributionDefs() {
 	m.DistributionDefinitions = nil
 }
 
+func (m *Term) GetInitializedWinners() Winners {
+	winners := make(Winners, 0)
+	for _, distDef := range m.DistributionDefinitions {
+		var distWinners *DistributionWinners
+		if IsFTDistribution(distDef.Key) {
+			distWinners = NewDistributionWinners(DistributionWinnersFT{})
+		} else {
+			distWinners = NewDistributionWinners(DistributionWinnersNFT{})
+		}
+		winners = append(winners, &DistributionWinnersEntry{
+			Key:   distDef.Key,
+			Value: distWinners,
+		})
+	}
+	return winners
+}
+
 type NewTermArgs struct {
 	RoundManager             eos.AccountName         `json:"round_manager"`
 	TermName                 string                  `json:"term_name"`

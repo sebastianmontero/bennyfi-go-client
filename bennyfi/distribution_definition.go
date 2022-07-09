@@ -87,18 +87,27 @@ func (m *DistributionDefinitionFT) CalculateDistribution(totalReward eos.Asset, 
 	minParticipantReward := eos.Asset{Amount: eos.Int64((rewardToAllParticipants / float64(numParticipantsEntered)) * float64(precisionAdj)), Symbol: totalReward.Symbol}
 	beneficiaryReward := eos.Asset{Amount: eos.Int64(rewardToBeneficiary * float64(precisionAdj)), Symbol: totalReward.Symbol}
 	managerFee := eos.Asset{Amount: eos.Int64(feeToManager * float64(precisionAdj)), Symbol: totalReward.Symbol}
-	winnerPrize := totalReward.Sub(beneficiaryReward).Sub(managerFee).Sub(util.MultiplyAsset(minParticipantReward, int64(numParticipantsEntered)))
-	remaining := winnerPrize
-	winnerPrizeAdj := float64(winnerPrize.Amount) / precisionAdj
-	winnerPrizes := make([]string, 0, m.GetNumWinners())
-	for _, winnerPerc := range m.WinnersPerc {
-		prizeAmount := winnerPrizeAdj * float64((float64(winnerPerc) / percAdj))
-		prize := eos.Asset{Amount: eos.Int64(prizeAmount * float64(precisionAdj)), Symbol: totalReward.Symbol}
-		remaining = remaining.Sub(prize)
-		winnerPrizes = append(winnerPrizes, prize.String())
+	remaining := totalReward.Sub(beneficiaryReward).Sub(managerFee).Sub(util.MultiplyAsset(minParticipantReward, int64(numParticipantsEntered)))
+	winnerPrizes := make([]string, 0)
+	if m.GetNumWinners() > 0 {
+		winnerPrize := remaining
+		winnerPrizeAdj := float64(winnerPrize.Amount) / precisionAdj
+
+		for _, winnerPerc := range m.WinnersPerc {
+			prizeAmount := winnerPrizeAdj * float64((float64(winnerPerc) / percAdj))
+			prize := eos.Asset{Amount: eos.Int64(prizeAmount * float64(precisionAdj)), Symbol: totalReward.Symbol}
+			remaining = remaining.Sub(prize)
+			winnerPrizes = append(winnerPrizes, prize.String())
+		}
+		firstPrize, _ := eos.NewAssetFromString(winnerPrizes[0])
+		winnerPrizes[0] = firstPrize.Add(remaining).String()
+	} else {
+		if m.BeneficiaryPerc > 0 {
+			beneficiaryReward = beneficiaryReward.Add(remaining)
+		} else {
+			managerFee = managerFee.Add(remaining)
+		}
 	}
-	firstPrize, _ := eos.NewAssetFromString(winnerPrizes[0])
-	winnerPrizes[0] = firstPrize.Add(remaining).String()
 	return NewDistribution(&DistributionFT{
 		WinnerPrizes:          winnerPrizes,
 		BeneficiaryReward:     beneficiaryReward.String(),
