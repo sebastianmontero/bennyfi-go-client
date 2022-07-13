@@ -52,6 +52,13 @@ func AssertDistributionDef(t *testing.T, actual, expected *bennyfi.DistributionD
 	}
 }
 
+func AssertCategory(t *testing.T, actual, expected *bennyfi.Category) {
+	assert.Check(t, actual != nil)
+	assert.Equal(t, actual.Category, expected.Category)
+	assert.Equal(t, actual.CategoryName, expected.CategoryName)
+	assert.Equal(t, actual.CategoryDescription, expected.CategoryDescription)
+}
+
 func AssertDistributionDefFT(t *testing.T, actual, expected *bennyfi.DistributionDefinitionFT) {
 	assert.Check(t, actual != nil)
 	assert.Equal(t, actual.AllParticipantsPerc, expected.AllParticipantsPerc)
