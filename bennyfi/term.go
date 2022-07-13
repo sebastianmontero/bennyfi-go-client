@@ -115,8 +115,29 @@ func (m *BennyfiContract) NewTermFromTermArgs(termArgs *NewTermArgs) (string, er
 	return m.ExecAction(termArgs.RoundManager, "newterm", actionData)
 }
 
+func (m *BennyfiContract) EraseTerm(termId uint64, authorizer eos.AccountName) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["term_id"] = termId
+	actionData["authorizer"] = authorizer
+	return m.ExecAction(authorizer, "eraseterm", actionData)
+}
+
 func (m *BennyfiContract) GetTerms() ([]Term, error) {
 	return m.GetTermsReq(nil)
+}
+
+func (m *BennyfiContract) GetTermsById(termId uint64) (*Term, error) {
+	terms, err := m.GetTermsReq(&eos.GetTableRowsRequest{
+		LowerBound: fmt.Sprintf("%v", termId),
+		UpperBound: fmt.Sprintf("%v", termId),
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(terms) > 0 {
+		return &terms[0], nil
+	}
+	return nil, nil
 }
 
 func (m *BennyfiContract) GetTermsbyManager(termManager eos.AccountName) ([]Term, error) {
