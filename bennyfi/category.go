@@ -31,6 +31,7 @@ type Category struct {
 	Category            eos.Name `json:"category"`
 	CategoryName        string   `json:"category_name"`
 	CategoryDescription string   `json:"category_description"`
+	CategoryImage       string   `json:"category_image"`
 }
 
 type SetCategoryArgs struct {

@@ -363,34 +363,24 @@ func (m *Round) CalculateUnlockTime() time.Time {
 }
 
 type NewRoundArgs struct {
-	RoundManager         eos.AccountName `json:"round_manager"`
-	TermID               uint64          `json:"term_id"`
-	ProjectID            uint64          `json:"project_id"`
-	RoundName            string          `json:"round_name"`
-	RoundDescription     string          `json:"round_description"`
-	RoundCategory        eos.Name        `json:"round_category"`
-	EntryStake           string          `json:"entry_stake"`
-	FTRewards            FTRewardsArg    `json:"ft_rewards"`
-	NumParticipants      uint32          `json:"num_participants"`
-	StakingPeriodHrs     uint32          `json:"staking_period_hrs"`
-	EnrollmentTimeOutHrs uint32          `json:"enrollment_time_out_hrs"`
-	StartTime            string          `json:"start_time"`
+	RoundManager     eos.AccountName `json:"round_manager"`
+	TermID           uint64          `json:"term_id"`
+	ProjectID        uint64          `json:"project_id"`
+	RoundName        string          `json:"round_name"`
+	RoundDescription string          `json:"round_description"`
+	RoundCategory    eos.Name        `json:"round_category"`
+	StartTime        string          `json:"start_time"`
 }
 
 func RoundToNewRoundArgs(round *Round) *NewRoundArgs {
 	return &NewRoundArgs{
-		TermID:               round.TermID,
-		ProjectID:            round.ProjectID,
-		RoundName:            round.RoundName,
-		RoundDescription:     round.RoundDescription,
-		RoundCategory:        round.RoundCategory,
-		StakingPeriodHrs:     uint32(round.StakingPeriod.Hrs()),
-		EnrollmentTimeOutHrs: uint32(round.EnrollmentTimeOut.Hrs()),
-		NumParticipants:      round.NumParticipants,
-		EntryStake:           round.EntryStake,
-		FTRewards:            round.Rewards.ToFTRewardsArg(),
-		RoundManager:         round.RoundManager,
-		StartTime:            round.StartTime,
+		TermID:           round.TermID,
+		ProjectID:        round.ProjectID,
+		RoundName:        round.RoundName,
+		RoundDescription: round.RoundDescription,
+		RoundCategory:    round.RoundCategory,
+		RoundManager:     round.RoundManager,
+		StartTime:        round.StartTime,
 	}
 }
 
@@ -454,11 +444,6 @@ func (m *BennyfiContract) NewRoundFromRoundArgs(roundArgs *NewRoundArgs) (string
 	actionData["round_category"] = roundArgs.RoundCategory
 	actionData["term_id"] = roundArgs.TermID
 	actionData["project_id"] = roundArgs.ProjectID
-	actionData["entry_stake"] = roundArgs.EntryStake
-	actionData["ft_rewards"] = roundArgs.FTRewards
-	actionData["num_participants"] = roundArgs.NumParticipants
-	actionData["staking_period_hrs"] = roundArgs.StakingPeriodHrs
-	actionData["enrollment_time_out_hrs"] = roundArgs.EnrollmentTimeOutHrs
 	actionData["start_time"] = roundArgs.StartTime
 	return m.ExecAction(roundArgs.RoundManager, "newround", actionData)
 }

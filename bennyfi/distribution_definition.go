@@ -70,13 +70,22 @@ type DistributionDefinitionFT struct {
 	BeneficiaryPerc     uint32   `json:"beneficiary_perc_x100000"`
 	RoundManagerPerc    uint32   `json:"round_manager_perc_x100000"`
 	WinnersPerc         []uint32 `json:"winners_perc_x100000"`
+	Reward              string   `json:"reward"`
 }
 
 func (m *DistributionDefinitionFT) GetNumWinners() int {
 	return len(m.WinnersPerc)
 }
 
-func (m *DistributionDefinitionFT) CalculateDistribution(totalReward eos.Asset, numParticipantsEntered uint32) *Distribution {
+func (m *DistributionDefinitionFT) GetReward() eos.Asset {
+	reward, err := eos.NewAssetFromString(m.Reward)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse reward: %v to asset", m.Reward))
+	}
+	return reward
+}
+
+func (m *DistributionDefinitionFT) CalculateDistribution(numParticipantsEntered uint32, totalReward eos.Asset) *Distribution {
 
 	precisionAdj := math.Pow(10, float64(totalReward.Precision))
 	percAdj := float64(10000000)
@@ -334,6 +343,17 @@ func (m DistributionDefinitions) HasVesting() bool {
 		}
 	}
 	return false
+}
+
+func (m DistributionDefinitions) GetDistributionDefinitionsFT() []*DistributionDefinitionFT {
+	distDefsFT := make([]*DistributionDefinitionFT, 0)
+	for _, distDefEntry := range m {
+		switch v := distDefEntry.Value.Impl.(type) {
+		case *DistributionDefinitionFT:
+			distDefsFT = append(distDefsFT, v)
+		}
+	}
+	return distDefsFT
 }
 
 func (m DistributionDefinitions) GetVestingTrackers() VestingTrackers {

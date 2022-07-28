@@ -30,15 +30,26 @@ import (
 type Term struct {
 	TermID                   uint64                  `json:"term_id"`
 	TermName                 string                  `json:"term_name"`
-	RoundManager             eos.AccountName         `json:"round_manager"`
-	Beneficiary              eos.AccountName         `json:"beneficiary"`
+	Authorizer               eos.AccountName         `json:"authorizer"`
 	RoundType                eos.Name                `json:"round_type"`
 	RoundAccess              eos.Name                `json:"round_access"`
+	NumParticipants          uint32                  `json:"num_participants"`
+	EntryStake               string                  `json:"entry_stake"`
+	StakingPeriod            *Microseconds           `json:"staking_period"`
+	EnrollmentTimeOut        *Microseconds           `json:"enrollment_time_out"`
 	BeneficiaryEntryFeePerc  uint32                  `json:"beneficiary_entry_fee_perc_x100000"`
 	RoundManagerEntryFeePerc uint32                  `json:"round_manager_entry_fee_perc_x100000"`
 	DistributionDefinitions  DistributionDefinitions `json:"distribution_definitions"`
 	CreatedDate              string                  `json:"created_date"`
 	UpdatedDate              string                  `json:"updated_date"`
+}
+
+func (m *Term) GetEntryStake() eos.Asset {
+	entryStake, err := eos.NewAssetFromString(m.EntryStake)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse entry stake: %v to asset", m.EntryStake))
+	}
+	return entryStake
 }
 
 func (m *Term) UpsertDistributionDef(name string, definition interface{}) {
@@ -73,11 +84,23 @@ func (m *Term) GetInitializedWinners() Winners {
 	return winners
 }
 
+func (m *Term) RequiresBeneficiary() bool {
+	mainDist := m.DistributionDefinitions.FindFT(DistributionMain)
+	if mainDist == nil {
+		panic("invalid terms they don't have a main distribution definition")
+	}
+	return mainDist.BeneficiaryPerc > 0 || m.DistributionDefinitions.Has(DistributionProjectToken) || m.DistributionDefinitions.Has(DistributionProjectNFT)
+}
+
 type NewTermArgs struct {
-	RoundManager             eos.AccountName         `json:"round_manager"`
+	Authorizer               eos.AccountName         `json:"authorizer"`
 	TermName                 string                  `json:"term_name"`
 	RoundType                eos.Name                `json:"round_type"`
 	RoundAccess              eos.Name                `json:"round_access"`
+	NumParticipants          uint32                  `json:"num_participants"`
+	EntryStake               string                  `json:"entry_stake"`
+	StakingPeriodHrs         uint32                  `json:"staking_period_hrs"`
+	EnrollmentTimeOutHrs     uint32                  `json:"enrollment_time_out_hrs"`
 	Beneficiary              eos.AccountName         `json:"beneficiary"`
 	BeneficiaryEntryFeePerc  uint32                  `json:"beneficiary_entry_fee_perc_x100000"`
 	RoundManagerEntryFeePerc uint32                  `json:"round_manager_entry_fee_perc_x100000"`
@@ -87,10 +110,13 @@ type NewTermArgs struct {
 func TermToNewTermArgs(terms *Term) *NewTermArgs {
 	return &NewTermArgs{
 		TermName:                 terms.TermName,
-		RoundManager:             terms.RoundManager,
-		Beneficiary:              terms.Beneficiary,
+		Authorizer:               terms.Authorizer,
 		RoundType:                terms.RoundType,
 		RoundAccess:              terms.RoundAccess,
+		NumParticipants:          terms.NumParticipants,
+		EntryStake:               terms.EntryStake,
+		StakingPeriodHrs:         uint32(terms.StakingPeriod.Hrs()),
+		EnrollmentTimeOutHrs:     uint32(terms.EnrollmentTimeOut.Hrs()),
 		BeneficiaryEntryFeePerc:  terms.BeneficiaryEntryFeePerc,
 		RoundManagerEntryFeePerc: terms.RoundManagerEntryFeePerc,
 		DistributionDefinitions:  terms.DistributionDefinitions,
@@ -103,16 +129,19 @@ func (m *BennyfiContract) NewTerm(term *Term) (string, error) {
 
 func (m *BennyfiContract) NewTermFromTermArgs(termArgs *NewTermArgs) (string, error) {
 	actionData := make(map[string]interface{})
-	actionData["round_manager"] = termArgs.RoundManager
+	actionData["authorizer"] = termArgs.Authorizer
 	actionData["term_name"] = termArgs.TermName
-	actionData["beneficiary"] = termArgs.Beneficiary
 	actionData["round_type"] = termArgs.RoundType
 	actionData["round_access"] = termArgs.RoundAccess
+	actionData["num_participants"] = termArgs.NumParticipants
+	actionData["entry_stake"] = termArgs.EntryStake
+	actionData["staking_period_hrs"] = termArgs.StakingPeriodHrs
+	actionData["enrollment_time_out_hrs"] = termArgs.EnrollmentTimeOutHrs
 	actionData["beneficiary_entry_fee_perc_x100000"] = termArgs.BeneficiaryEntryFeePerc
 	actionData["round_manager_entry_fee_perc_x100000"] = termArgs.RoundManagerEntryFeePerc
 	actionData["distribution_definitions"] = termArgs.DistributionDefinitions
 
-	return m.ExecAction(termArgs.RoundManager, "newterm", actionData)
+	return m.ExecAction(termArgs.Authorizer, "newterm", actionData)
 }
 
 func (m *BennyfiContract) EraseTerm(termId uint64, authorizer eos.AccountName) (string, error) {
