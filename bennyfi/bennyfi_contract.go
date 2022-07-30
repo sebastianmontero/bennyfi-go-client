@@ -102,6 +102,10 @@ func (m *BennyfiContract) Pause(pause uint32) (string, error) {
 	return m.ExecAction(eos.AN(m.ContractName), "pause", actionData)
 }
 
-func (m *BennyfiContract) Reset() (string, error) {
-	return m.ExecAction(eos.AN(m.ContractName), "reset", nil)
+func (m *BennyfiContract) Reset(limit uint64, toDelete []string) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["limit"] = limit
+	actionData["to_delete"] = toDelete
+	actionData["call_counter"] = m.NextCallCounter()
+	return m.ExecAction(eos.AN(m.ContractName), "reset", actionData)
 }
