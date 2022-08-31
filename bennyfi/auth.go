@@ -35,6 +35,7 @@ var (
 	RoundManager uint64 = 40
 	Player       uint64 = 50
 	Beneficiary  uint64 = 60
+	Disabled     uint64 = 70
 )
 
 type Auth struct {
@@ -42,7 +43,7 @@ type Auth struct {
 	Account     eos.AccountName `json:"account"`
 	Level       uint64          `json:"auth_level"`
 	DisplayName string          `json:"display_name"`
-	Avatar      string          `json:"avatar"`
+	ArtifactCID string          `json:"artifact_cid"`
 	Notes       string          `json:"notes"`
 }
 
@@ -67,11 +68,11 @@ func (m *BennyfiContract) SetAuthLevel(authorizer, account eos.AccountName, leve
 	return "", nil
 }
 
-func (m *BennyfiContract) SetProfile(account eos.AccountName, displayName, avatar string) (string, error) {
+func (m *BennyfiContract) SetProfile(account eos.AccountName, displayName, artifactCID string) (string, error) {
 	actionData := make(map[string]interface{})
 	actionData["account"] = account
 	actionData["display_name"] = displayName
-	actionData["avatar"] = avatar
+	actionData["artifact_cid"] = artifactCID
 	_, err := m.Contract.ExecAction(account, "setprofile", actionData)
 	if err != nil {
 		return "", err

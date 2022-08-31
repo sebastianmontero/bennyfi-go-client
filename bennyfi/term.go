@@ -25,7 +25,36 @@ import (
 	"fmt"
 
 	eos "github.com/eoscanada/eos-go"
+	"github.com/sebastianmontero/eos-go-toolbox/dto"
 )
+
+type DefaultValue struct {
+	Key   string         `json:"key"`
+	Value *dto.FlexValue `json:"value"`
+}
+
+func (m *DefaultValue) String() string {
+	return fmt.Sprintf("Key: %v, Value: %v", m.Key, m.Value)
+}
+
+type DefaultValues []*DefaultValue
+
+func (m DefaultValues) FindPos(key string) int {
+	for i, attr := range m {
+		if attr.Key == key {
+			return i
+		}
+	}
+	return -1
+}
+
+func (m DefaultValues) Find(key string) *DefaultValue {
+	pos := m.FindPos(key)
+	if pos >= 0 {
+		return m[pos]
+	}
+	return nil
+}
 
 type Term struct {
 	TermID                   uint64                  `json:"term_id"`
@@ -40,6 +69,7 @@ type Term struct {
 	BeneficiaryEntryFeePerc  uint32                  `json:"beneficiary_entry_fee_perc_x100000"`
 	RoundManagerEntryFeePerc uint32                  `json:"round_manager_entry_fee_perc_x100000"`
 	DistributionDefinitions  DistributionDefinitions `json:"distribution_definitions"`
+	DefaultValues            DefaultValues           `json:"default_values"`
 	CreatedDate              string                  `json:"created_date"`
 	UpdatedDate              string                  `json:"updated_date"`
 }
@@ -105,6 +135,7 @@ type NewTermArgs struct {
 	BeneficiaryEntryFeePerc  uint32                  `json:"beneficiary_entry_fee_perc_x100000"`
 	RoundManagerEntryFeePerc uint32                  `json:"round_manager_entry_fee_perc_x100000"`
 	DistributionDefinitions  DistributionDefinitions `json:"distribution_definitions"`
+	DefaultValues            DefaultValues           `json:"default_values"`
 }
 
 func TermToNewTermArgs(terms *Term) *NewTermArgs {
@@ -120,6 +151,7 @@ func TermToNewTermArgs(terms *Term) *NewTermArgs {
 		BeneficiaryEntryFeePerc:  terms.BeneficiaryEntryFeePerc,
 		RoundManagerEntryFeePerc: terms.RoundManagerEntryFeePerc,
 		DistributionDefinitions:  terms.DistributionDefinitions,
+		DefaultValues:            terms.DefaultValues,
 	}
 }
 
@@ -140,6 +172,7 @@ func (m *BennyfiContract) NewTermFromTermArgs(termArgs *NewTermArgs) (string, er
 	actionData["beneficiary_entry_fee_perc_x100000"] = termArgs.BeneficiaryEntryFeePerc
 	actionData["round_manager_entry_fee_perc_x100000"] = termArgs.RoundManagerEntryFeePerc
 	actionData["distribution_definitions"] = termArgs.DistributionDefinitions
+	actionData["default_values"] = termArgs.DefaultValues
 
 	return m.ExecAction(termArgs.Authorizer, "newterm", actionData)
 }
