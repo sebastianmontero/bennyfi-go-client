@@ -490,6 +490,12 @@ func (m *BennyfiContract) UnlockRounds(callCounter uint64) (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unlockrnds", actionData)
 }
 
+func (m *BennyfiContract) UnlockRound(roundId uint64) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["round_id"] = roundId
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unlockrnd", actionData)
+}
+
 func (m *BennyfiContract) UnstakeUnlockedRounds(callCounter uint64) (string, error) {
 	actionData := make(map[string]interface{})
 	actionData["call_counter"] = callCounter

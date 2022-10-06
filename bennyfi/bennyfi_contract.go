@@ -76,6 +76,7 @@ func (m *BennyfiContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) erro
 		"mvfrmsavings",
 		"sellrex",
 		"withdrawrex",
+		"unlockrnd",
 		"unlockrnds",
 		"redraw",
 		"unstakeopen",
