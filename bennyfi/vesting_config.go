@@ -124,7 +124,7 @@ func (m *VestingConfig) calculate(amount int64, paidOut int64, startTime, vestin
 }
 
 type VestingContext struct {
-	VestingConfigs map[string]*VestingTracker
+	VestingConfigs map[eos.Name]*VestingTracker
 	VestingCycle   uint16
 	VestingTime    time.Time
 	IsLastCycle    bool
@@ -139,7 +139,7 @@ func (m *VestingContext) Process(time time.Time, tracker *VestingTracker) {
 		return
 	}
 	if !m.HasConfigs() || time.Before(m.VestingTime) {
-		m.VestingConfigs = make(map[string]*VestingTracker)
+		m.VestingConfigs = make(map[eos.Name]*VestingTracker)
 		m.VestingTime = time
 	}
 	m.VestingConfigs[tracker.DistName] = tracker
@@ -163,7 +163,7 @@ func (m *VestingContext) GetOrderedVestingConfigs() []*VestingTracker {
 
 type VestingTracker struct {
 	VestingConfig *VestingConfig
-	DistName      string
+	DistName      eos.Name
 	Cycle         uint16
 }
 

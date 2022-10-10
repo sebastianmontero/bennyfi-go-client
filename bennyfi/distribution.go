@@ -283,13 +283,13 @@ func (m *Distribution) UnmarshalBinary(decoder *eos.Decoder) error {
 }
 
 type DistributionEntry struct {
-	Key   string        `json:"key"`
+	Key   eos.Name      `json:"key"`
 	Value *Distribution `json:"value"`
 }
 
 type Distributions []*DistributionEntry
 
-func (m Distributions) FindPos(key string) int {
+func (m Distributions) FindPos(key eos.Name) int {
 	for i, def := range m {
 		if def.Key == key {
 			return i
@@ -298,7 +298,7 @@ func (m Distributions) FindPos(key string) int {
 	return -1
 }
 
-func (m Distributions) Find(key string) *DistributionEntry {
+func (m Distributions) Find(key eos.Name) *DistributionEntry {
 	pos := m.FindPos(key)
 	if pos >= 0 {
 		return m[pos]
@@ -306,7 +306,7 @@ func (m Distributions) Find(key string) *DistributionEntry {
 	return nil
 }
 
-func (m Distributions) FindFT(key string) *DistributionFT {
+func (m Distributions) FindFT(key eos.Name) *DistributionFT {
 	v := m.Find(key)
 	if v != nil {
 		return v.Value.DistributionFT()
@@ -314,7 +314,7 @@ func (m Distributions) FindFT(key string) *DistributionFT {
 	return nil
 }
 
-func (m Distributions) FindNFT(key string) *DistributionNFT {
+func (m Distributions) FindNFT(key eos.Name) *DistributionNFT {
 	v := m.Find(key)
 	if v != nil {
 		return v.Value.DistributionNFT()
@@ -322,7 +322,7 @@ func (m Distributions) FindNFT(key string) *DistributionNFT {
 	return nil
 }
 
-func (p *Distributions) Upsert(key string, distribution interface{}) {
+func (p *Distributions) Upsert(key eos.Name, distribution interface{}) {
 	m := *p
 	pos := m.FindPos(key)
 	var dist *Distribution
@@ -344,7 +344,7 @@ func (p *Distributions) Upsert(key string, distribution interface{}) {
 	*p = m
 }
 
-func (p *Distributions) Remove(key string) *DistributionEntry {
+func (p *Distributions) Remove(key eos.Name) *DistributionEntry {
 	m := *p
 	pos := m.FindPos(key)
 	if pos >= 0 {

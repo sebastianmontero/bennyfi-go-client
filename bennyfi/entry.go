@@ -47,14 +47,14 @@ type Entry struct {
 	EnteredDate  string          `json:"entered_date"`
 }
 
-func (m *Entry) UpsertReturn(name string, ret interface{}) {
+func (m *Entry) UpsertReturn(name eos.Name, ret interface{}) {
 	if m.Returns == nil {
 		m.Returns = make(ReturnEntries, 0, 1)
 	}
 	m.Returns.Upsert(name, ret)
 }
 
-func (m *Entry) RemoveReturn(name string) {
+func (m *Entry) RemoveReturn(name eos.Name) {
 	m.Returns.Remove(name)
 }
 

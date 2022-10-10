@@ -187,13 +187,13 @@ func (m *Returns) UnmarshalBinary(decoder *eos.Decoder) error {
 }
 
 type ReturnsEntry struct {
-	Key   string   `json:"key"`
+	Key   eos.Name `json:"key"`
 	Value *Returns `json:"value"`
 }
 
 type ReturnEntries []*ReturnsEntry
 
-func (m ReturnEntries) FindPos(key string) int {
+func (m ReturnEntries) FindPos(key eos.Name) int {
 	for i, def := range m {
 		if def.Key == key {
 			return i
@@ -202,7 +202,7 @@ func (m ReturnEntries) FindPos(key string) int {
 	return -1
 }
 
-func (m ReturnEntries) Find(key string) *ReturnsEntry {
+func (m ReturnEntries) Find(key eos.Name) *ReturnsEntry {
 	pos := m.FindPos(key)
 	if pos >= 0 {
 		return m[pos]
@@ -210,7 +210,7 @@ func (m ReturnEntries) Find(key string) *ReturnsEntry {
 	return nil
 }
 
-func (m ReturnEntries) FindFT(key string) *ReturnsFT {
+func (m ReturnEntries) FindFT(key eos.Name) *ReturnsFT {
 	v := m.Find(key)
 	if v != nil {
 		return v.Value.ReturnsFT()
@@ -218,7 +218,7 @@ func (m ReturnEntries) FindFT(key string) *ReturnsFT {
 	return nil
 }
 
-func (m ReturnEntries) FindNFT(key string) *ReturnsNFT {
+func (m ReturnEntries) FindNFT(key eos.Name) *ReturnsNFT {
 	v := m.Find(key)
 	if v != nil {
 		return v.Value.ReturnsNFT()
@@ -226,7 +226,7 @@ func (m ReturnEntries) FindNFT(key string) *ReturnsNFT {
 	return nil
 }
 
-func (p *ReturnEntries) Upsert(key string, ret interface{}) {
+func (p *ReturnEntries) Upsert(key eos.Name, ret interface{}) {
 	m := *p
 	pos := m.FindPos(key)
 	defEntry := &ReturnsEntry{
@@ -241,7 +241,7 @@ func (p *ReturnEntries) Upsert(key string, ret interface{}) {
 	*p = m
 }
 
-func (p *ReturnEntries) Remove(key string) *ReturnsEntry {
+func (p *ReturnEntries) Remove(key eos.Name) *ReturnsEntry {
 	m := *p
 	pos := m.FindPos(key)
 	if pos >= 0 {

@@ -28,8 +28,8 @@ import (
 )
 
 type TotalEarlyExitRewardFeeEntry struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
+	Key   eos.Name `json:"key"`
+	Value string   `json:"value"`
 }
 
 func (m *TotalEarlyExitRewardFeeEntry) GetTotalEarlyExitRewardFee() eos.Asset {
@@ -42,7 +42,7 @@ func (m *TotalEarlyExitRewardFeeEntry) GetTotalEarlyExitRewardFee() eos.Asset {
 
 type TotalEarlyExitRewardFees []*TotalEarlyExitRewardFeeEntry
 
-func (m TotalEarlyExitRewardFees) FindPos(key string) int {
+func (m TotalEarlyExitRewardFees) FindPos(key eos.Name) int {
 	for i, def := range m {
 		if def.Key == key {
 			return i
@@ -51,7 +51,7 @@ func (m TotalEarlyExitRewardFees) FindPos(key string) int {
 	return -1
 }
 
-func (m TotalEarlyExitRewardFees) Find(key string) *TotalEarlyExitRewardFeeEntry {
+func (m TotalEarlyExitRewardFees) Find(key eos.Name) *TotalEarlyExitRewardFeeEntry {
 	pos := m.FindPos(key)
 	if pos >= 0 {
 		return m[pos]
@@ -59,7 +59,7 @@ func (m TotalEarlyExitRewardFees) Find(key string) *TotalEarlyExitRewardFeeEntry
 	return nil
 }
 
-func (p *TotalEarlyExitRewardFees) Upsert(key string, fee string) {
+func (p *TotalEarlyExitRewardFees) Upsert(key eos.Name, fee string) {
 	m := *p
 	pos := m.FindPos(key)
 	entry := &TotalEarlyExitRewardFeeEntry{
@@ -74,7 +74,7 @@ func (p *TotalEarlyExitRewardFees) Upsert(key string, fee string) {
 	*p = m
 }
 
-func (p *TotalEarlyExitRewardFees) Remove(key string) *TotalEarlyExitRewardFeeEntry {
+func (p *TotalEarlyExitRewardFees) Remove(key eos.Name) *TotalEarlyExitRewardFeeEntry {
 	m := *p
 	pos := m.FindPos(key)
 	if pos >= 0 {

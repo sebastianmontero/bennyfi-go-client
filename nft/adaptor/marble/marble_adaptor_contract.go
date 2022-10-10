@@ -23,7 +23,6 @@ package marble
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/eoscanada/eos-go"
 	"github.com/sebastianmontero/bennyfi-go-client/bennyfi"
@@ -42,12 +41,14 @@ var (
 )
 
 type Reward struct {
+	RewardID     uint64          `json:"reward_id"`
 	RoundID      uint64          `json:"round_id"`
+	Distribution eos.Name        `json:"distribution"`
 	Description  string          `json:"description"`
 	GroupName    eos.Name        `json:"group_name"`
 	FrameName    eos.Name        `json:"frame_name"`
 	CurrentState eos.Name        `json:"current_state"`
-	Beneficiary  eos.AccountName `json:"beneficiary"`
+	Funder       eos.AccountName `json:"funder"`
 	NFTContract  eos.AccountName `json:"nft_contract"`
 	CreatedDate  string          `json:"created_date"`
 	UpdatedDate  string          `json:"updated_date"`
@@ -55,23 +56,25 @@ type Reward struct {
 
 func (m *Reward) NewRewardArgs() *NewRewardArgs {
 	return &NewRewardArgs{
-		RoundID:     m.RoundID,
-		Description: m.Description,
-		GroupName:   m.GroupName,
-		FrameName:   m.FrameName,
-		Beneficiary: m.Beneficiary,
-		NFTContract: m.NFTContract,
+		RoundID:      m.RoundID,
+		Distribution: m.Distribution,
+		Description:  m.Description,
+		GroupName:    m.GroupName,
+		FrameName:    m.FrameName,
+		Funder:       m.Funder,
+		NFTContract:  m.NFTContract,
 	}
 }
 
 // Order of struct properties for action must be on the same order as the action parameters for the call to succeed
 type NewRewardArgs struct {
-	Beneficiary eos.AccountName `json:"beneficiary"`
-	RoundID     uint64          `json:"round_id"`
-	Description string          `json:"description"`
-	GroupName   eos.Name        `json:"group_name"`
-	FrameName   eos.Name        `json:"frame_name"`
-	NFTContract eos.AccountName `json:"nft_contract"`
+	Funder       eos.AccountName `json:"funder"`
+	RoundID      uint64          `json:"round_id"`
+	Distribution eos.Name        `json:"distribution"`
+	Description  string          `json:"description"`
+	GroupName    eos.Name        `json:"group_name"`
+	FrameName    eos.Name        `json:"frame_name"`
+	NFTContract  eos.AccountName `json:"nft_contract"`
 }
 
 type MarbleAdaptorContract struct {
@@ -97,7 +100,7 @@ func (m *MarbleAdaptorContract) SetReward(reward *Reward) (string, error) {
 }
 
 func (m *MarbleAdaptorContract) SetRewardFromArgs(args *NewRewardArgs) (string, error) {
-	return m.ExecAction(args.Beneficiary, "setreward", args)
+	return m.ExecAction(args.Funder, "setreward", args)
 }
 
 func (m *MarbleAdaptorContract) Verify(args *bennyfi.NFTActionParams, caller eos.AccountName) (string, error) {
@@ -116,15 +119,22 @@ func (m *MarbleAdaptorContract) Transfer(args *bennyfi.NFTActionParams, caller e
 	return m.ExecAction(caller, "transfer", args)
 }
 
-func (m *MarbleAdaptorContract) GetRewardByRound(roundId uint64) (*Reward, error) {
+func (m *MarbleAdaptorContract) GetRewardByRoundDistribution(roundId uint64, distribution eos.Name) (*Reward, error) {
+
+	rndAndDist, err := m.EOS.GetComposedIndexValue(roundId, distribution)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate composed index, err: %v", err)
+	}
 	request := &eos.GetTableRowsRequest{
+		Index:      "3",
+		KeyType:    "i128",
 		Limit:      1,
-		LowerBound: strconv.FormatUint(roundId, 10),
-		UpperBound: strconv.FormatUint(roundId, 10),
+		LowerBound: rndAndDist,
+		UpperBound: rndAndDist,
 	}
 	rewards, err := m.GetRewardsReq(request)
 	if err != nil {
-		return nil, fmt.Errorf("failed getting round by id: %v, error: %v", roundId, err)
+		return nil, fmt.Errorf("failed getting round by id: %v and distribution: %v, error: %v", roundId, distribution, err)
 	}
 	if len(rewards) > 0 {
 		return rewards[0], nil

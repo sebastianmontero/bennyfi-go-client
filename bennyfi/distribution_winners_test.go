@@ -10,7 +10,7 @@ import (
 
 func TestWinnersUpsert(t *testing.T) {
 	actual := bennyfi.Winners{}
-	key1 := "key1"
+	key1 := eos.Name("key1")
 	winnerFT := bennyfi.NewWinnerFT(eos.AN("account1"), "10.0000 TLOS", 1)
 
 	distWinnersFT := bennyfi.DistributionWinnersFT{winnerFT}
@@ -29,7 +29,7 @@ func TestWinnersUpsert(t *testing.T) {
 	actual.Upsert(key1, winnerFT)
 	test.AssertWinners(t, actual, expected)
 
-	key2 := "key2"
+	key2 := eos.Name("key2")
 	winnerNFT := bennyfi.NewWinnerNFT(eos.AN("account1"), 2, 1)
 	distWinnersNFT := bennyfi.DistributionWinnersNFT{winnerNFT}
 	expected = append(expected, &bennyfi.DistributionWinnersEntry{

@@ -32,22 +32,24 @@ import (
 )
 
 var (
-	DistributionMain         = "main"
-	DistributionProjectToken = "project-token"
-	DistributionProjectNFT   = "project-nft"
-	OrderedDistributionNames = []string{DistributionMain, DistributionProjectNFT, DistributionProjectToken}
+	DistributionMainToken    = eos.Name("maintoken")
+	DistributionMainNFT      = eos.Name("mainnft")
+	DistributionProjectToken = eos.Name("projecttoken")
+	DistributionProjectNFT   = eos.Name("projectnft")
+	OrderedDistributionNames = []eos.Name{DistributionMainNFT, DistributionMainToken, DistributionProjectNFT, DistributionProjectToken}
 )
 
-func IsFTDistribution(distName string) bool {
-	return distName == DistributionMain || distName == DistributionProjectToken
+func IsFTDistribution(distName eos.Name) bool {
+	return distName == DistributionMainToken || distName == DistributionProjectToken
 }
 
-func IsNFTDistribution(distName string) bool {
-	return distName == DistributionProjectNFT
+func IsNFTDistribution(distName eos.Name) bool {
+	return distName == DistributionProjectNFT || distName == DistributionMainNFT
 }
 
 type IDistributionDefinition interface {
 	GetNumWinners() int
+	HasBeneficiaryReward() bool
 	HasVesting() bool
 	GetVesting() *VestingConfig
 }
@@ -75,6 +77,10 @@ type DistributionDefinitionFT struct {
 
 func (m *DistributionDefinitionFT) GetNumWinners() int {
 	return len(m.WinnersPerc)
+}
+
+func (m *DistributionDefinitionFT) HasBeneficiaryReward() bool {
+	return m.BeneficiaryPerc > 0
 }
 
 func (m *DistributionDefinitionFT) GetReward() eos.Asset {
@@ -161,6 +167,10 @@ func (m *DistributionDefinitionNFT) GetNumWinners() int {
 	return len(m.WinnerPrizes)
 }
 
+func (m *DistributionDefinitionNFT) HasBeneficiaryReward() bool {
+	return m.BeneficiaryReward > 0
+}
+
 var DistributionDefinitionVariant = eos.NewVariantDefinition([]eos.VariantType{
 	{Name: "DistributionDefinitionFT", Type: &DistributionDefinitionFT{}},
 	{Name: "DistributionDefinitionNFT", Type: &DistributionDefinitionNFT{}},
@@ -176,6 +186,10 @@ type DistributionDefinition struct {
 
 func (m *DistributionDefinition) GetNumWinners() int {
 	return m.Impl.(IDistributionDefinition).GetNumWinners()
+}
+
+func (m *DistributionDefinition) HasBeneficiaryReward() bool {
+	return m.Impl.(IDistributionDefinition).HasBeneficiaryReward()
 }
 
 func (m *DistributionDefinition) HasVesting() bool {
@@ -236,13 +250,13 @@ func (m *DistributionDefinition) UnmarshalBinary(decoder *eos.Decoder) error {
 }
 
 type DistributionDefinitionEntry struct {
-	Key   string                  `json:"key"`
+	Key   eos.Name                `json:"key"`
 	Value *DistributionDefinition `json:"value"`
 }
 
 type DistributionDefinitions []*DistributionDefinitionEntry
 
-func (m DistributionDefinitions) FindPos(key string) int {
+func (m DistributionDefinitions) FindPos(key eos.Name) int {
 	for i, def := range m {
 		if def.Key == key {
 			return i
@@ -251,11 +265,11 @@ func (m DistributionDefinitions) FindPos(key string) int {
 	return -1
 }
 
-func (m DistributionDefinitions) Has(key string) bool {
+func (m DistributionDefinitions) Has(key eos.Name) bool {
 	return m.FindPos(key) >= 0
 }
 
-func (m DistributionDefinitions) Find(key string) *DistributionDefinitionEntry {
+func (m DistributionDefinitions) Find(key eos.Name) *DistributionDefinitionEntry {
 	pos := m.FindPos(key)
 	if pos >= 0 {
 		return m[pos]
@@ -263,7 +277,7 @@ func (m DistributionDefinitions) Find(key string) *DistributionDefinitionEntry {
 	return nil
 }
 
-func (m DistributionDefinitions) FindFT(key string) *DistributionDefinitionFT {
+func (m DistributionDefinitions) FindFT(key eos.Name) *DistributionDefinitionFT {
 	v := m.Find(key)
 	if v != nil {
 		return v.Value.DistributionDefinitionFT()
@@ -271,7 +285,7 @@ func (m DistributionDefinitions) FindFT(key string) *DistributionDefinitionFT {
 	return nil
 }
 
-func (m DistributionDefinitions) FindNFT(key string) *DistributionDefinitionNFT {
+func (m DistributionDefinitions) FindNFT(key eos.Name) *DistributionDefinitionNFT {
 	v := m.Find(key)
 	if v != nil {
 		return v.Value.DistributionDefinitionNFT()
@@ -279,7 +293,7 @@ func (m DistributionDefinitions) FindNFT(key string) *DistributionDefinitionNFT 
 	return nil
 }
 
-//Used during testing to make sure dist definitions are ordered as they are oredered in the c++ map
+// Used during testing to make sure dist definitions are ordered as they are oredered in the c++ map
 func (m DistributionDefinitions) GetOrderedDistDefs() DistributionDefinitions {
 	dists := make(DistributionDefinitions, 0)
 	for _, name := range OrderedDistributionNames {
@@ -291,7 +305,7 @@ func (m DistributionDefinitions) GetOrderedDistDefs() DistributionDefinitions {
 	return dists
 }
 
-func (p *DistributionDefinitions) Upsert(key string, definition interface{}) {
+func (p *DistributionDefinitions) Upsert(key eos.Name, definition interface{}) {
 	m := *p
 	pos := m.FindPos(key)
 	defEntry := &DistributionDefinitionEntry{
@@ -306,7 +320,7 @@ func (p *DistributionDefinitions) Upsert(key string, definition interface{}) {
 	*p = m
 }
 
-func (p *DistributionDefinitions) Remove(key string) *DistributionDefinitionEntry {
+func (p *DistributionDefinitions) Remove(key eos.Name) *DistributionDefinitionEntry {
 	m := *p
 	pos := m.FindPos(key)
 	if pos >= 0 {
@@ -319,7 +333,7 @@ func (p *DistributionDefinitions) Remove(key string) *DistributionDefinitionEntr
 	return nil
 }
 
-func (m DistributionDefinitions) GetNumWinners(key string) int {
+func (m DistributionDefinitions) GetNumWinners(key eos.Name) int {
 
 	entry := m.Find(key)
 	if entry == nil {

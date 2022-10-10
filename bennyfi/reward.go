@@ -171,8 +171,8 @@ func (m *Reward) UnmarshalBinary(decoder *eos.Decoder) error {
 }
 
 type RewardEntry struct {
-	Key   string  `json:"key"`
-	Value *Reward `json:"value"`
+	Key   eos.Name `json:"key"`
+	Value *Reward  `json:"value"`
 }
 
 func (m *RewardEntry) Clone() *RewardEntry {
@@ -183,8 +183,8 @@ func (m *RewardEntry) Clone() *RewardEntry {
 }
 
 type FTRewardArgEntry struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
+	Key   eos.Name `json:"key"`
+	Value string   `json:"value"`
 }
 
 func (m *FTRewardArgEntry) String() string {
@@ -227,7 +227,7 @@ func (m Rewards) GetRewardsFT() []*RewardFT {
 	return rewardsFT
 }
 
-func (m Rewards) FindPos(key string) int {
+func (m Rewards) FindPos(key eos.Name) int {
 	for i, def := range m {
 		if def.Key == key {
 			return i
@@ -236,7 +236,7 @@ func (m Rewards) FindPos(key string) int {
 	return -1
 }
 
-func (m Rewards) Find(key string) *RewardEntry {
+func (m Rewards) Find(key eos.Name) *RewardEntry {
 	pos := m.FindPos(key)
 	if pos >= 0 {
 		return m[pos]
@@ -244,7 +244,11 @@ func (m Rewards) Find(key string) *RewardEntry {
 	return nil
 }
 
-func (m Rewards) FindFT(key string) *RewardFT {
+func (m Rewards) Has(key eos.Name) bool {
+	return m.Find(key) != nil
+}
+
+func (m Rewards) FindFT(key eos.Name) *RewardFT {
 	v := m.Find(key)
 	if v != nil {
 		return v.Value.RewardFT()
@@ -252,7 +256,7 @@ func (m Rewards) FindFT(key string) *RewardFT {
 	return nil
 }
 
-func (m Rewards) FindNFT(key string) *RewardNFT {
+func (m Rewards) FindNFT(key eos.Name) *RewardNFT {
 	v := m.Find(key)
 	if v != nil {
 		return v.Value.RewardNFT()
@@ -260,7 +264,7 @@ func (m Rewards) FindNFT(key string) *RewardNFT {
 	return nil
 }
 
-func (p *Rewards) Upsert(key string, reward interface{}) {
+func (p *Rewards) Upsert(key eos.Name, reward interface{}) {
 	m := *p
 	pos := m.FindPos(key)
 	entry := &RewardEntry{
@@ -275,7 +279,7 @@ func (p *Rewards) Upsert(key string, reward interface{}) {
 	*p = m
 }
 
-func (p *Rewards) Remove(key string) *RewardEntry {
+func (p *Rewards) Remove(key eos.Name) *RewardEntry {
 	m := *p
 	pos := m.FindPos(key)
 	if pos >= 0 {
@@ -291,7 +295,7 @@ func (p *Rewards) Remove(key string) *RewardEntry {
 func (m Rewards) UpdateFundingStateAll(state eos.Name) {
 	for _, def := range m {
 		r := def.Value
-		if r.GetFundingState() != RewardFundingStateRex {
+		if r.GetFundingState() != FundingStateRex {
 			r.SetFundingState(state)
 		}
 	}
@@ -300,14 +304,14 @@ func (m Rewards) UpdateFundingStateAll(state eos.Name) {
 func (m Rewards) IsFundingPending() bool {
 	for _, def := range m {
 		r := def.Value
-		if r.GetFundingState() == RewardFundingStatePending {
+		if r.GetFundingState() == FundingStatePending {
 			return true
 		}
 	}
 	return false
 }
 
-func (m Rewards) UpdateFundingState(dist string, state eos.Name) {
+func (m Rewards) UpdateFundingState(dist eos.Name, state eos.Name) {
 	m.Find(dist).Value.SetFundingState(state)
 }
 

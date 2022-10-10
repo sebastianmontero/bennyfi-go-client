@@ -82,14 +82,14 @@ func (m *Term) GetEntryStake() eos.Asset {
 	return entryStake
 }
 
-func (m *Term) UpsertDistributionDef(name string, definition interface{}) {
+func (m *Term) UpsertDistributionDef(name eos.Name, definition interface{}) {
 	if m.DistributionDefinitions == nil {
 		m.DistributionDefinitions = make(DistributionDefinitions, 0, 1)
 	}
 	m.DistributionDefinitions.Upsert(name, definition)
 }
 
-func (m *Term) RemoveDistributionDef(name string) {
+func (m *Term) RemoveDistributionDef(name eos.Name) {
 	m.DistributionDefinitions.Remove(name)
 }
 
@@ -115,11 +115,12 @@ func (m *Term) GetInitializedWinners() Winners {
 }
 
 func (m *Term) RequiresBeneficiary() bool {
-	mainDist := m.DistributionDefinitions.FindFT(DistributionMain)
-	if mainDist == nil {
-		panic("invalid terms they don't have a main distribution definition")
+	for _, distDef := range m.DistributionDefinitions {
+		if distDef.Value.HasBeneficiaryReward() {
+			return true
+		}
 	}
-	return mainDist.BeneficiaryPerc > 0 || m.DistributionDefinitions.Has(DistributionProjectToken) || m.DistributionDefinitions.Has(DistributionProjectNFT)
+	return m.DistributionDefinitions.Has(DistributionProjectToken) || m.DistributionDefinitions.Has(DistributionProjectNFT)
 }
 
 type NewTermArgs struct {

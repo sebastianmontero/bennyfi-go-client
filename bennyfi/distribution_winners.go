@@ -215,13 +215,13 @@ func (m *DistributionWinners) UnmarshalBinary(decoder *eos.Decoder) error {
 }
 
 type DistributionWinnersEntry struct {
-	Key   string               `json:"key"`
+	Key   eos.Name             `json:"key"`
 	Value *DistributionWinners `json:"value"`
 }
 
 type Winners []*DistributionWinnersEntry
 
-func (m Winners) FindPos(key string) int {
+func (m Winners) FindPos(key eos.Name) int {
 	for i, def := range m {
 		if def.Key == key {
 			return i
@@ -230,7 +230,7 @@ func (m Winners) FindPos(key string) int {
 	return -1
 }
 
-func (m Winners) Find(key string) *DistributionWinnersEntry {
+func (m Winners) Find(key eos.Name) *DistributionWinnersEntry {
 	pos := m.FindPos(key)
 	if pos >= 0 {
 		return m[pos]
@@ -238,11 +238,11 @@ func (m Winners) Find(key string) *DistributionWinnersEntry {
 	return nil
 }
 
-func (m Winners) HasWinners(key string) bool {
+func (m Winners) HasWinners(key eos.Name) bool {
 	return m.NumWinners(key) > 0
 }
 
-func (m Winners) NumWinners(key string) int {
+func (m Winners) NumWinners(key eos.Name) int {
 	we := m.Find(key)
 	if we != nil {
 		return we.Value.Len()
@@ -250,7 +250,7 @@ func (m Winners) NumWinners(key string) int {
 	return 0
 }
 
-func (m Winners) FindFT(key string) DistributionWinnersFT {
+func (m Winners) FindFT(key eos.Name) DistributionWinnersFT {
 	v := m.Find(key)
 	if v != nil {
 		return v.Value.DistributionWinnersFT()
@@ -258,7 +258,7 @@ func (m Winners) FindFT(key string) DistributionWinnersFT {
 	return nil
 }
 
-func (m Winners) FindNFT(key string) DistributionWinnersNFT {
+func (m Winners) FindNFT(key eos.Name) DistributionWinnersNFT {
 	v := m.Find(key)
 	if v != nil {
 		return v.Value.DistributionWinnersNFT()
@@ -266,7 +266,7 @@ func (m Winners) FindNFT(key string) DistributionWinnersNFT {
 	return nil
 }
 
-func (m Winners) FindWinnerFT(key string, account interface{}) *WinnerFT {
+func (m Winners) FindWinnerFT(key eos.Name, account interface{}) *WinnerFT {
 	v := m.Find(key)
 	if v != nil {
 		return v.Value.FindFT(account)
@@ -274,7 +274,7 @@ func (m Winners) FindWinnerFT(key string, account interface{}) *WinnerFT {
 	return nil
 }
 
-func (m Winners) FindWinnerNFT(key string, account interface{}) *WinnerNFT {
+func (m Winners) FindWinnerNFT(key eos.Name, account interface{}) *WinnerNFT {
 	v := m.Find(key)
 	if v != nil {
 		return v.Value.FindNFT(account)
@@ -282,7 +282,7 @@ func (m Winners) FindWinnerNFT(key string, account interface{}) *WinnerNFT {
 	return nil
 }
 
-func (p *Winners) Upsert(key string, winner interface{}) {
+func (p *Winners) Upsert(key eos.Name, winner interface{}) {
 	m := *p
 	pos := m.FindPos(key)
 	if pos >= 0 {
@@ -297,7 +297,7 @@ func (p *Winners) Upsert(key string, winner interface{}) {
 	*p = m
 }
 
-func (p *Winners) Remove(key string) *DistributionWinnersEntry {
+func (p *Winners) Remove(key eos.Name) *DistributionWinnersEntry {
 	m := *p
 	pos := m.FindPos(key)
 	if pos >= 0 {
