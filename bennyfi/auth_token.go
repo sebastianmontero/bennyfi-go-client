@@ -22,6 +22,7 @@
 package bennyfi
 
 import (
+	"encoding/json"
 	"fmt"
 
 	eos "github.com/eoscanada/eos-go"
@@ -66,7 +67,17 @@ type AuthToken struct {
 	Authorizer    eos.AccountName `json:"authorizer"`
 	Symbol        string          `json:"symbol"`
 	TokenContract eos.AccountName `json:"token_contract"`
+	ArtifactCID   string          `json:"artifact_cid"`
 	TokenRoles    TokenRoles      `json:"token_roles"`
+}
+
+func (m *AuthToken) String() string {
+	j, err := json.Marshal(m)
+	if err != nil {
+		panic(fmt.Sprintf("Failed marshalling auth token, error: %v", err))
+	}
+	return string(j)
+
 }
 
 type SetTokenRoleArgs struct {
@@ -97,6 +108,7 @@ func (m *BennyfiContract) SetToken(authToken *AuthToken) (string, error) {
 	actionData["authorizer"] = authToken.Authorizer
 	actionData["symbol"] = authToken.Symbol
 	actionData["token_contract"] = authToken.TokenContract
+	actionData["artifact_cid"] = authToken.ArtifactCID
 	actionData["token_roles"] = authToken.TokenRoles
 
 	return m.ExecAction(authToken.Authorizer, "settoken", actionData)
