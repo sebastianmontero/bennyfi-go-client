@@ -215,8 +215,8 @@ func (m *DistributionWinners) UnmarshalBinary(decoder *eos.Decoder) error {
 }
 
 type DistributionWinnersEntry struct {
-	Key   eos.Name             `json:"key"`
-	Value *DistributionWinners `json:"value"`
+	Key   eos.Name             `json:"first"`
+	Value *DistributionWinners `json:"second"`
 }
 
 type Winners []*DistributionWinnersEntry

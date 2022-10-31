@@ -171,8 +171,8 @@ func (m *Reward) UnmarshalBinary(decoder *eos.Decoder) error {
 }
 
 type RewardEntry struct {
-	Key   eos.Name `json:"key"`
-	Value *Reward  `json:"value"`
+	Key   eos.Name `json:"first"`
+	Value *Reward  `json:"second"`
 }
 
 func (m *RewardEntry) Clone() *RewardEntry {
@@ -183,8 +183,8 @@ func (m *RewardEntry) Clone() *RewardEntry {
 }
 
 type FTRewardArgEntry struct {
-	Key   eos.Name `json:"key"`
-	Value string   `json:"value"`
+	Key   eos.Name `json:"first"`
+	Value string   `json:"second"`
 }
 
 func (m *FTRewardArgEntry) String() string {

@@ -28,8 +28,8 @@ import (
 )
 
 type ConfigEntry struct {
-	Key   string         `json:"key"`
-	Value *dto.FlexValue `json:"value"`
+	Key   string         `json:"first"`
+	Value *dto.FlexValue `json:"second"`
 }
 
 type Config []*ConfigEntry

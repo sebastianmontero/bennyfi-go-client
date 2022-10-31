@@ -45,8 +45,8 @@ type TokenLimits struct {
 }
 
 type TokenRole struct {
-	Key   eos.Name     `json:"key"`
-	Value *TokenLimits `json:"value"`
+	Key   eos.Name     `json:"first"`
+	Value *TokenLimits `json:"second"`
 }
 
 func NewTokenRole(tokenRole string, minValue, maxValue eos.Int64, symbol eos.Symbol) *TokenRole {

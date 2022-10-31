@@ -250,8 +250,8 @@ func (m *DistributionDefinition) UnmarshalBinary(decoder *eos.Decoder) error {
 }
 
 type DistributionDefinitionEntry struct {
-	Key   eos.Name                `json:"key"`
-	Value *DistributionDefinition `json:"value"`
+	Key   eos.Name                `json:"first"`
+	Value *DistributionDefinition `json:"second"`
 }
 
 type DistributionDefinitions []*DistributionDefinitionEntry

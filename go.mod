@@ -9,3 +9,4 @@ require (
 )
 
 // replace github.com/sebastianmontero/eos-go-toolbox => ../eos-go-toolbox
+// replace github.com/eoscanada/eos-go => ../eos-go

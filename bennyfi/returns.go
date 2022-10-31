@@ -187,8 +187,8 @@ func (m *Returns) UnmarshalBinary(decoder *eos.Decoder) error {
 }
 
 type ReturnsEntry struct {
-	Key   eos.Name `json:"key"`
-	Value *Returns `json:"value"`
+	Key   eos.Name `json:"first"`
+	Value *Returns `json:"second"`
 }
 
 type ReturnEntries []*ReturnsEntry

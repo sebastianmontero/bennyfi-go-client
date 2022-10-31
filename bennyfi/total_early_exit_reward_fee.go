@@ -28,8 +28,8 @@ import (
 )
 
 type TotalEarlyExitRewardFeeEntry struct {
-	Key   eos.Name `json:"key"`
-	Value string   `json:"value"`
+	Key   eos.Name `json:"first"`
+	Value string   `json:"second"`
 }
 
 func (m *TotalEarlyExitRewardFeeEntry) GetTotalEarlyExitRewardFee() eos.Asset {

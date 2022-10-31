@@ -152,8 +152,8 @@ func NewInitArgs(initialAdmin eos.AccountName) *InitArgs {
 }
 
 type TagEntry struct {
-	Key   eos.Name `json:"key"`
-	Value string   `json:"value"`
+	Key   eos.Name `json:"first"`
+	Value string   `json:"second"`
 }
 
 func (m *TagEntry) String() string {
@@ -161,8 +161,8 @@ func (m *TagEntry) String() string {
 }
 
 type AttributeEntry struct {
-	Key   eos.Name `json:"key"`
-	Value int64    `json:"value"`
+	Key   eos.Name `json:"first"`
+	Value int64    `json:"second"`
 }
 
 func (m *AttributeEntry) String() string {
