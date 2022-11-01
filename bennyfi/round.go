@@ -39,7 +39,7 @@ var (
 	// RoundOpen                        = eos.Name("roundopen")
 	RoundClosed                      = eos.Name("closed")
 	RoundUnlocked                    = eos.Name("unlocked")
-	RoundTimedOut                    = eos.Name("cancel")
+	RoundTimedOut                    = eos.Name("cancelled")
 	RoundStakeStateNotStarted        = eos.Name("notstarted")
 	RoundStakeStateStaked            = eos.Name("staked")
 	RoundStakeStateUnstakingTimedOut = eos.Name("unstakingtmo")
