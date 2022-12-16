@@ -39,12 +39,13 @@ var (
 )
 
 type Auth struct {
-	Authorizer  eos.AccountName `json:"authorizer"`
-	Account     eos.AccountName `json:"account"`
-	Level       uint64          `json:"auth_level"`
-	DisplayName string          `json:"display_name"`
-	ArtifactCID string          `json:"artifact_cid"`
-	Notes       string          `json:"notes"`
+	Authorizer   eos.AccountName `json:"authorizer"`
+	Account      eos.AccountName `json:"account"`
+	Level        uint64          `json:"auth_level"`
+	DisplayName  string          `json:"display_name"`
+	ArtifactCID  string          `json:"artifact_cid"`
+	Notes        string          `json:"notes"`
+	StakedAmount string          `json:"staked_amount"`
 }
 
 func (m *BennyfiContract) SetAuth(auth *Auth) (string, error) {
@@ -85,6 +86,28 @@ func (m *BennyfiContract) EraseAuth(authorizer, account eos.AccountName) (string
 	actionData["authorizer"] = authorizer
 	actionData["account"] = account
 	_, err := m.Contract.ExecAction(string(authorizer), "eraseauth", actionData)
+	if err != nil {
+		return "", err
+	}
+	return "", nil
+}
+
+func (m *BennyfiContract) StakeAuth(account eos.AccountName, level uint64) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["account"] = account
+	actionData["auth_level"] = level
+	_, err := m.Contract.ExecAction(string(account), "stakeauth", actionData)
+	if err != nil {
+		return "", err
+	}
+	return "", nil
+}
+
+func (m *BennyfiContract) UnstakeAuth(authorizer, account eos.AccountName) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["authorizer"] = authorizer
+	actionData["account"] = account
+	_, err := m.Contract.ExecAction(string(authorizer), "unstakeauth", actionData)
 	if err != nil {
 		return "", err
 	}

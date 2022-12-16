@@ -58,6 +58,23 @@ type NewGroupArgs struct {
 	SupplyCap   uint64          `json:"supply_cap"`
 }
 
+func (m *NewGroupArgs) String() string {
+	return fmt.Sprintf(`
+		Item{
+			Title: %v,
+			Description: %v,
+			GroupName: %v,
+			Manager: %v,
+			SupplyCap: %v
+		}
+	`,
+		m.Title,
+		m.Description,
+		m.GroupName,
+		m.Manager,
+		m.SupplyCap)
+}
+
 type Item struct {
 	Serial uint64          `json:"serial"`
 	Group  eos.Name        `json:"group"`
@@ -177,6 +194,21 @@ type Frame struct {
 	Group             eos.Name   `json:"group"`
 	DefaultTags       Tags       `json:"default_tags"`
 	DefaultAttributes Attributes `json:"default_attributes"`
+}
+
+func (m *Frame) String() string {
+	return fmt.Sprintf(`
+		Item{
+			FrameName: %v,
+			Group: %v,
+			DefaultTags: %v,
+			DefaultAttributes: %v,
+		}
+	`,
+		m.FrameName,
+		m.Group,
+		m.DefaultTags,
+		m.DefaultAttributes)
 }
 
 type QuickBuildArgs struct {
