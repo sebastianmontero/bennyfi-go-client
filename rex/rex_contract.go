@@ -41,7 +41,8 @@ var (
 )
 
 type Config struct {
-	LendableIncrement uint64 `json:"lendable_increment"`
+	TokenContract     eos.Name `json:"token_contract"`
+	LendableIncrement uint64   `json:"lendable_increment"`
 }
 
 type Balance struct {
@@ -80,13 +81,33 @@ func (m *RexContract) ExecAction(permissionLevel interface{}, action string, act
 	return fmt.Sprintf("Tx ID: %v", resp.TransactionID), nil
 }
 
-func (m *RexContract) Init(totalLendable, totalRex eos.Asset, lendableIncrement uint64) (string, error) {
+func (m *RexContract) Init(totalLendable, totalRex eos.Asset, lendableIncrement uint64, tokenContract eos.Name) (string, error) {
 	actionData := make(map[string]interface{})
 	actionData["total_lendable"] = totalLendable
 	actionData["total_rex"] = totalRex
 	actionData["lendable_increment"] = lendableIncrement
+	actionData["token_contract"] = tokenContract
 
 	return m.ExecAction(m.ContractName, "init", actionData)
+}
+
+func (m *RexContract) InitConf(lendableIncrement uint64, tokenContract eos.Name) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["lendable_increment"] = lendableIncrement
+	actionData["token_contract"] = tokenContract
+
+	return m.ExecAction(m.ContractName, "initconf", actionData)
+}
+
+func (m *RexContract) SetIncrement(lendableIncrement uint64) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["lendable_increment"] = lendableIncrement
+
+	return m.ExecAction(m.ContractName, "setincrement", actionData)
+}
+
+func (m *RexContract) ResetConf() (string, error) {
+	return m.ExecAction(m.ContractName, "resetconf", nil)
 }
 
 func (m *RexContract) Deposit(owner eos.AccountName, amount eos.Asset) (string, error) {
