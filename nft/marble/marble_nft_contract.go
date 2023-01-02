@@ -229,6 +229,7 @@ func NewQuickBuildArgs(frameName eos.Name, to eos.AccountName) *QuickBuildArgs {
 
 type MarbleNFTContract struct {
 	*contract.Contract
+	*contract.SettingsContract
 }
 
 func NewMarbleNFTContract(eos *service.EOS, contractName string) *MarbleNFTContract {
@@ -237,6 +238,7 @@ func NewMarbleNFTContract(eos *service.EOS, contractName string) *MarbleNFTContr
 			EOS:          eos,
 			ContractName: contractName,
 		},
+		contract.NewSettingsContract(eos, contractName),
 	}
 }
 

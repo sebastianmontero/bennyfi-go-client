@@ -114,6 +114,16 @@ func (m *BennyfiContract) UnstakeAuth(authorizer, account eos.AccountName) (stri
 	return "", nil
 }
 
+func (m *BennyfiContract) CanCreateToken(user eos.AccountName) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["user"] = user
+	_, err := m.Contract.ExecAction(string(user), "cancreatetkn", actionData)
+	if err != nil {
+		return "", err
+	}
+	return "", nil
+}
+
 func (m *BennyfiContract) GetAuths() ([]Auth, error) {
 	return m.GetAuthsReq(nil)
 }
