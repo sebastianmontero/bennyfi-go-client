@@ -34,6 +34,14 @@ type ConfigEntry struct {
 
 type Config []*ConfigEntry
 
+func (m Config) ToMap() map[string]interface{} {
+	configMap := make(map[string]interface{})
+	for _, configEntry := range m {
+		configMap[configEntry.Key] = configEntry.Value.Impl
+	}
+	return configMap
+}
+
 func (m Config) HasConfig() bool {
 	return len(m) > 0
 }

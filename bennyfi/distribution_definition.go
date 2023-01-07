@@ -58,6 +58,16 @@ type BaseDistributionDefinition struct {
 	*VestingConfig `json:"vesting_config"`
 }
 
+type BaseDistributionDefinitionCustomJSON struct {
+	VestingConfig map[string]interface{} `json:"vesting_config"`
+}
+
+func (m BaseDistributionDefinition) ToCustomJSON() BaseDistributionDefinitionCustomJSON {
+	return BaseDistributionDefinitionCustomJSON{
+		VestingConfig: m.VestingConfig.ToMap(),
+	}
+}
+
 func (m *BaseDistributionDefinition) HasVesting() bool {
 	return m.VestingConfig.HasVesting()
 }
@@ -73,6 +83,18 @@ type DistributionDefinitionFT struct {
 	RoundManagerPerc    uint32   `json:"round_manager_perc_x100000"`
 	WinnersPerc         []uint32 `json:"winners_perc_x100000"`
 	Reward              string   `json:"reward"`
+}
+
+type DistributionDefinitionFTCustomJSON struct {
+	BaseDistributionDefinitionCustomJSON
+	DistributionDefinitionFT
+}
+
+func (m DistributionDefinitionFT) ToCustomJSON() DistributionDefinitionFTCustomJSON {
+	return DistributionDefinitionFTCustomJSON{
+		BaseDistributionDefinitionCustomJSON: m.BaseDistributionDefinition.ToCustomJSON(),
+		DistributionDefinitionFT:             m,
+	}
 }
 
 func (m *DistributionDefinitionFT) GetNumWinners() int {
@@ -140,6 +162,18 @@ type DistributionDefinitionNFT struct {
 	RoundManagerFee       uint16     `json:"round_manager_fee"`
 	WinnerPrizes          []uint16   `json:"winner_prizes"`
 	NFTConfig             *NFTConfig `json:"nft_config"`
+}
+
+type DistributionDefinitionNFTCustomJSON struct {
+	BaseDistributionDefinitionCustomJSON
+	DistributionDefinitionNFT
+}
+
+func (m DistributionDefinitionNFT) ToCustomJSON() DistributionDefinitionNFTCustomJSON {
+	return DistributionDefinitionNFTCustomJSON{
+		BaseDistributionDefinitionCustomJSON: m.BaseDistributionDefinition.ToCustomJSON(),
+		DistributionDefinitionNFT:            m,
+	}
 }
 
 func (m *DistributionDefinitionNFT) CalculateDistribution() *Distribution {
@@ -255,6 +289,20 @@ type DistributionDefinitionEntry struct {
 }
 
 type DistributionDefinitions []*DistributionDefinitionEntry
+
+func (m DistributionDefinitions) ToMap() map[eos.Name]interface{} {
+	distDefMap := make(map[eos.Name]interface{})
+	for _, distDefEntry := range m {
+		var distDef interface{}
+		if IsFTDistribution(distDefEntry.Key) {
+			distDef = distDefEntry.Value.DistributionDefinitionFT().ToCustomJSON()
+		} else {
+			distDef = distDefEntry.Value.DistributionDefinitionNFT().ToCustomJSON()
+		}
+		distDefMap[distDefEntry.Key] = distDef
+	}
+	return distDefMap
+}
 
 func (m DistributionDefinitions) FindPos(key eos.Name) int {
 	for i, def := range m {

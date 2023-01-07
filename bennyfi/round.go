@@ -161,6 +161,22 @@ type Round struct {
 	UpdatedDate              string                   `json:"updated_date"`
 }
 
+type RoundCustomJSON struct {
+	Distributions map[eos.Name]interface{} `json:"distributions"`
+	Rewards       map[eos.Name]interface{} `json:"rewards"`
+	Winners       map[eos.Name]interface{} `json:"winners"`
+	Round
+}
+
+func (m Round) ToCustomJSON() RoundCustomJSON {
+	return RoundCustomJSON{
+		Distributions: m.Distributions.ToMap(),
+		Rewards:       m.Rewards.ToMap(),
+		Winners:       m.Winners.ToMap(),
+		Round:         m,
+	}
+}
+
 func (m *Round) RequiresRoundManagerFunding() bool {
 	return m.Rewards.Has(DistributionMainNFT)
 }

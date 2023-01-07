@@ -47,6 +47,18 @@ type Entry struct {
 	EnteredDate  string          `json:"entered_date"`
 }
 
+type EntryCustomJSON struct {
+	Returns map[eos.Name]interface{} `json:"returns"`
+	Entry
+}
+
+func (m Entry) ToCustomJSON() EntryCustomJSON {
+	return EntryCustomJSON{
+		Returns: m.Returns.ToMap(),
+		Entry:   m,
+	}
+}
+
 func (m *Entry) UpsertReturn(name eos.Name, ret interface{}) {
 	if m.Returns == nil {
 		m.Returns = make(ReturnEntries, 0, 1)

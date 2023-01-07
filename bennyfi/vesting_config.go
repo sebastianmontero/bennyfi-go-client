@@ -37,7 +37,7 @@ var (
 )
 
 type VestingConfig struct {
-	Config Config `json:"config"`
+	Config `json:"config"`
 }
 
 func NewNoVestingConfig() *VestingConfig {

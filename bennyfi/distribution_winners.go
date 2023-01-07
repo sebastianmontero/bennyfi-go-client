@@ -221,6 +221,14 @@ type DistributionWinnersEntry struct {
 
 type Winners []*DistributionWinnersEntry
 
+func (m Winners) ToMap() map[eos.Name]interface{} {
+	winnerMap := make(map[eos.Name]interface{})
+	for _, winnerEntry := range m {
+		winnerMap[winnerEntry.Key] = winnerEntry.Value.Impl
+	}
+	return winnerMap
+}
+
 func (m Winners) FindPos(key eos.Name) int {
 	for i, def := range m {
 		if def.Key == key {

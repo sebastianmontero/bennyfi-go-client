@@ -289,6 +289,14 @@ type DistributionEntry struct {
 
 type Distributions []*DistributionEntry
 
+func (m Distributions) ToMap() map[eos.Name]interface{} {
+	distMap := make(map[eos.Name]interface{})
+	for _, distEntry := range m {
+		distMap[distEntry.Key] = distEntry.Value.Impl
+	}
+	return distMap
+}
+
 func (m Distributions) FindPos(key eos.Name) int {
 	for i, def := range m {
 		if def.Key == key {

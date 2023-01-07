@@ -39,6 +39,14 @@ func (m *DefaultValue) String() string {
 
 type DefaultValues []*DefaultValue
 
+func (m DefaultValues) ToMap() map[string]interface{} {
+	defaultValueMap := make(map[string]interface{})
+	for _, defaultValueEntry := range m {
+		defaultValueMap[defaultValueEntry.Key] = defaultValueEntry.Value.Impl
+	}
+	return defaultValueMap
+}
+
 func (m DefaultValues) FindPos(key string) int {
 	for i, attr := range m {
 		if attr.Key == key {
@@ -72,6 +80,20 @@ type Term struct {
 	DefaultValues            DefaultValues           `json:"default_values"`
 	CreatedDate              string                  `json:"created_date"`
 	UpdatedDate              string                  `json:"updated_date"`
+}
+
+type TermCustomJSON struct {
+	DistributionDefinitions map[eos.Name]interface{} `json:"distribution_definitions"`
+	DefaultValues           map[string]interface{}   `json:"default_values"`
+	Term
+}
+
+func (m Term) ToCustomJSON() TermCustomJSON {
+	return TermCustomJSON{
+		DistributionDefinitions: m.DistributionDefinitions.ToMap(),
+		DefaultValues:           m.DefaultValues.ToMap(),
+		Term:                    m,
+	}
 }
 
 func (m *Term) GetEntryStake() eos.Asset {

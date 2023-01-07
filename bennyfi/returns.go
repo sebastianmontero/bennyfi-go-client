@@ -193,6 +193,14 @@ type ReturnsEntry struct {
 
 type ReturnEntries []*ReturnsEntry
 
+func (m ReturnEntries) ToMap() map[eos.Name]interface{} {
+	returnsMap := make(map[eos.Name]interface{})
+	for _, returnsEntry := range m {
+		returnsMap[returnsEntry.Key] = returnsEntry.Value.Impl
+	}
+	return returnsMap
+}
+
 func (m ReturnEntries) FindPos(key eos.Name) int {
 	for i, def := range m {
 		if def.Key == key {

@@ -202,6 +202,14 @@ type FTRewardsArg []*FTRewardArgEntry
 
 type Rewards []*RewardEntry
 
+func (m Rewards) ToMap() map[eos.Name]interface{} {
+	rewardMap := make(map[eos.Name]interface{})
+	for _, rewardEntry := range m {
+		rewardMap[rewardEntry.Key] = rewardEntry.Value.Impl
+	}
+	return rewardMap
+}
+
 func (m Rewards) ToFTRewardsArg() FTRewardsArg {
 	rewardsArg := make(FTRewardsArg, 0)
 	for _, rewardEntry := range m {
