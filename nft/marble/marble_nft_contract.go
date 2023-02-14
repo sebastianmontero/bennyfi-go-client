@@ -283,6 +283,12 @@ func (m *MarbleNFTContract) QuickBuild(args *QuickBuildArgs, manager eos.Account
 	return m.ExecAction(manager, "quickbuild", args)
 }
 
+func (m *MarbleNFTContract) Reset(limit uint64) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["limit"] = limit
+	return m.ExecAction(eos.AN(m.ContractName), "reset", actionData)
+}
+
 func (m *MarbleNFTContract) RemoveFrame(frameName eos.Name, memo string, manager eos.AccountName) (string, error) {
 	data := map[string]interface{}{
 		"frame_name": frameName,
@@ -293,6 +299,22 @@ func (m *MarbleNFTContract) RemoveFrame(frameName eos.Name, memo string, manager
 
 func (m *MarbleNFTContract) GetItems() ([]*Item, error) {
 	return m.GetItemsReq(nil)
+}
+
+func (m *MarbleNFTContract) AreTablesEmpty() (bool, error) {
+	items, err := m.GetItems()
+	if err != nil {
+		return false, err
+	}
+	groups, err := m.GetGroupsReq(nil)
+	if err != nil {
+		return false, err
+	}
+	frames, err := m.GetFramesReq(nil)
+	if err != nil {
+		return false, err
+	}
+	return len(items) == 0 && len(groups) == 0 && len(frames) == 0, err
 }
 
 func (m *MarbleNFTContract) GetLastItem() (*Item, error) {
