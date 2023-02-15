@@ -36,7 +36,7 @@ var (
 	}
 	RexFundSymbol = eos.Symbol{
 		Precision: 4,
-		Symbol:    "TLOS",
+		Symbol:    "BTLOS",
 	}
 )
 

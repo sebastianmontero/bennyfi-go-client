@@ -207,6 +207,26 @@ func (m *BennyfiContract) EraseTerm(termId uint64, authorizer eos.AccountName) (
 	return m.ExecAction(authorizer, "eraseterm", actionData)
 }
 
+func (m *BennyfiContract) GetAllTerms() ([]Term, error) {
+	var terms []Term
+	req := eos.GetTableRowsRequest{
+		Table: "terms",
+	}
+	err := m.GetAllTableRows(req, "term_id", &terms)
+	if err != nil {
+		return nil, fmt.Errorf("failed getting all terms: %v", err)
+	}
+	return terms, nil
+
+}
+
+func (m *BennyfiContract) GetAllTermsAsMap() ([]map[string]interface{}, error) {
+	req := eos.GetTableRowsRequest{
+		Table: "terms",
+	}
+	return m.GetAllTableRowsAsMap(req, "term_id")
+}
+
 func (m *BennyfiContract) GetTerms() ([]Term, error) {
 	return m.GetTermsReq(nil)
 }

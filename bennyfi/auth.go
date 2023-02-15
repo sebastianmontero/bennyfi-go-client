@@ -128,6 +128,26 @@ func (m *BennyfiContract) GetAuths() ([]Auth, error) {
 	return m.GetAuthsReq(nil)
 }
 
+func (m *BennyfiContract) GetAllAuths() ([]Auth, error) {
+	var auths []Auth
+	req := eos.GetTableRowsRequest{
+		Table: "auths",
+	}
+	err := m.GetAllTableRows(req, "account", &auths)
+	if err != nil {
+		return nil, fmt.Errorf("failed getting all auths: %v", err)
+	}
+	return auths, nil
+
+}
+
+func (m *BennyfiContract) GetAllAuthsAsMap() ([]map[string]interface{}, error) {
+	req := eos.GetTableRowsRequest{
+		Table: "auths",
+	}
+	return m.GetAllTableRowsAsMap(req, "account")
+}
+
 func (m *BennyfiContract) GetAuth(accountName interface{}) (*Auth, error) {
 	request := &eos.GetTableRowsRequest{}
 	m.FilterAuthsByAccount(request, accountName, true)
