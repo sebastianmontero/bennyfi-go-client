@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
+	"strings"
 	"time"
 
 	eos "github.com/eoscanada/eos-go"
@@ -175,6 +176,10 @@ func (m Round) ToCustomJSON() RoundCustomJSON {
 		Winners:       m.Winners.ToMap(),
 		Round:         m,
 	}
+}
+
+func (m *Round) HasBeneficiary() bool {
+	return strings.Trim(m.Beneficiary.String(), " ") != ""
 }
 
 func (m *Round) RequiresRoundManagerFunding() bool {
@@ -561,6 +566,13 @@ func (m *BennyfiContract) ReceiveRand(actor eos.AccountName, roundId uint64, ran
 func (m *BennyfiContract) GetRounds() ([]Round, error) {
 
 	return m.GetRoundsReq(nil)
+}
+
+func (m *BennyfiContract) GetAllRoundsAsMap() ([]map[string]interface{}, error) {
+	req := eos.GetTableRowsRequest{
+		Table: "rounds",
+	}
+	return m.GetAllTableRowsAsMap(req, "round_id")
 }
 
 func (m *BennyfiContract) GetRoundsbyTermAndId(termId uint64) ([]Round, error) {

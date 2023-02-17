@@ -52,6 +52,10 @@ func (m *Balance) GetStakedBalance() eos.Asset {
 	return stakedBalance
 }
 
+func (m *Balance) GetTotalBalance() eos.Asset {
+	return m.GetLiquidBalance().Add(m.GetStakedBalance())
+}
+
 func (m *Balance) HasLiquidBalance() bool {
 	return m.GetLiquidBalance().Amount > 0
 }
@@ -82,6 +86,25 @@ func (m *BennyfiContract) WithdrawTot(from eos.AccountName, symbol eos.Symbol) (
 
 func (m *BennyfiContract) GetBalances() ([]Balance, error) {
 	return m.GetBalancesReq(nil)
+}
+
+func (m *BennyfiContract) GetAllBalances() ([]Balance, error) {
+	var balances []Balance
+	req := eos.GetTableRowsRequest{
+		Table: "balances",
+	}
+	err := m.GetAllTableRows(req, "id", &balances)
+	if err != nil {
+		return nil, fmt.Errorf("failed getting all balances: %v", err)
+	}
+	return balances, nil
+}
+
+func (m *BennyfiContract) GetAllBalancesAsMap() ([]map[string]interface{}, error) {
+	req := eos.GetTableRowsRequest{
+		Table: "balances",
+	}
+	return m.GetAllTableRowsAsMap(req, "id")
 }
 
 func (m *BennyfiContract) GetBalancesReq(req *eos.GetTableRowsRequest) ([]Balance, error) {

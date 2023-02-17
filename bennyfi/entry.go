@@ -59,6 +59,14 @@ func (m Entry) ToCustomJSON() EntryCustomJSON {
 	}
 }
 
+func (m *Entry) GetEntryStake() eos.Asset {
+	entryStake, err := eos.NewAssetFromString(m.EntryStake)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse entry stake: %v to asset", m.EntryStake))
+	}
+	return entryStake
+}
+
 func (m *Entry) UpsertReturn(name eos.Name, ret interface{}) {
 	if m.Returns == nil {
 		m.Returns = make(ReturnEntries, 0, 1)
@@ -105,6 +113,13 @@ func (m *BennyfiContract) Vesting(entryId uint64, permissionLevel interface{}) (
 func (m *BennyfiContract) GetEntries() ([]Entry, error) {
 
 	return m.GetEntriesReq(&eos.GetTableRowsRequest{})
+}
+
+func (m *BennyfiContract) GetAllEntriesAsMap() ([]map[string]interface{}, error) {
+	req := eos.GetTableRowsRequest{
+		Table: "entries",
+	}
+	return m.GetAllTableRowsAsMap(req, "entry_id")
 }
 
 func (m *BennyfiContract) GetEntriesbyParticipant(participant eos.AccountName) ([]Entry, error) {

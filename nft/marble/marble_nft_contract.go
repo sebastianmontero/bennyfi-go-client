@@ -283,6 +283,36 @@ func (m *MarbleNFTContract) QuickBuild(args *QuickBuildArgs, manager eos.Account
 	return m.ExecAction(manager, "quickbuild", args)
 }
 
+func (m *MarbleNFTContract) NewDefaultNFTReward(groupName eos.Name, frameName eos.Name, manager eos.AccountName, authorizer eos.AccountName, maxSupply uint64) error {
+	title := fmt.Sprintf("Group Name: %v, Frame Name: %v", groupName, frameName)
+	groupArgs := &NewGroupArgs{
+		Title:       title,
+		Description: title,
+		GroupName:   groupName,
+		Manager:     manager,
+		SupplyCap:   maxSupply,
+	}
+	_, err := m.NewGroup(groupArgs, authorizer)
+	if err != nil {
+		return fmt.Errorf("failed creating %v nft group: %v", groupName, err)
+	}
+
+	frameArgs := &Frame{
+		FrameName:   frameName,
+		Group:       groupName,
+		DefaultTags: make(Tags, 0),
+		DefaultAttributes: Attributes{{
+			Key:   "reward",
+			Value: 100,
+		}},
+	}
+	_, err = m.NewFrame(frameArgs, manager)
+	if err != nil {
+		return fmt.Errorf("failed creating %v frame: %v", frameName, err)
+	}
+	return nil
+}
+
 func (m *MarbleNFTContract) Reset(limit uint64) (string, error) {
 	actionData := make(map[string]interface{})
 	actionData["limit"] = limit

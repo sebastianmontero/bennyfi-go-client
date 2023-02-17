@@ -182,6 +182,14 @@ func (m *RewardEntry) Clone() *RewardEntry {
 	}
 }
 
+func (m *RewardEntry) AsRewardFT() *RewardFT {
+	return m.Value.Impl.(*RewardFT)
+}
+
+func (m *RewardEntry) AsRewardNFT() *RewardNFT {
+	return m.Value.Impl.(*RewardNFT)
+}
+
 type FTRewardArgEntry struct {
 	Key   eos.Name `json:"first"`
 	Value string   `json:"second"`
@@ -233,6 +241,32 @@ func (m Rewards) GetRewardsFT() []*RewardFT {
 		}
 	}
 	return rewardsFT
+}
+
+func (m Rewards) GetFundedRewardsFT() []*RewardEntry {
+	rewardsFT := make([]*RewardEntry, 0)
+	for _, rewardEntry := range m {
+		switch v := rewardEntry.Value.Impl.(type) {
+		case *RewardFT:
+			if v.FundingState == FundingStateFunded || v.FundingState == FundingStateCommited {
+				rewardsFT = append(rewardsFT, rewardEntry)
+			}
+		}
+	}
+	return rewardsFT
+}
+
+func (m Rewards) GetFundedRewardsNFT() []*RewardEntry {
+	rewardsNFT := make([]*RewardEntry, 0)
+	for _, rewardEntry := range m {
+		switch v := rewardEntry.Value.Impl.(type) {
+		case *RewardNFT:
+			if v.FundingState == FundingStateFunded || v.FundingState == FundingStateCommited {
+				rewardsNFT = append(rewardsNFT, rewardEntry)
+			}
+		}
+	}
+	return rewardsNFT
 }
 
 func (m Rewards) FindPos(key eos.Name) int {
