@@ -110,6 +110,14 @@ func (m *RexContract) ResetConf() (string, error) {
 	return m.ExecAction(m.ContractName, "resetconf", nil)
 }
 
+func (m *RexContract) ResetBalance() (string, error) {
+	return m.ExecAction(m.ContractName, "resetbal", nil)
+}
+
+func (m *RexContract) ResetPool() (string, error) {
+	return m.ExecAction(m.ContractName, "resetpool", nil)
+}
+
 func (m *RexContract) Deposit(owner eos.AccountName, amount eos.Asset) (string, error) {
 	actionData := make(map[string]interface{})
 	actionData["owner"] = owner
