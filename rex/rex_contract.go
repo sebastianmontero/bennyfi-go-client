@@ -55,9 +55,33 @@ type Balance struct {
 	FundOutBalance  string          `json:"fund_out_balance"`
 }
 
+func (m *Balance) GetFundOutBalance() eos.Asset {
+	fundOutBalance, err := eos.NewAssetFromString(m.FundOutBalance)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse entry stake: %v to asset", m.FundOutBalance))
+	}
+	return fundOutBalance
+}
+
 type RexPool struct {
 	TotalLendable string `json:"total_lendable"`
 	TotalRex      string `json:"total_rex"`
+}
+
+func (m *RexPool) GetTotalLendable() eos.Asset {
+	totalLendable, err := eos.NewAssetFromString(m.TotalLendable)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse entry stake: %v to asset", m.TotalLendable))
+	}
+	return totalLendable
+}
+
+func (m *RexPool) GetTotalRex() eos.Asset {
+	totalRex, err := eos.NewAssetFromString(m.TotalRex)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse entry stake: %v to asset", m.TotalRex))
+	}
+	return totalRex
 }
 
 type RexContract struct {

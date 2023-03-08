@@ -34,6 +34,7 @@ import (
 )
 
 var (
+	RoundNotStarted       = eos.Name("notstarted")
 	RoundPending          = eos.Name("pending")
 	RoundAcceptingEntries = eos.Name("open")
 	RoundDrawing          = eos.Name("drawing")
@@ -110,6 +111,13 @@ func (m *Microseconds) UnmarshalJSON(b []byte) error {
 	}
 	return nil
 }
+func (m *Microseconds) NumMicroseconds() int64 {
+	v, err := strconv.ParseInt(m.Microseconds, 10, 64)
+	if err != nil {
+		panic(fmt.Sprintf("failed parsing microseconds: %v, error: %v", m.Microseconds, err))
+	}
+	return v
+}
 
 func (m *Microseconds) String() string {
 	return m.Microseconds
@@ -176,6 +184,13 @@ func (m Round) ToCustomJSON() RoundCustomJSON {
 		Winners:       m.Winners.ToMap(),
 		Round:         m,
 	}
+}
+func (m *Round) String() string {
+	result, err := json.Marshal(m)
+	if err != nil {
+		panic(fmt.Sprintf("Failed marshalling round: %v", err))
+	}
+	return string(result)
 }
 
 func (m *Round) HasBeneficiary() bool {
@@ -476,7 +491,15 @@ func (m *BennyfiContract) NewRoundFromRoundArgs(roundArgs *NewRoundArgs) (string
 	actionData["term_id"] = roundArgs.TermID
 	actionData["project_id"] = roundArgs.ProjectID
 	actionData["start_time"] = roundArgs.StartTime
+	// fmt.Println("New Round: ", actionData)
 	return m.ExecAction(roundArgs.RoundManager, "newround", actionData)
+}
+
+func (m *BennyfiContract) StartRound(roundID uint64) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["round_id"] = roundID
+
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "startround", actionData)
 }
 
 func (m *BennyfiContract) FundRound(roundID uint64, funder interface{}) (string, error) {
@@ -489,6 +512,12 @@ func (m *BennyfiContract) FundRound(roundID uint64, funder interface{}) (string,
 
 func (m *BennyfiContract) TimedEvents() (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "timedevents", nil)
+}
+
+func (m *BennyfiContract) StartRounds(callCounter uint64) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["call_counter"] = callCounter
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "startrounds", actionData)
 }
 
 func (m *BennyfiContract) TimeoutRounds(callCounter uint64) (string, error) {

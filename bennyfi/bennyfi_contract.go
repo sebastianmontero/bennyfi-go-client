@@ -72,6 +72,8 @@ func (m *BennyfiContract) ProposeAction(proposerName interface{}, requested []eo
 func (m *BennyfiContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) error {
 	openActions := []string{
 		"timedevents",
+		"startround",
+		"startrounds",
 		"timeoutrnds",
 		"mvfrmsavings",
 		"sellrex",
