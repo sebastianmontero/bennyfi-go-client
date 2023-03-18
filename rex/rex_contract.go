@@ -71,7 +71,7 @@ type RexPool struct {
 func (m *RexPool) GetTotalLendable() eos.Asset {
 	totalLendable, err := eos.NewAssetFromString(m.TotalLendable)
 	if err != nil {
-		panic(fmt.Sprintf("Unable to parse entry stake: %v to asset", m.TotalLendable))
+		panic(fmt.Sprintf("Unable to parse total lendable: %v to asset", m.TotalLendable))
 	}
 	return totalLendable
 }
@@ -79,7 +79,37 @@ func (m *RexPool) GetTotalLendable() eos.Asset {
 func (m *RexPool) GetTotalRex() eos.Asset {
 	totalRex, err := eos.NewAssetFromString(m.TotalRex)
 	if err != nil {
-		panic(fmt.Sprintf("Unable to parse entry stake: %v to asset", m.TotalRex))
+		panic(fmt.Sprintf("Unable to parse total rex: %v to asset", m.TotalRex))
+	}
+	return totalRex
+}
+
+func (m *RexPool) ToInitialPool() *InitialPool {
+	return &InitialPool{
+		TotalLendable: m.TotalLendable,
+		TotalRex:      m.TotalRex,
+		DepositCount:  0,
+	}
+}
+
+type InitialPool struct {
+	TotalLendable string `json:"total_lendable"`
+	TotalRex      string `json:"total_rex"`
+	DepositCount  uint64 `json:"deposit_count"`
+}
+
+func (m *InitialPool) GetTotalLendable() eos.Asset {
+	totalLendable, err := eos.NewAssetFromString(m.TotalLendable)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse total lendable: %v to asset", m.TotalLendable))
+	}
+	return totalLendable
+}
+
+func (m *InitialPool) GetTotalRex() eos.Asset {
+	totalRex, err := eos.NewAssetFromString(m.TotalRex)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse total rex: %v to asset", m.TotalRex))
 	}
 	return totalRex
 }
@@ -115,6 +145,13 @@ func (m *RexContract) Init(totalLendable, totalRex eos.Asset, lendableIncrement 
 	return m.ExecAction(m.ContractName, "init", actionData)
 }
 
+func (m *RexContract) SetInitialPool(totalLendable, totalRex eos.Asset) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["total_lendable"] = totalLendable
+	actionData["total_rex"] = totalRex
+	return m.ExecAction(m.ContractName, "setinitpool", actionData)
+}
+
 func (m *RexContract) InitConf(lendableIncrement uint64, tokenContract eos.Name) (string, error) {
 	actionData := make(map[string]interface{})
 	actionData["lendable_increment"] = lendableIncrement
@@ -140,6 +177,10 @@ func (m *RexContract) ResetBalance() (string, error) {
 
 func (m *RexContract) ResetPool() (string, error) {
 	return m.ExecAction(m.ContractName, "resetpool", nil)
+}
+
+func (m *RexContract) ResetInitialPool() (string, error) {
+	return m.ExecAction(m.ContractName, "rsetinitpool", nil)
 }
 
 func (m *RexContract) Deposit(owner eos.AccountName, amount eos.Asset) (string, error) {
@@ -238,6 +279,21 @@ func (m *RexContract) GetPool() (*RexPool, error) {
 	var pool []RexPool
 	req := &eos.GetTableRowsRequest{
 		Table: "rexpool",
+	}
+	err := m.GetTableRows(*req, &pool)
+	if err != nil {
+		return nil, fmt.Errorf("get table rows %v", err)
+	}
+	if len(pool) > 0 {
+		return &pool[0], nil
+	}
+	return nil, nil
+}
+
+func (m *RexContract) GetInitialPool() (*InitialPool, error) {
+	var pool []InitialPool
+	req := &eos.GetTableRowsRequest{
+		Table: "initialpool",
 	}
 	err := m.GetTableRows(*req, &pool)
 	if err != nil {

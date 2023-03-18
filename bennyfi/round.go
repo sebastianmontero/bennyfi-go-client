@@ -221,6 +221,14 @@ func (m *Round) GetEntryStake() eos.Asset {
 	return entryStake
 }
 
+func (m *Round) GetRexBalance() eos.Asset {
+	rexBalance, err := eos.NewAssetFromString(m.RexBalance)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse rex balance: %v to asset", m.RexBalance))
+	}
+	return rexBalance
+}
+
 func (m *Round) GetRoundManagerEntryFee() eos.Asset {
 	roundManagerEntryFee, err := eos.NewAssetFromString(m.RoundManagerEntryFee)
 	if err != nil {
@@ -598,10 +606,32 @@ func (m *BennyfiContract) GetRounds() ([]Round, error) {
 }
 
 func (m *BennyfiContract) GetAllRoundsAsMap() ([]map[string]interface{}, error) {
+	return m.GetAllRoundsFromAsMap(0)
+}
+
+func (m *BennyfiContract) GetAllRoundsFromAsMap(roundID uint64) ([]map[string]interface{}, error) {
 	req := eos.GetTableRowsRequest{
 		Table: "rounds",
 	}
-	return m.GetAllTableRowsAsMap(req, "round_id")
+	return m.GetAllTableRowsFromAsMap(req, "round_id", strconv.FormatUint(roundID, 10))
+}
+
+func (m *BennyfiContract) GetAllRoundsFrom(roundID uint64) ([]Round, error) {
+
+	roundsAsMap, err := m.GetAllRoundsFromAsMap(roundID)
+	if err != nil {
+		return nil, err
+	}
+	roundsAsStr, err := json.Marshal(roundsAsMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed marshalling rounds map: %v", err)
+	}
+	var rounds []Round
+	err = json.Unmarshal(roundsAsStr, &rounds)
+	if err != nil {
+		return nil, fmt.Errorf("failed marshalling rounds map: %v", err)
+	}
+	return rounds, nil
 }
 
 func (m *BennyfiContract) GetRoundsbyTermAndId(termId uint64) ([]Round, error) {
