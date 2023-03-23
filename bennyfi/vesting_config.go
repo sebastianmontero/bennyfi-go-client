@@ -106,7 +106,7 @@ func (m *VestingConfig) calculate(amount int64, paidOut int64, startTime, vestin
 		}
 		cycle = 1
 	} else {
-		cycle = elapsed_time.Microseconds() / (int64(m.GetPeriod()) * microsecondsPerHr)
+		cycle = elapsed_time.Microseconds() / (int64(m.GetPeriod()) * dto.MicrosecondsPerHr)
 	}
 	if cycle > int64(m.TotalCycles()) {
 		panic(fmt.Sprintf("failed to calculate vesting amount, cycle: %v, can not be greater than total cycles: %v", cycle, m.TotalCycles()))

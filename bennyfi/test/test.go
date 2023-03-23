@@ -59,6 +59,20 @@ func AssertCategory(t *testing.T, actual, expected *bennyfi.Category) {
 	assert.Equal(t, actual.CategoryDescription, expected.CategoryDescription)
 }
 
+func AssertYieldSource(t *testing.T, actual, expected *bennyfi.YieldSource) {
+	assert.Check(t, actual != nil)
+	assert.Equal(t, actual.YieldSource, expected.YieldSource)
+	assert.Equal(t, actual.YieldSourceName, expected.YieldSourceName)
+	assert.Equal(t, actual.YieldSourceDescription, expected.YieldSourceDescription)
+	assert.Equal(t, actual.StakeSymbol, expected.StakeSymbol)
+	assert.Equal(t, actual.AdaptorContract, expected.AdaptorContract)
+	assert.Equal(t, actual.YieldSourceCID, expected.YieldSourceCID)
+	assert.Equal(t, actual.EntryFeePercentageOfYieldx100000, expected.EntryFeePercentageOfYieldx100000)
+	assert.Equal(t, actual.DailyYieldx100000, expected.DailyYieldx100000)
+	assert.Equal(t, actual.TokenValue, expected.TokenValue)
+	assert.Equal(t, actual.BenyValue, expected.BenyValue)
+}
+
 func AssertDistributionDefFT(t *testing.T, actual, expected *bennyfi.DistributionDefinitionFT) {
 	assert.Check(t, actual != nil)
 	assert.Equal(t, actual.AllParticipantsPerc, expected.AllParticipantsPerc)

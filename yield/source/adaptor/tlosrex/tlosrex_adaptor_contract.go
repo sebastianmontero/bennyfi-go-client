@@ -19,41 +19,52 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-package bennyfi
+package tlosrex
 
 import (
 	"fmt"
-	"time"
 
-	eos "github.com/eoscanada/eos-go"
+	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/ecc"
 	"github.com/sebastianmontero/eos-go-toolbox/contract"
 	"github.com/sebastianmontero/eos-go-toolbox/service"
 )
 
 var (
-	PAUSED   uint32 = 1
-	UNPAUSED uint32 = 0
+	SettingBennyfiContract      = "BENNYFI_CONTRACT"
+	SettingTokenContract        = "TOKEN_CONTRACT"
+	SettingRexContract          = "REX_CONTRACT"
+	SettingRexDeposit_account   = "REX_DEPOSIT_ACCOUNT"
+	SettingBatchSize            = "BATCH_SIZE"
+	SettingMinStakingPeriod_hrs = "MIN_STAKING_PERIOD_HRS"
+	SettingMaxStakingPeriod_hrs = "MAX_STAKING_PERIOD_HRS"
+	SettingMinStakeAmount       = "MIN_STAKE_AMOUNT"
+	SettingMaxStakeAmount       = "MAX_STAKE_AMOUNT"
+	RexStatePreRex              = eos.Name("prerex")
+	RexStateInSavings           = eos.Name("insavings")
+	RexStateInLockPeriod        = eos.Name("lockperiod")
+	RexStateSold                = eos.Name("sold")
+	RexStateWithdrawn           = eos.Name("withdrawn")
 )
 
-type BennyfiContract struct {
+type TlosRexContract struct {
 	*contract.SettingsContract
 	callCounter uint64
 }
 
-func NewBennyfiContract(eos *service.EOS, contractName string) *BennyfiContract {
-	return &BennyfiContract{
+func NewTlosRexContract(eos *service.EOS, contractName string) *TlosRexContract {
+	return &TlosRexContract{
 		contract.NewSettingsContract(eos, contractName),
 		0,
 	}
 }
 
-func (m *BennyfiContract) NextCallCounter() uint64 {
+func (m *TlosRexContract) NextCallCounter() uint64 {
 	m.callCounter++
 	return m.callCounter
 }
 
-func (m *BennyfiContract) ExecAction(permissionLevel interface{}, action string, actionData interface{}) (string, error) {
+func (m *TlosRexContract) ExecAction(permissionLevel interface{}, action string, actionData interface{}) (string, error) {
 	resp, err := m.Contract.ExecAction(permissionLevel, action, actionData)
 	if err != nil {
 		return "", err
@@ -61,27 +72,11 @@ func (m *BennyfiContract) ExecAction(permissionLevel interface{}, action string,
 	return fmt.Sprintf("Tx ID: %v", resp.TransactionID), nil
 }
 
-func (m *BennyfiContract) ProposeAction(proposerName interface{}, requested []eos.PermissionLevel, expireIn time.Duration, permissionLevel, actionName, data interface{}) (string, error) {
-	resp, err := m.Contract.ProposeAction(proposerName, requested, expireIn, permissionLevel, actionName, data)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("Proposal Name: %v, Tx ID: %v", resp.ProposalName, resp.PushTransactionFullResp.TransactionID), nil
-}
-
-func (m *BennyfiContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) error {
+func (m *TlosRexContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) error {
 	openActions := []string{
-		"timedevents",
-		"startround",
-		"startrounds",
-		"timeoutrnds",
-		"unlockrnd",
-		"unlockrnds",
-		"redraw",
-		"unstakeopen",
-		"ustkulckrnds",
-		"ustktmdrnds",
-		"vestingrnds",
+		"mvfrmsavings",
+		"sellrex",
+		"withdrawrex",
 	}
 	err := m.EOS.CreateSimplePermission(m.ContractName, "open", publicKey)
 	if err != nil {
@@ -96,13 +91,7 @@ func (m *BennyfiContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) erro
 	return nil
 }
 
-func (m *BennyfiContract) Pause(pause uint32) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["pause"] = pause
-	return m.ExecAction(eos.AN(m.ContractName), "pause", actionData)
-}
-
-func (m *BennyfiContract) Reset(limit uint64, toDelete []string) (string, error) {
+func (m *TlosRexContract) Reset(limit uint64, toDelete []string) (string, error) {
 	actionData := make(map[string]interface{})
 	actionData["limit"] = limit
 	actionData["to_delete"] = toDelete

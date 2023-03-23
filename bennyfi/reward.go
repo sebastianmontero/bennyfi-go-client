@@ -337,7 +337,7 @@ func (p *Rewards) Remove(key eos.Name) *RewardEntry {
 func (m Rewards) UpdateFundingStateAll(state eos.Name) {
 	for _, def := range m {
 		r := def.Value
-		if r.GetFundingState() != FundingStateRex {
+		if r.GetFundingState() != FundingStateYield {
 			r.SetFundingState(state)
 		}
 	}

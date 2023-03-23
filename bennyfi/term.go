@@ -72,8 +72,8 @@ type Term struct {
 	RoundAccess              eos.Name                `json:"round_access"`
 	NumParticipants          uint32                  `json:"num_participants"`
 	EntryStake               string                  `json:"entry_stake"`
-	StakingPeriod            *Microseconds           `json:"staking_period"`
-	EnrollmentTimeOut        *Microseconds           `json:"enrollment_time_out"`
+	StakingPeriod            *dto.Microseconds       `json:"staking_period"`
+	EnrollmentTimeOut        *dto.Microseconds       `json:"enrollment_time_out"`
 	BeneficiaryEntryFeePerc  uint32                  `json:"beneficiary_entry_fee_perc_x100000"`
 	RoundManagerEntryFeePerc uint32                  `json:"round_manager_entry_fee_perc_x100000"`
 	DistributionDefinitions  DistributionDefinitions `json:"distribution_definitions"`

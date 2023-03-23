@@ -30,6 +30,7 @@ import (
 	"time"
 
 	eos "github.com/eoscanada/eos-go"
+	"github.com/sebastianmontero/eos-go-toolbox/dto"
 	"github.com/sebastianmontero/eos-go-toolbox/util"
 )
 
@@ -53,8 +54,8 @@ var (
 	VestingStateVesting1             = eos.Name("vesting1") //used for entries to enable handling the different vesting cycles
 	VestingStateVesting2             = eos.Name("vesting2")
 	VestingStateFinished             = eos.Name("finished")
-	RoundTypeManagerFunded           = eos.Name("mgrfunded")
-	RoundTypeRexPool                 = eos.Name("rexpool")
+	RoundTypeFunded                  = eos.Name("funded")
+	RoundTypeYield                   = eos.Name("yield")
 	RoundAccessPrivate               = eos.Name("private")
 	RoundAccessPublic                = eos.Name("public")
 	RexStateNotApplicable            = eos.Name("notaplicable")
@@ -67,61 +68,9 @@ var (
 	FundingStateFunded               = eos.Name("funded")
 	FundingStateRefunded             = eos.Name("refunded")
 	FundingStateCommited             = eos.Name("commited")
-	FundingStateRex                  = eos.Name("rex")
+	FundingStateYield                = eos.Name("yield")
 	RexLockPeriodDays                = 5
 )
-
-var microsecondsPerHr int64 = 60 * 60 * 1000000
-
-type Microseconds struct {
-	Microseconds string `json:"_count"`
-}
-
-func NewMicroseconds(hrs int64) *Microseconds {
-	return &Microseconds{
-		Microseconds: strconv.FormatInt(hrs*microsecondsPerHr, 10),
-	}
-}
-
-func (m *Microseconds) Hrs() int64 {
-	ms, _ := strconv.ParseInt(m.Microseconds, 10, 64)
-	return ms / microsecondsPerHr
-}
-
-func (m *Microseconds) UnmarshalJSON(b []byte) error {
-	ms := make(map[string]interface{})
-	if err := json.Unmarshal(b, &ms); err != nil {
-		return err
-	}
-	if countI, ok := ms["_count"]; ok {
-		var microseconds string
-		switch count := countI.(type) {
-		case float64:
-			microseconds = strconv.FormatFloat(count, 'f', 0, 64)
-		case string:
-			microseconds = count
-		default:
-			return fmt.Errorf("Microseconds count of unknown type: %T", count)
-		}
-		*m = Microseconds{
-			Microseconds: microseconds,
-		}
-	} else {
-		return fmt.Errorf("Error unmarshalling microseconds no '_count' property found: %v", ms)
-	}
-	return nil
-}
-func (m *Microseconds) NumMicroseconds() int64 {
-	v, err := strconv.ParseInt(m.Microseconds, 10, 64)
-	if err != nil {
-		panic(fmt.Sprintf("failed parsing microseconds: %v, error: %v", m.Microseconds, err))
-	}
-	return v
-}
-
-func (m *Microseconds) String() string {
-	return m.Microseconds
-}
 
 type Round struct {
 	RoundID                  uint64                   `json:"round_id"`
@@ -132,8 +81,8 @@ type Round struct {
 	RoundCategory            eos.Name                 `json:"round_category"`
 	RoundType                eos.Name                 `json:"round_type"`
 	RoundAccess              eos.Name                 `json:"round_access"`
-	StakingPeriod            *Microseconds            `json:"staking_period"`
-	EnrollmentTimeOut        *Microseconds            `json:"enrollment_time_out"`
+	StakingPeriod            *dto.Microseconds        `json:"staking_period"`
+	EnrollmentTimeOut        *dto.Microseconds        `json:"enrollment_time_out"`
 	NumParticipants          uint32                   `json:"num_participants"`
 	ParticipantEntryFee      string                   `json:"participant_entry_fee"`
 	RoundManagerEntryFee     string                   `json:"round_manager_entry_fee"`
@@ -326,7 +275,7 @@ func (m *Round) UpdateFundingState(dist eos.Name, state eos.Name) {
 }
 
 func (m *Round) CalculateEntryFee(settings *EntryFeeSettings) eos.Asset {
-	if m.RoundType == RoundTypeManagerFunded {
+	if m.RoundType == RoundTypeFunded {
 		// fmt.Println("Manager funded entry fee: ", util.MultiplyAsset(settings.SelfFundedPerUser, int64(m.NumParticipants)))
 		return util.MultiplyAsset(settings.SelfFundedPerUser, int64(m.NumParticipants))
 	} else {
