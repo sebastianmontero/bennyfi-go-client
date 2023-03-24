@@ -40,36 +40,30 @@ var (
 	RoundAcceptingEntries = eos.Name("open")
 	RoundDrawing          = eos.Name("drawing")
 	// RoundOpen                        = eos.Name("roundopen")
-	RoundClosed                      = eos.Name("closed")
-	RoundUnlocked                    = eos.Name("unlocked")
-	RoundTimedOut                    = eos.Name("cancelled")
-	RoundStakeStateNotStarted        = eos.Name("notstarted")
-	RoundStakeStateStaked            = eos.Name("staked")
-	RoundStakeStateUnstakingTimedOut = eos.Name("unstakingtmo")
-	RoundStakeStateUnstakingUnlocked = eos.Name("unstakingulk")
-	RoundStakeStateUnstaked          = eos.Name("unstaked")
-	VestingStateNotApplicable        = eos.Name("notaplicable")
-	VestingStateNotStarted           = eos.Name("notstarted")
-	VestingStateVesting              = eos.Name("vesting")
-	VestingStateVesting1             = eos.Name("vesting1") //used for entries to enable handling the different vesting cycles
-	VestingStateVesting2             = eos.Name("vesting2")
-	VestingStateFinished             = eos.Name("finished")
-	RoundTypeFunded                  = eos.Name("funded")
-	RoundTypeYield                   = eos.Name("yield")
-	RoundAccessPrivate               = eos.Name("private")
-	RoundAccessPublic                = eos.Name("public")
-	RexStateNotApplicable            = eos.Name("notaplicable")
-	RexStatePreRex                   = eos.Name("prerex")
-	RexStateInSavings                = eos.Name("insavings")
-	RexStateInLockPeriod             = eos.Name("lockperiod")
-	RexStateSold                     = eos.Name("sold")
-	RexStateWithdrawn                = eos.Name("withdrawn")
-	FundingStatePending              = eos.Name("pending")
-	FundingStateFunded               = eos.Name("funded")
-	FundingStateRefunded             = eos.Name("refunded")
-	FundingStateCommited             = eos.Name("commited")
-	FundingStateYield                = eos.Name("yield")
-	RexLockPeriodDays                = 5
+	RoundClosed                            = eos.Name("closed")
+	RoundClosedYieldWithdrawnTestSetupOnly = eos.Name("closedyield")
+	RoundUnlocked                          = eos.Name("unlocked")
+	RoundTimedOut                          = eos.Name("cancelled")
+	RoundStakeStateNotStarted              = eos.Name("notstarted")
+	RoundStakeStateStaked                  = eos.Name("staked")
+	RoundStakeStateUnstakingTimedOut       = eos.Name("unstakingtmo")
+	RoundStakeStateUnstakingUnlocked       = eos.Name("unstakingulk")
+	RoundStakeStateUnstaked                = eos.Name("unstaked")
+	VestingStateNotApplicable              = eos.Name("notaplicable")
+	VestingStateNotStarted                 = eos.Name("notstarted")
+	VestingStateVesting                    = eos.Name("vesting")
+	VestingStateVesting1                   = eos.Name("vesting1") //used for entries to enable handling the different vesting cycles
+	VestingStateVesting2                   = eos.Name("vesting2")
+	VestingStateFinished                   = eos.Name("finished")
+	RoundTypeFunded                        = eos.Name("funded")
+	RoundTypeYield                         = eos.Name("yield")
+	RoundAccessPrivate                     = eos.Name("private")
+	RoundAccessPublic                      = eos.Name("public")
+	FundingStatePending                    = eos.Name("pending")
+	FundingStateFunded                     = eos.Name("funded")
+	FundingStateRefunded                   = eos.Name("refunded")
+	FundingStateCommited                   = eos.Name("commited")
+	FundingStateYield                      = eos.Name("yield")
 )
 
 type Round struct {
@@ -90,7 +84,6 @@ type Round struct {
 	BeneficiaryEntryFeeState eos.Name                 `json:"beneficiary_entry_fee_state"`
 	EntryStake               string                   `json:"entry_stake"`
 	Rewards                  Rewards                  `json:"rewards"`
-	RexBalance               string                   `json:"rex_balance"`
 	NumParticipantsEntered   uint32                   `json:"num_participants_entered"`
 	NumClaimedReturns        uint32                   `json:"num_claimed_returns"`
 	NumUnstaked              uint32                   `json:"num_unstaked"`
@@ -98,7 +91,6 @@ type Round struct {
 	VestingCycle             uint16                   `json:"vesting_cycle"`
 	NumVested                uint16                   `json:"num_vested"`
 	CurrentState             eos.Name                 `json:"current_state"`
-	RexState                 eos.Name                 `json:"rex_state"`
 	StakeState               eos.Name                 `json:"stake_state"`
 	VestingState             eos.Name                 `json:"vesting_state"`
 	TotalDeposits            string                   `json:"total_deposits"`
@@ -111,7 +103,6 @@ type Round struct {
 	StartTime                string                   `json:"start_time"`
 	ClosedTime               string                   `json:"closed_time"`
 	StakedTime               string                   `json:"staked_time"`
-	MovedFromSavingsTime     string                   `json:"moved_from_savings_time"`
 	StakeEndTime             string                   `json:"stake_end_time"`
 	EnrollmentTimeEnd        string                   `json:"enrollment_time_end"`
 	NextVestingTime          string                   `json:"next_vesting_time"`
@@ -168,14 +159,6 @@ func (m *Round) GetEntryStake() eos.Asset {
 		panic(fmt.Sprintf("Unable to parse entry stake: %v to asset", m.EntryStake))
 	}
 	return entryStake
-}
-
-func (m *Round) GetRexBalance() eos.Asset {
-	rexBalance, err := eos.NewAssetFromString(m.RexBalance)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse rex balance: %v to asset", m.RexBalance))
-	}
-	return rexBalance
 }
 
 func (m *Round) GetRoundManagerEntryFee() eos.Asset {
@@ -340,28 +323,24 @@ func (m *Round) CalculateReturns(entryOwner eos.AccountName, distName eos.Name, 
 	}
 }
 
-func (m *Round) CalculateRexLockPeriodTime() time.Time {
-	stakedTime, err := util.ToTime(m.StakedTime)
-	if err != nil {
-		panic(fmt.Sprintf("failed to calculate Rex Lock Period Time, could not parse staked time: %v, error: %v", m.StakedTime, err))
-	}
-	return stakedTime.Add(time.Hour * time.Duration(m.StakingPeriod.Hrs()-int64(24*RexLockPeriodDays)))
-}
-
-func (m *Round) CalculateSellRexTime() time.Time {
-	movedFromSavingsTime, err := util.ToTime(m.MovedFromSavingsTime)
-	if err != nil {
-		panic(fmt.Sprintf("failed to calculate Sell Rex Time, could not parse moved from savings time: %v, error: %v", m.MovedFromSavingsTime, err))
-	}
-	return movedFromSavingsTime.Add(time.Hour * time.Duration(24*RexLockPeriodDays))
-}
-
 func (m *Round) CalculateUnlockTime() time.Time {
 	stakedTime, err := util.ToTime(m.StakedTime)
 	if err != nil {
 		panic(fmt.Sprintf("failed to calculate Unlock Time, could not parse staked time: %v, error: %v", m.StakedTime, err))
 	}
 	return stakedTime.Add(time.Hour * time.Duration(m.StakingPeriod.Hrs()))
+}
+
+func (m *Round) SetYieldReward(totalReturn eos.Asset) {
+	r := m.Rewards.FindFT(DistributionMainToken)
+	r.FundingState = FundingStateFunded
+	totalDeposits := m.GetTotalDeposits()
+	reward := totalReturn.Sub(totalDeposits)
+	if reward.Amount > 0 {
+		r.Reward = reward.String()
+	} else {
+		r.Reward = eos.Asset{Amount: 0, Symbol: totalReturn.Symbol}.String()
+	}
 }
 
 type NewRoundArgs struct {
@@ -405,7 +384,6 @@ func (m *Round) Clone() *Round {
 		BeneficiaryEntryFeeState: m.BeneficiaryEntryFeeState,
 		EntryStake:               m.EntryStake,
 		Rewards:                  m.Rewards.Clone(),
-		RexBalance:               m.RexBalance,
 		NumParticipantsEntered:   m.NumParticipantsEntered,
 		NumClaimedReturns:        m.NumClaimedReturns,
 		NumUnstaked:              m.NumUnstaked,
@@ -413,7 +391,6 @@ func (m *Round) Clone() *Round {
 		VestingCycle:             m.VestingCycle,
 		NumVested:                m.NumVested,
 		CurrentState:             m.CurrentState,
-		RexState:                 m.RexState,
 		StakeState:               m.StakeState,
 		VestingState:             m.VestingState,
 		TotalDeposits:            m.TotalDeposits,
@@ -426,7 +403,6 @@ func (m *Round) Clone() *Round {
 		StartTime:                m.StartTime,
 		ClosedTime:               m.ClosedTime,
 		StakedTime:               m.StakedTime,
-		MovedFromSavingsTime:     m.MovedFromSavingsTime,
 		StakeEndTime:             m.StakeEndTime,
 		EnrollmentTimeEnd:        m.EnrollmentTimeEnd,
 		NextVestingTime:          m.NextVestingTime,

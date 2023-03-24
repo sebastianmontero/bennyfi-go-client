@@ -83,6 +83,7 @@ type DistributionDefinitionFT struct {
 	RoundManagerPerc    uint32   `json:"round_manager_perc_x100000"`
 	WinnersPerc         []uint32 `json:"winners_perc_x100000"`
 	Reward              string   `json:"reward"`
+	YieldSource         eos.Name `json:"yield_source"`
 }
 
 type DistributionDefinitionFTCustomJSON struct {
