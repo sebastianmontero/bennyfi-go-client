@@ -23,7 +23,6 @@ package bennyfi
 
 import (
 	"fmt"
-	"math"
 	"time"
 
 	eos "github.com/eoscanada/eos-go"
@@ -109,12 +108,4 @@ func (m *BennyfiContract) Reset(limit uint64, toDelete []string) (string, error)
 	actionData["to_delete"] = toDelete
 	actionData["call_counter"] = m.NextCallCounter()
 	return m.ExecAction(eos.AN(m.ContractName), "reset", actionData)
-}
-
-func CalculateAssetPercentage(amount eos.Asset, percentage uint32) eos.Asset {
-	precisionAdj := math.Pow(10, float64(amount.Precision))
-	percAdj := float64(10000000)
-	amountAdj := float64(amount.Amount) / precisionAdj
-	percAmount := amountAdj * float64((float64(percentage) / percAdj))
-	return eos.Asset{Amount: eos.Int64(percAmount * float64(precisionAdj)), Symbol: amount.Symbol}
 }

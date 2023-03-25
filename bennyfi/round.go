@@ -264,9 +264,9 @@ func (m *Round) CalculateEntryFee(settings *EntryFeeSettings) eos.Asset {
 	} else {
 
 		totalStake := util.MultiplyAsset(m.GetEntryStake(), int64(m.NumParticipants))
-		yield := util.CalculatePercentage(util.MultiplyAsset(totalStake, int64(m.StakingPeriod.Hrs())), settings.HourlyYield())
+		yield := util.CalculateAssetPercentage(util.MultiplyAsset(totalStake, int64(m.StakingPeriod.Hrs())), settings.HourlyYield())
 		yieldUSD := util.DivideAssets(yield, settings.ValueTLOS)
-		yieldPerc := util.CalculatePercentage(yieldUSD, settings.PercOfYield)
+		yieldPerc := util.CalculateAssetPercentage(yieldUSD, settings.PercOfYield)
 		entryFee := util.DivideAssets(yieldPerc, settings.ValueBENY)
 		adjustedEntryFee := util.AdjustPrecision(big.NewInt(int64(entryFee.Amount)), entryFee.Precision, settings.BENYToken.Precision)
 		// fmt.Printf("Entry fee values, total stake: %v, yield: %v, yieldUSD: %v, yieldPerc: %v, entryFee: %v, adjustedEntryFee: %v \n", totalStake, yield, yieldUSD, yieldPerc, entryFee, adjustedEntryFee)
@@ -276,8 +276,8 @@ func (m *Round) CalculateEntryFee(settings *EntryFeeSettings) eos.Asset {
 
 func (m *Round) CalculateEntryFees(settings *EntryFeeSettings, term *Term) {
 	entryFee := m.CalculateEntryFee(settings)
-	roundManagerEntryFee := util.CalculatePercentage(entryFee, term.RoundManagerEntryFeePerc)
-	beneficiaryEntryFee := util.CalculatePercentage(entryFee, term.BeneficiaryEntryFeePerc)
+	roundManagerEntryFee := util.CalculateAssetPercentage(entryFee, term.RoundManagerEntryFeePerc)
+	beneficiaryEntryFee := util.CalculateAssetPercentage(entryFee, term.BeneficiaryEntryFeePerc)
 	participantEntryFee := entryFee.Sub(roundManagerEntryFee).Sub(beneficiaryEntryFee)
 	// fmt.Printf("Round manager percent fee: %v, beneficiary percent fee: %v\n", term.RoundManagerEntryFeePerc, term.BeneficiaryEntryFeePerc)
 	// fmt.Printf("Entryfee: %v, Beneficiary Entry fee: %v, Round Manager Entry fee: %v, Participant Entry Fee total: %v \n", entryFee, beneficiaryEntryFee, roundManagerEntryFee, participantEntryFee)
@@ -297,7 +297,7 @@ func (m *Round) CalculateReturns(entryOwner eos.AccountName, distName eos.Name, 
 		if winner != nil {
 			winnerPrize = winner.GetPrize()
 		}
-		earlyExitRewardFee := util.CalculatePercentage(winnerPrize, earlyExitFeePerc)
+		earlyExitRewardFee := util.CalculateAssetPercentage(winnerPrize, earlyExitFeePerc)
 		if isEarlyExit {
 			winnerPrize = winnerPrize.Sub(earlyExitRewardFee)
 			earlyExitRewardFee = earlyExitRewardFee.Add(minParticipantReward)
