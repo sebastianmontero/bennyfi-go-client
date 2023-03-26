@@ -161,6 +161,12 @@ func (m *Round) GetEntryStake() eos.Asset {
 	return entryStake
 }
 
+func (m *Round) CalculateMaxTotalDeposits() eos.Asset {
+	totalStake := m.GetEntryStake()
+	totalStake.Amount = totalStake.Amount * eos.Int64(m.NumParticipants)
+	return totalStake
+}
+
 func (m *Round) GetRoundManagerEntryFee() eos.Asset {
 	roundManagerEntryFee, err := eos.NewAssetFromString(m.RoundManagerEntryFee)
 	if err != nil {

@@ -74,6 +74,9 @@ func (m *TlosRexContract) ExecAction(permissionLevel interface{}, action string,
 
 func (m *TlosRexContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) error {
 	openActions := []string{
+		"mvfrmsvngsrn",
+		"sellrexrn",
+		"withdrwrexrn",
 		"mvfrmsavings",
 		"sellrex",
 		"withdrawrex",

@@ -114,6 +114,24 @@ func (m *TlosRexContract) CheckStakeParameters(authorizer, tokenContract, stakeA
 	return m.ExecAction(authorizer, "chckstkparam", actionData)
 }
 
+func (m *TlosRexContract) MoveRoundFromSavings(roundId uint64) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["round_id"] = roundId
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "mvfrmsvngsrn", actionData)
+}
+
+func (m *TlosRexContract) SellRoundRex(roundId uint64) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["round_id"] = roundId
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "sellrexrn", actionData)
+}
+
+func (m *TlosRexContract) WithdrawRoundRex(roundId uint64) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["round_id"] = roundId
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "withdrwrexrn", actionData)
+}
+
 func (m *TlosRexContract) MoveFromSavings(callCounter uint64) (string, error) {
 	actionData := make(map[string]interface{})
 	actionData["call_counter"] = callCounter
