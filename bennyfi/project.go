@@ -64,6 +64,7 @@ type Project struct {
 	Attributes  Attributes      `json:"attributes"`
 	CreatedDate string          `json:"created_date"`
 	UpdatedDate string          `json:"updated_date"`
+	*Deletable
 }
 
 type NewProjectArgs struct {
@@ -87,6 +88,14 @@ func (m *BennyfiContract) NewProject(projectArgs *NewProjectArgs) (string, error
 	actionData["attributes"] = projectArgs.Attributes
 
 	return m.ExecAction(projectArgs.Authorizer, "newproject", actionData)
+}
+
+func (m *BennyfiContract) EraseProject(projectId uint64, authorizer eos.AccountName, erase bool) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["project_id"] = projectId
+	actionData["authorizer"] = authorizer
+	actionData["erase"] = erase
+	return m.ExecAction(authorizer, "eraseproject", actionData)
 }
 
 func (m *BennyfiContract) NewProjectFromProject(project *Project) (string, error) {
@@ -119,6 +128,24 @@ func (m *BennyfiContract) GetLastProject() (*Project, error) {
 		return &projects[0], nil
 	}
 	return nil, nil
+}
+
+func (m *BennyfiContract) GetProjectById(projectId uint64) (*Project, error) {
+	request := &eos.GetTableRowsRequest{}
+	m.FilterProjectsById(request, projectId)
+	projects, err := m.GetProjectsReq(request)
+	if err != nil {
+		return nil, err
+	}
+	if len(projects) > 0 {
+		return &projects[0], nil
+	}
+	return nil, nil
+}
+
+func (m *BennyfiContract) FilterProjectsById(req *eos.GetTableRowsRequest, projectId uint64) {
+	req.LowerBound = fmt.Sprintf("%v", projectId)
+	req.UpperBound = fmt.Sprintf("%v", projectId)
 }
 
 func (m *BennyfiContract) GetProjectsByAuthorizerAndId(authorizer interface{}, projectIDUpperBound uint64) ([]Project, error) {

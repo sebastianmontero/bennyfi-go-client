@@ -80,6 +80,7 @@ type Term struct {
 	DefaultValues            DefaultValues           `json:"default_values"`
 	CreatedDate              string                  `json:"created_date"`
 	UpdatedDate              string                  `json:"updated_date"`
+	*Deletable
 }
 
 type TermCustomJSON struct {
@@ -200,10 +201,11 @@ func (m *BennyfiContract) NewTermFromTermArgs(termArgs *NewTermArgs) (string, er
 	return m.ExecAction(termArgs.Authorizer, "newterm", actionData)
 }
 
-func (m *BennyfiContract) EraseTerm(termId uint64, authorizer eos.AccountName) (string, error) {
+func (m *BennyfiContract) EraseTerm(termId uint64, authorizer eos.AccountName, erase bool) (string, error) {
 	actionData := make(map[string]interface{})
 	actionData["term_id"] = termId
 	actionData["authorizer"] = authorizer
+	actionData["erase"] = erase
 	return m.ExecAction(authorizer, "eraseterm", actionData)
 }
 
