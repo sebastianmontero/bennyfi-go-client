@@ -67,3 +67,27 @@ func GetEntryFeeSettings(contract *BennyfiContract) (*EntryFeeSettings, error) {
 		BENYToken:         benyToken,
 	}, nil
 }
+
+func (m *BennyfiContract) ShouldBurnFees() (bool, error) {
+	shouldBurn, err := m.SettingAsUint32(SettingEntryFeeBurnYes)
+	if err != nil {
+		return false, err
+	}
+	return shouldBurn > 0, nil
+}
+
+func (m *BennyfiContract) GetActiveFeeAccount() (eos.AccountName, error) {
+	shouldBurn, err := m.ShouldBurnFees()
+	if err != nil {
+		return "", err
+	}
+	feeAccountSettingName := SettingEntryFeeAccount
+	if shouldBurn {
+		feeAccountSettingName = SettingEntryFeeBurnAccount
+	}
+	feeAccount, err := m.SettingAsName(feeAccountSettingName)
+	if err != nil {
+		return "", err
+	}
+	return eos.AccountName(feeAccount), nil
+}

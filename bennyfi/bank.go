@@ -25,6 +25,7 @@ import (
 	"fmt"
 
 	eos "github.com/eoscanada/eos-go"
+	"github.com/sebastianmontero/eos-go-toolbox/util"
 )
 
 type Balance struct {
@@ -52,6 +53,14 @@ func (m *Balance) GetStakedBalance() eos.Asset {
 	return stakedBalance
 }
 
+func (m *Balance) GetSymbol() eos.Symbol {
+	symbol, err := eos.StringToSymbol(m.Symbol)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse symbol: %v to Symbol", m.Symbol))
+	}
+	return symbol
+}
+
 func (m *Balance) GetTotalBalance() eos.Asset {
 	return m.GetLiquidBalance().Add(m.GetStakedBalance())
 }
@@ -66,6 +75,36 @@ func (m *Balance) HasStakedBalance() bool {
 
 func (m *Balance) HasBalance() bool {
 	return m.HasLiquidBalance() || m.HasStakedBalance()
+}
+
+func (m *Balance) AddLiquidBalance(amount interface{}, negative bool) eos.Asset {
+	amnt, err := util.ToAsset(amount)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse amount: %v to asset", amount))
+	}
+	liquidBalance := m.GetLiquidBalance()
+	if negative {
+		liquidBalance = liquidBalance.Sub(amnt)
+	} else {
+		liquidBalance = liquidBalance.Add(amnt)
+	}
+	m.LiquidBalance = liquidBalance.String()
+	return liquidBalance
+}
+
+func (m *Balance) AddStakedBalance(amount interface{}, negative bool) eos.Asset {
+	amnt, err := util.ToAsset(amount)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse amount: %v to asset", amount))
+	}
+	stakedBalance := m.GetStakedBalance()
+	if negative {
+		stakedBalance = stakedBalance.Sub(amnt)
+	} else {
+		stakedBalance = stakedBalance.Add(amnt)
+	}
+	m.StakedBalance = stakedBalance.String()
+	return stakedBalance
 }
 
 func (m *BennyfiContract) Withdraw(from eos.AccountName, quantity eos.Asset) (string, error) {
@@ -157,5 +196,34 @@ func (m *BennyfiContract) GetBalance(tokenHolder eos.AccountName, symbol string)
 		}
 	}
 	return nil, nil
+
+}
+
+func (m *BennyfiContract) GetBalanceOrDefault(tokenHolder eos.AccountName, symbol, tokenContract interface{}) (*Balance, error) {
+
+	symb, err := util.ToSymbol(symbol)
+	if err != nil {
+		return nil, err
+	}
+
+	tkc, err := util.ToAccountName(tokenContract)
+	if err != nil {
+		return nil, err
+	}
+
+	balance, err := m.GetBalance(tokenHolder, symb.String())
+	if err != nil {
+		return nil, err
+	}
+	if balance == nil {
+		balance = &Balance{
+			TokenHolder:   tokenHolder,
+			Symbol:        symb.String(),
+			LiquidBalance: eos.Asset{Amount: 0, Symbol: symb}.String(),
+			StakedBalance: eos.Asset{Amount: 0, Symbol: symb}.String(),
+			TokenContract: tkc,
+		}
+	}
+	return balance, nil
 
 }
