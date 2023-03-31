@@ -66,6 +66,7 @@ type YieldSource struct {
 	DailyYieldx100000                uint32          `json:"daily_yield_x100000"`
 	TokenValue                       string          `json:"token_value"`
 	BenyValue                        string          `json:"beny_value"`
+	Authorizer                       eos.AccountName `json:"authorizer"`
 	// NOT USED AT THE MOMENT
 	// AdditionalParams                 AdditionalParams `json:"additional_params"`
 }
@@ -78,34 +79,21 @@ func (m *YieldSource) String() string {
 	return string(result)
 }
 
-type SetYieldSourceArgs struct {
-	*YieldSourceStruct
-	Authorizer eos.AccountName `json:"authorizer"`
-}
-
-func (m *SetYieldSourceArgs) String() string {
-	result, err := json.Marshal(m)
-	if err != nil {
-		panic(fmt.Sprintf("Failed marshalling round: %v", err))
-	}
-	return string(result)
-}
-
-func (m *BennyfiContract) SetYieldSource(yieldSourceArgs *SetYieldSourceArgs) (string, error) {
+func (m *BennyfiContract) SetYieldSource(yieldSource *YieldSource) (string, error) {
 	// return m.ExecAction(yieldSourceArgs.Authorizer, "setyieldsrc", yieldSourceArgs)
 	actionData := make(map[string]interface{})
-	actionData["yield_source"] = yieldSourceArgs.YieldSource
-	actionData["yield_source_name"] = yieldSourceArgs.YieldSourceName
-	actionData["yield_source_description"] = yieldSourceArgs.YieldSourceDescription
-	actionData["stake_symbol"] = yieldSourceArgs.StakeSymbol
-	actionData["adaptor_contract"] = yieldSourceArgs.AdaptorContract
-	actionData["yield_source_cid"] = yieldSourceArgs.YieldSourceCID
-	actionData["entry_fee_percentage_of_yield_x100000"] = yieldSourceArgs.EntryFeePercentageOfYieldx100000
-	actionData["daily_yield_x100000"] = yieldSourceArgs.DailyYieldx100000
-	actionData["token_value"] = yieldSourceArgs.TokenValue
-	actionData["beny_value"] = yieldSourceArgs.BenyValue
-	actionData["authorizer"] = yieldSourceArgs.Authorizer
-	return m.ExecAction(yieldSourceArgs.Authorizer, "setyieldsrc", actionData)
+	actionData["yield_source"] = yieldSource.YieldSource
+	actionData["yield_source_name"] = yieldSource.YieldSourceName
+	actionData["yield_source_description"] = yieldSource.YieldSourceDescription
+	actionData["stake_symbol"] = yieldSource.StakeSymbol
+	actionData["adaptor_contract"] = yieldSource.AdaptorContract
+	actionData["yield_source_cid"] = yieldSource.YieldSourceCID
+	actionData["entry_fee_percentage_of_yield_x100000"] = yieldSource.EntryFeePercentageOfYieldx100000
+	actionData["daily_yield_x100000"] = yieldSource.DailyYieldx100000
+	actionData["token_value"] = yieldSource.TokenValue
+	actionData["beny_value"] = yieldSource.BenyValue
+	actionData["authorizer"] = yieldSource.Authorizer
+	return m.ExecAction(yieldSource.Authorizer, "setyieldsrc", actionData)
 }
 
 func (m *BennyfiContract) EraseYieldSource(yieldSource eos.Name, authorizer eos.AccountName) (string, error) {

@@ -465,24 +465,6 @@ func (m *BennyfiContract) TimeoutRounds(callCounter uint64) (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "timeoutrnds", actionData)
 }
 
-func (m *BennyfiContract) MoveFromSavings(callCounter uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["call_counter"] = callCounter
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "mvfrmsavings", actionData)
-}
-
-func (m *BennyfiContract) SellRex(callCounter uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["call_counter"] = callCounter
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "sellrex", actionData)
-}
-
-func (m *BennyfiContract) WithdrawRex(callCounter uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["call_counter"] = callCounter
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "withdrawrex", actionData)
-}
-
 func (m *BennyfiContract) UnlockRounds(callCounter uint64) (string, error) {
 	actionData := make(map[string]interface{})
 	actionData["call_counter"] = callCounter
