@@ -1,6 +1,8 @@
 package bennyfi
 
-import eos "github.com/eoscanada/eos-go"
+import (
+	eos "github.com/eoscanada/eos-go"
+)
 
 const (
 	SettingEntryFeeAccount               = "ENTRY_FEE_ACCOUNT"
@@ -15,6 +17,7 @@ const (
 	SettingBenyToken                     = "BENY_TOKEN"
 	SettingRoundManagerStakeAmount       = "ROUND_MANAGER_STAKE_AMOUNT"
 	SettingBeneficiaryStakeAmount        = "BENEFICIARY_STAKE_AMOUNT"
+	SettingCreationFee                   = "CREATION_FEE"
 )
 
 type EntryFeeSettings struct {

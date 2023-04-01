@@ -143,6 +143,13 @@ func (m *BennyfiContract) GetProjectById(projectId uint64) (*Project, error) {
 	return nil, nil
 }
 
+func (m *BennyfiContract) GetAllProjectsAsMap() ([]map[string]interface{}, error) {
+	req := eos.GetTableRowsRequest{
+		Table: "projects",
+	}
+	return m.GetAllTableRowsAsMap(req, "project_id")
+}
+
 func (m *BennyfiContract) FilterProjectsById(req *eos.GetTableRowsRequest, projectId uint64) {
 	req.LowerBound = fmt.Sprintf("%v", projectId)
 	req.UpperBound = fmt.Sprintf("%v", projectId)
