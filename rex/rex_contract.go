@@ -64,6 +64,8 @@ func (m *Balance) GetFundOutBalance() eos.Asset {
 }
 
 type RexPool struct {
+	TotalLent     string `json:"total_lent"`
+	TotalUnlent   string `json:"total_unlent"`
 	TotalLendable string `json:"total_lendable"`
 	TotalRex      string `json:"total_rex"`
 }
@@ -150,6 +152,13 @@ func (m *RexContract) SetInitialPool(totalLendable, totalRex eos.Asset) (string,
 	actionData["total_lendable"] = totalLendable
 	actionData["total_rex"] = totalRex
 	return m.ExecAction(m.ContractName, "setinitpool", actionData)
+}
+
+func (m *RexContract) SetLent(totalLent, totalUnlent eos.Asset) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["total_lent"] = totalLent
+	actionData["total_unlent"] = totalUnlent
+	return m.ExecAction(m.ContractName, "setlent", actionData)
 }
 
 func (m *RexContract) InitConf(lendableIncrement uint64, tokenContract eos.Name) (string, error) {
@@ -303,4 +312,8 @@ func (m *RexContract) GetInitialPool() (*InitialPool, error) {
 		return &pool[0], nil
 	}
 	return nil, nil
+}
+
+func (m *RexContract) GetMinUnlent(totalLent, proceedsAmount eos.Asset) eos.Asset {
+	return eos.Asset{Amount: totalLent.Amount/10 + proceedsAmount.Amount, Symbol: totalLent.Symbol}
 }

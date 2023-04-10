@@ -23,6 +23,7 @@ type Stake struct {
 	StakedTime           string            `json:"staked_time"`
 	MovedFromSavingsTime string            `json:"moved_from_savings_time"`
 	StakeEndTime         string            `json:"stake_end_time"`
+	LastNotifiedTime     string            `json:"last_notified_time"`
 	UpdatedDate          string            `json:"updated_date"`
 }
 
@@ -80,6 +81,14 @@ func (m *Stake) GetStakeEndTime() time.Time {
 		panic(fmt.Sprintf("Unable to parse stakeEndTime: %v to asset", m.StakeEndTime))
 	}
 	return stakeEndTime
+}
+
+func (m *Stake) GetLastNotifiedTime() time.Time {
+	lastNotifiedTime, err := util.ToTime(m.LastNotifiedTime)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse lastNotifiedTime: %v to asset", m.LastNotifiedTime))
+	}
+	return lastNotifiedTime
 }
 
 func (m *Stake) CalculateRexLockPeriodTime() time.Time {
@@ -157,6 +166,13 @@ func (m *TlosRexContract) TstLapseTime(roundId uint64) (string, error) {
 	return m.ExecAction(eos.AN(m.ContractName), "tstlapsetime", actionData)
 }
 
+func (m *TlosRexContract) TstSetLastNotifiedTime(roundId uint64, lastNotifiedTime string) (string, error) {
+	actionData := make(map[string]interface{})
+	actionData["round_id"] = roundId
+	actionData["last_notified_time"] = lastNotifiedTime
+	return m.ExecAction(eos.AN(m.ContractName), "setlastnotif", actionData)
+}
+
 func (m *Stake) Clone() *Stake {
 	return &Stake{
 		RoundID:              m.RoundID,
@@ -168,6 +184,7 @@ func (m *Stake) Clone() *Stake {
 		StakedTime:           m.StakedTime,
 		MovedFromSavingsTime: m.MovedFromSavingsTime,
 		StakeEndTime:         m.StakeEndTime,
+		LastNotifiedTime:     m.LastNotifiedTime,
 		UpdatedDate:          m.UpdatedDate,
 	}
 }
