@@ -31,46 +31,32 @@ import (
 type Balance struct {
 	ID            uint64          `json:"id"`
 	TokenHolder   eos.AccountName `json:"token_holder"`
-	Symbol        string          `json:"symbol"`
-	LiquidBalance string          `json:"liquid_balance"`
-	StakedBalance string          `json:"staked_balance"`
+	Symbol        eos.Symbol      `json:"symbol"`
+	LiquidBalance eos.Asset       `json:"liquid_balance"`
+	StakedBalance eos.Asset       `json:"staked_balance"`
 	TokenContract eos.AccountName `json:"token_contract"`
 }
 
-func (m *Balance) GetLiquidBalance() eos.Asset {
-	liquidBalance, err := eos.NewAssetFromString(m.LiquidBalance)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse liquid balance: %v to asset", m.LiquidBalance))
-	}
-	return liquidBalance
+type WithdrawArgs struct {
+	From     eos.AccountName `json:"from"`
+	Quantity eos.Asset       `json:"quantity"`
 }
 
-func (m *Balance) GetStakedBalance() eos.Asset {
-	stakedBalance, err := eos.NewAssetFromString(m.StakedBalance)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse staked balance: %v to asset", m.StakedBalance))
-	}
-	return stakedBalance
-}
-
-func (m *Balance) GetSymbol() eos.Symbol {
-	symbol, err := eos.StringToSymbol(m.Symbol)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse symbol: %v to Symbol", m.Symbol))
-	}
-	return symbol
+type WithdrawTotalArgs struct {
+	From   eos.AccountName `json:"from"`
+	Symbol eos.Symbol      `json:"symbol"`
 }
 
 func (m *Balance) GetTotalBalance() eos.Asset {
-	return m.GetLiquidBalance().Add(m.GetStakedBalance())
+	return m.LiquidBalance.Add(m.StakedBalance)
 }
 
 func (m *Balance) HasLiquidBalance() bool {
-	return m.GetLiquidBalance().Amount > 0
+	return m.LiquidBalance.Amount > 0
 }
 
 func (m *Balance) HasStakedBalance() bool {
-	return m.GetStakedBalance().Amount > 0
+	return m.StakedBalance.Amount > 0
 }
 
 func (m *Balance) HasBalance() bool {
@@ -82,14 +68,12 @@ func (m *Balance) AddLiquidBalance(amount interface{}, negative bool) eos.Asset 
 	if err != nil {
 		panic(fmt.Sprintf("Unable to parse amount: %v to asset", amount))
 	}
-	liquidBalance := m.GetLiquidBalance()
 	if negative {
-		liquidBalance = liquidBalance.Sub(amnt)
+		m.LiquidBalance = m.LiquidBalance.Sub(amnt)
 	} else {
-		liquidBalance = liquidBalance.Add(amnt)
+		m.LiquidBalance = m.LiquidBalance.Add(amnt)
 	}
-	m.LiquidBalance = liquidBalance.String()
-	return liquidBalance
+	return m.LiquidBalance
 }
 
 func (m *Balance) AddStakedBalance(amount interface{}, negative bool) eos.Asset {
@@ -97,28 +81,29 @@ func (m *Balance) AddStakedBalance(amount interface{}, negative bool) eos.Asset 
 	if err != nil {
 		panic(fmt.Sprintf("Unable to parse amount: %v to asset", amount))
 	}
-	stakedBalance := m.GetStakedBalance()
+
 	if negative {
-		stakedBalance = stakedBalance.Sub(amnt)
+		m.StakedBalance = m.StakedBalance.Sub(amnt)
 	} else {
-		stakedBalance = stakedBalance.Add(amnt)
+		m.StakedBalance = m.StakedBalance.Add(amnt)
 	}
-	m.StakedBalance = stakedBalance.String()
-	return stakedBalance
+	return m.StakedBalance
 }
 
 func (m *BennyfiContract) Withdraw(from eos.AccountName, quantity eos.Asset) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["from"] = eos.Name(from)
-	actionData["quantity"] = quantity
+	actionData := &WithdrawArgs{
+		From:     from,
+		Quantity: quantity,
+	}
 
 	return m.ExecAction(from, "withdraw", actionData)
 }
 
 func (m *BennyfiContract) WithdrawTot(from eos.AccountName, symbol eos.Symbol) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["from"] = eos.Name(from)
-	actionData["symbol"] = symbol.String()
+	actionData := &WithdrawTotalArgs{
+		From:   from,
+		Symbol: symbol,
+	}
 
 	return m.ExecAction(from, "withdrawtot", actionData)
 }
@@ -174,7 +159,12 @@ func (m *BennyfiContract) FilterBalancesbyAccount(req *eos.GetTableRowsRequest, 
 	req.UpperBound = fmt.Sprintf("%v", account)
 }
 
-func (m *BennyfiContract) GetBalance(tokenHolder eos.AccountName, symbol string) (*Balance, error) {
+func (m *BennyfiContract) GetBalance(tokenHolder eos.AccountName, symbol interface{}) (*Balance, error) {
+
+	symb, err := util.ToSymbol(symbol)
+	if err != nil {
+		return nil, err
+	}
 
 	var balances []Balance
 	request := eos.GetTableRowsRequest{
@@ -186,12 +176,12 @@ func (m *BennyfiContract) GetBalance(tokenHolder eos.AccountName, symbol string)
 		//Limit:      1,
 	}
 
-	err := m.GetTableRows(request, &balances)
+	err = m.GetTableRows(request, &balances)
 	if err != nil {
 		return nil, fmt.Errorf("get table rows %v", err)
 	}
 	for _, balance := range balances {
-		if balance.Symbol == symbol {
+		if balance.Symbol.Equal(symb) {
 			return &balance, nil
 		}
 	}
@@ -218,9 +208,9 @@ func (m *BennyfiContract) GetBalanceOrDefault(tokenHolder eos.AccountName, symbo
 	if balance == nil {
 		balance = &Balance{
 			TokenHolder:   tokenHolder,
-			Symbol:        symb.String(),
-			LiquidBalance: eos.Asset{Amount: 0, Symbol: symb}.String(),
-			StakedBalance: eos.Asset{Amount: 0, Symbol: symb}.String(),
+			Symbol:        symb,
+			LiquidBalance: eos.Asset{Amount: 0, Symbol: symb},
+			StakedBalance: eos.Asset{Amount: 0, Symbol: symb},
 			TokenContract: tkc,
 		}
 	}

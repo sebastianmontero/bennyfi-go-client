@@ -39,6 +39,11 @@ type SetCategoryArgs struct {
 	Authorizer eos.AccountName `json:"authorizer"`
 }
 
+type EraseCategoryArgs struct {
+	Category   eos.Name        `json:"category"`
+	Authorizer eos.AccountName `json:"authorizer"`
+}
+
 func (m *BennyfiContract) SetCategory(categoryArgs *SetCategoryArgs) (string, error) {
 	// actionData := make(map[string]interface{})
 	// actionData["authorizer"] = categoryArgs.Authorizer
@@ -48,9 +53,10 @@ func (m *BennyfiContract) SetCategory(categoryArgs *SetCategoryArgs) (string, er
 }
 
 func (m *BennyfiContract) EraseCategory(category eos.Name, authorizer eos.AccountName) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["category"] = category
-	actionData["authorizer"] = authorizer
+	actionData := &EraseCategoryArgs{
+		Category:   category,
+		Authorizer: authorizer,
+	}
 	return m.ExecAction(authorizer, "erasectgry", actionData)
 }
 

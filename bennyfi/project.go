@@ -73,6 +73,12 @@ type NewProjectArgs struct {
 	Attributes  Attributes      `json:"attributes"`
 }
 
+type EraseProjectArgs struct {
+	ProjectID  uint64          `json:"project_id"`
+	Authorizer eos.AccountName `json:"authorizer"`
+	Erase      bool            `json:"erase"`
+}
+
 func (m *Project) ToNewProjectArgs() *NewProjectArgs {
 	return &NewProjectArgs{
 		Authorizer:  m.Authorizer,
@@ -82,19 +88,15 @@ func (m *Project) ToNewProjectArgs() *NewProjectArgs {
 }
 
 func (m *BennyfiContract) NewProject(projectArgs *NewProjectArgs) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["authorizer"] = projectArgs.Authorizer
-	actionData["beneficiary"] = projectArgs.Beneficiary
-	actionData["attributes"] = projectArgs.Attributes
-
-	return m.ExecAction(projectArgs.Authorizer, "newproject", actionData)
+	return m.ExecAction(projectArgs.Authorizer, "newproject", projectArgs)
 }
 
 func (m *BennyfiContract) EraseProject(projectId uint64, authorizer eos.AccountName, erase bool) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["project_id"] = projectId
-	actionData["authorizer"] = authorizer
-	actionData["erase"] = erase
+	actionData := &EraseProjectArgs{
+		ProjectID:  projectId,
+		Authorizer: authorizer,
+		Erase:      erase,
+	}
 	return m.ExecAction(authorizer, "eraseproject", actionData)
 }
 
