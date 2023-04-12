@@ -38,6 +38,47 @@ var (
 	Disabled     uint64 = 70
 )
 
+type SetAuthArgs struct {
+	Authorizer  eos.AccountName `json:"authorizer"`
+	Account     eos.AccountName `json:"account"`
+	Level       uint64          `json:"auth_level"`
+	DisplayName string          `json:"display_name"`
+	ArtifactCID string          `json:"artifact_cid"`
+	Notes       string          `json:"notes"`
+}
+
+type SetAuthLevelArgs struct {
+	Authorizer eos.AccountName `json:"authorizer"`
+	Account    eos.AccountName `json:"account"`
+	Level      uint64          `json:"auth_level"`
+	Notes      string          `json:"notes"`
+}
+
+type StakeAuthArgs struct {
+	Account eos.AccountName `json:"account"`
+	Level   uint64          `json:"auth_level"`
+}
+
+type CanCreateTokenArgs struct {
+	User eos.AccountName `json:"user"`
+}
+
+type UnstakeAuthArgs struct {
+	Authorizer eos.AccountName `json:"authorizer"`
+	Account    eos.AccountName `json:"account"`
+}
+
+type SetProfileArgs struct {
+	Account     eos.AccountName `json:"account"`
+	DisplayName string          `json:"display_name"`
+	ArtifactCID string          `json:"artifact_cid"`
+}
+
+type EraseAuthArgs struct {
+	Authorizer eos.AccountName `json:"authorizer"`
+	Account    eos.AccountName `json:"account"`
+}
+
 type Auth struct {
 	Authorizer   eos.AccountName `json:"authorizer"`
 	Account      eos.AccountName `json:"account"`
@@ -48,8 +89,36 @@ type Auth struct {
 	StakedAmount string          `json:"staked_amount"`
 }
 
+func (m *Auth) ToSetAuthArgs() *SetAuthArgs {
+	return &SetAuthArgs{
+		Authorizer:  m.Authorizer,
+		Account:     m.Account,
+		Level:       m.Level,
+		DisplayName: m.DisplayName,
+		ArtifactCID: m.ArtifactCID,
+		Notes:       m.Notes,
+	}
+}
+
+func (m *Auth) ToSetAuthLevelArgs() *SetAuthLevelArgs {
+	return &SetAuthLevelArgs{
+		Authorizer: m.Authorizer,
+		Account:    m.Account,
+		Level:      m.Level,
+		Notes:      m.Notes,
+	}
+}
+
+func (m *Auth) ToSetProfileArgs() *SetProfileArgs {
+	return &SetProfileArgs{
+		Account:     m.Account,
+		DisplayName: m.DisplayName,
+		ArtifactCID: m.ArtifactCID,
+	}
+}
+
 func (m *BennyfiContract) SetAuth(auth *Auth) (string, error) {
-	_, err := m.Contract.ExecAction(auth.Authorizer, "setauth", auth)
+	_, err := m.Contract.ExecAction(auth.Authorizer, "setauth", auth.ToSetAuthArgs())
 	if err != nil {
 		return "", err
 	}
@@ -57,11 +126,13 @@ func (m *BennyfiContract) SetAuth(auth *Auth) (string, error) {
 }
 
 func (m *BennyfiContract) SetAuthLevel(authorizer, account eos.AccountName, level uint64, notes string) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["authorizer"] = authorizer
-	actionData["account"] = account
-	actionData["auth_level"] = level
-	actionData["notes"] = notes
+
+	actionData := &SetAuthLevelArgs{
+		Authorizer: authorizer,
+		Account:    account,
+		Level:      level,
+		Notes:      notes,
+	}
 	_, err := m.Contract.ExecAction(authorizer, "setauthlevel", actionData)
 	if err != nil {
 		return "", err
@@ -70,10 +141,11 @@ func (m *BennyfiContract) SetAuthLevel(authorizer, account eos.AccountName, leve
 }
 
 func (m *BennyfiContract) SetProfile(account eos.AccountName, displayName, artifactCID string) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["account"] = account
-	actionData["display_name"] = displayName
-	actionData["artifact_cid"] = artifactCID
+	actionData := &SetProfileArgs{
+		Account:     account,
+		DisplayName: displayName,
+		ArtifactCID: artifactCID,
+	}
 	_, err := m.Contract.ExecAction(account, "setprofile", actionData)
 	if err != nil {
 		return "", err
@@ -82,9 +154,10 @@ func (m *BennyfiContract) SetProfile(account eos.AccountName, displayName, artif
 }
 
 func (m *BennyfiContract) EraseAuth(authorizer, account eos.AccountName) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["authorizer"] = authorizer
-	actionData["account"] = account
+	actionData := &EraseAuthArgs{
+		Authorizer: authorizer,
+		Account:    account,
+	}
 	_, err := m.Contract.ExecAction(string(authorizer), "eraseauth", actionData)
 	if err != nil {
 		return "", err
@@ -93,9 +166,10 @@ func (m *BennyfiContract) EraseAuth(authorizer, account eos.AccountName) (string
 }
 
 func (m *BennyfiContract) StakeAuth(account eos.AccountName, level uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["account"] = account
-	actionData["auth_level"] = level
+	actionData := &StakeAuthArgs{
+		Account: account,
+		Level:   level,
+	}
 	_, err := m.Contract.ExecAction(string(account), "stakeauth", actionData)
 	if err != nil {
 		return "", err
@@ -104,9 +178,10 @@ func (m *BennyfiContract) StakeAuth(account eos.AccountName, level uint64) (stri
 }
 
 func (m *BennyfiContract) UnstakeAuth(authorizer, account eos.AccountName) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["authorizer"] = authorizer
-	actionData["account"] = account
+	actionData := &UnstakeAuthArgs{
+		Authorizer: authorizer,
+		Account:    account,
+	}
 	_, err := m.Contract.ExecAction(string(authorizer), "unstakeauth", actionData)
 	if err != nil {
 		return "", err
@@ -115,9 +190,7 @@ func (m *BennyfiContract) UnstakeAuth(authorizer, account eos.AccountName) (stri
 }
 
 func (m *BennyfiContract) CanCreateToken(user eos.AccountName) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["user"] = user
-	_, err := m.Contract.ExecAction(string(user), "cancreatetkn", actionData)
+	_, err := m.Contract.ExecAction(string(user), "cancreatetkn", &CanCreateTokenArgs{User: user})
 	if err != nil {
 		return "", err
 	}

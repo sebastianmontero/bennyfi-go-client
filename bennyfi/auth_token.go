@@ -44,9 +44,34 @@ type TokenLimits struct {
 	MaxValue string `json:"max_value"`
 }
 
+func (m *TokenLimits) ToArgs() *TokenLimitsArgs {
+	min, err := eos.NewAssetFromString(m.MinValue)
+	if err != nil {
+		panic(fmt.Sprintf("failed parsing limit min value: %v, error: %v", m.MinValue, err))
+	}
+	max, err := eos.NewAssetFromString(m.MaxValue)
+	if err != nil {
+		panic(fmt.Sprintf("failed parsing limit max value: %v, error: %v", m.MaxValue, err))
+	}
+	return &TokenLimitsArgs{
+		MinValue: min,
+		MaxValue: max,
+	}
+}
+
 type TokenRole struct {
 	Key   eos.Name     `json:"first"`
 	Value *TokenLimits `json:"second"`
+}
+
+type TokenLimitsArgs struct {
+	MinValue eos.Asset `json:"min_value"`
+	MaxValue eos.Asset `json:"max_value"`
+}
+
+type TokenRoleArgs struct {
+	Key   eos.Name         `json:"first"`
+	Value *TokenLimitsArgs `json:"second"`
 }
 
 func NewTokenRole(tokenRole string, minValue, maxValue eos.Int64, symbol eos.Symbol) *TokenRole {
@@ -61,6 +86,19 @@ func NewTokenRole(tokenRole string, minValue, maxValue eos.Int64, symbol eos.Sym
 
 type TokenRoles []*TokenRole
 
+func (m TokenRoles) ToArgs() []*TokenRoleArgs {
+	args := make([]*TokenRoleArgs, 0, len(m))
+	for _, v := range m {
+		args = append(args, &TokenRoleArgs{
+			Key:   v.Key,
+			Value: v.Value.ToArgs(),
+		})
+	}
+	return args
+}
+
+type TokenRolesArgs []*TokenRoleArgs
+
 // type TokenRolesDTO []map[]
 
 type AuthToken struct {
@@ -69,6 +107,28 @@ type AuthToken struct {
 	TokenContract eos.AccountName `json:"token_contract"`
 	ArtifactCID   string          `json:"artifact_cid"`
 	TokenRoles    TokenRoles      `json:"token_roles"`
+}
+
+func (m *AuthToken) ToSetTokenArgs() *SetTokenArgs {
+	symb, err := eos.StringToSymbol(m.Symbol)
+	if err != nil {
+		panic(fmt.Sprintf("failed parsing symbol: %v, error: %v", m.Symbol, err))
+	}
+	return &SetTokenArgs{
+		Authorizer:    m.Authorizer,
+		Symbol:        symb,
+		TokenContract: m.TokenContract,
+		ArtifactCID:   m.ArtifactCID,
+		TokenRoles:    m.TokenRoles.ToArgs(),
+	}
+}
+
+type SetTokenArgs struct {
+	Authorizer    eos.AccountName `json:"authorizer"`
+	Symbol        eos.Symbol      `json:"symbol"`
+	TokenContract eos.AccountName `json:"token_contract"`
+	ArtifactCID   string          `json:"artifact_cid"`
+	TokenRoles    TokenRolesArgs  `json:"token_roles"`
 }
 
 func (m *AuthToken) String() string {
@@ -104,14 +164,14 @@ func (m *SetTokenRoleArgs) GetTokenRole() *TokenRole {
 }
 
 func (m *BennyfiContract) SetToken(authToken *AuthToken) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["authorizer"] = authToken.Authorizer
-	actionData["symbol"] = authToken.Symbol
-	actionData["token_contract"] = authToken.TokenContract
-	actionData["artifact_cid"] = authToken.ArtifactCID
-	actionData["token_roles"] = authToken.TokenRoles
+	// actionData := make(map[string]interface{})
+	// actionData["authorizer"] = authToken.Authorizer
+	// actionData["symbol"] = authToken.Symbol
+	// actionData["token_contract"] = authToken.TokenContract
+	// actionData["artifact_cid"] = authToken.ArtifactCID
+	// actionData["token_roles"] = authToken.TokenRoles
 
-	return m.ExecAction(authToken.Authorizer, "settoken", actionData)
+	return m.ExecAction(authToken.Authorizer, "settoken", authToken.ToSetTokenArgs())
 }
 
 func (m *BennyfiContract) SetTokenRole(args *SetTokenRoleArgs) (string, error) {
@@ -145,6 +205,10 @@ func (m *BennyfiContract) EraseTokenRole(authorizer eos.AccountName, symbol eos.
 
 func (m *BennyfiContract) GetTokens() ([]AuthToken, error) {
 	return m.GetTokensReq(nil)
+}
+
+func (m *BennyfiContract) GetTokens2() ([]SetTokenArgs, error) {
+	return m.GetTokensReq2(nil)
 }
 
 func (m *BennyfiContract) GetToken(symbol eos.Symbol) (*AuthToken, error) {
@@ -188,6 +252,20 @@ func (m *BennyfiContract) GetTokensReq(req *eos.GetTableRowsRequest) ([]AuthToke
 	err := m.GetTableRows(*req, &authTokens)
 	if err != nil {
 		return []AuthToken{}, fmt.Errorf("get table rows %v", err)
+	}
+	return authTokens, nil
+}
+
+func (m *BennyfiContract) GetTokensReq2(req *eos.GetTableRowsRequest) ([]SetTokenArgs, error) {
+
+	var authTokens []SetTokenArgs
+	if req == nil {
+		req = &eos.GetTableRowsRequest{}
+	}
+	req.Table = "authtokens"
+	err := m.GetTableRows(*req, &authTokens)
+	if err != nil {
+		return []SetTokenArgs{}, fmt.Errorf("get table rows %v", err)
 	}
 	return authTokens, nil
 }

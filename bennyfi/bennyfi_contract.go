@@ -97,9 +97,9 @@ func (m *BennyfiContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) erro
 }
 
 func (m *BennyfiContract) Pause(pause uint32) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["pause"] = pause
-	return m.ExecAction(eos.AN(m.ContractName), "pause", actionData)
+	// actionData := make(map[string]interface{})
+	// actionData["pause"] = pause
+	return m.ExecAction(eos.AN(m.ContractName), "pause", pause)
 }
 
 func (m *BennyfiContract) Reset(limit uint64, toDelete []string) (string, error) {
