@@ -27,6 +27,7 @@ import (
 	eos "github.com/eoscanada/eos-go"
 	"github.com/sebastianmontero/bennyfi-go-client/util/utype"
 	"github.com/sebastianmontero/eos-go-toolbox/err"
+	"github.com/sebastianmontero/eos-go-toolbox/util"
 )
 
 type IDistribution interface {
@@ -40,36 +41,20 @@ type IDistribution interface {
 }
 
 type DistributionFT struct {
-	BeneficiaryReward     string   `json:"beneficiary_reward"`
-	BeneficiaryRewardPaid string   `json:"beneficiary_reward_paid"`
-	RoundManagerFee       string   `json:"round_manager_fee"`
-	RoundManagerFeePaid   string   `json:"round_manager_fee_paid"`
-	MinParticipantReward  string   `json:"min_participant_reward"`
-	WinnerPrizes          []string `json:"winner_prizes"`
+	BeneficiaryReward     eos.Asset   `json:"beneficiary_reward"`
+	BeneficiaryRewardPaid eos.Asset   `json:"beneficiary_reward_paid"`
+	RoundManagerFee       eos.Asset   `json:"round_manager_fee"`
+	RoundManagerFeePaid   eos.Asset   `json:"round_manager_fee_paid"`
+	MinParticipantReward  eos.Asset   `json:"min_participant_reward"`
+	WinnerPrizes          []eos.Asset `json:"winner_prizes"`
 }
 
 func (m *DistributionFT) HasBeneficiaryReward() bool {
-	return m.GetBeneficiaryReward().Amount > 0
+	return m.BeneficiaryReward.Amount > 0
 }
 
 func (m *DistributionFT) HasRoundManagerFee() bool {
-	return m.GetRoundManagerFee().Amount > 0
-}
-
-func (m *DistributionFT) GetBeneficiaryReward() eos.Asset {
-	beneficiaryReward, err := eos.NewAssetFromString(m.BeneficiaryReward)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse beneficiary reward: %v to asset", m.BeneficiaryReward))
-	}
-	return beneficiaryReward
-}
-
-func (m *DistributionFT) GetBeneficiaryRewardPaid() eos.Asset {
-	beneficiaryRewardPaid, err := eos.NewAssetFromString(m.BeneficiaryRewardPaid)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse beneficiary reward paid: %v to asset", m.BeneficiaryRewardPaid))
-	}
-	return beneficiaryRewardPaid
+	return m.RoundManagerFee.Amount > 0
 }
 
 func (m *DistributionFT) PaidTotalBeneficiaryReward() {
@@ -77,12 +62,15 @@ func (m *DistributionFT) PaidTotalBeneficiaryReward() {
 }
 
 func (m *DistributionFT) PaidBeneficiaryReward(amount interface{}) {
-	amnt := amount.(eos.Asset)
-	paid := m.GetBeneficiaryRewardPaid().Add(amnt)
-	if paid.Amount > m.GetBeneficiaryReward().Amount {
+	amnt, err := util.ToAsset(amount)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to paid beneficiary reward amount: %v error: %v", amount, err))
+	}
+	paid := m.BeneficiaryRewardPaid.Add(amnt)
+	if paid.Amount > m.BeneficiaryReward.Amount {
 		panic(fmt.Sprintf("Total Paid amount: %v is greater than beneficiary reward: %v, current payment: %v", paid, m.BeneficiaryReward, amount))
 	}
-	m.BeneficiaryRewardPaid = paid.String()
+	m.BeneficiaryRewardPaid = paid
 }
 
 func (m *DistributionFT) PaidTotalRoundManagerFee() {
@@ -90,41 +78,20 @@ func (m *DistributionFT) PaidTotalRoundManagerFee() {
 }
 
 func (m *DistributionFT) PaidRoundManagerFee(amount interface{}) {
-	amnt := amount.(eos.Asset)
-	paid := m.GetRoundManagerFeePaid().Add(amnt)
-	if paid.Amount > m.GetRoundManagerFee().Amount {
+	amnt, err := util.ToAsset(amount)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to paid round manager fee amount: %v error: %v", amount, err))
+	}
+	paid := m.RoundManagerFeePaid.Add(amnt)
+	if paid.Amount > m.RoundManagerFee.Amount {
 		panic(fmt.Sprintf("Total Paid amount: %v is greater than round manager fee: %v, current payment: %v", paid, m.RoundManagerFee, amount))
 	}
-	m.RoundManagerFeePaid = paid.String()
+	m.RoundManagerFeePaid = paid
 }
 
 func (m *DistributionFT) Paid() {
 	m.PaidTotalBeneficiaryReward()
 	m.PaidTotalRoundManagerFee()
-}
-
-func (m *DistributionFT) GetRoundManagerFee() eos.Asset {
-	roundManagerFee, err := eos.NewAssetFromString(m.RoundManagerFee)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse round manager fee: %v to asset", m.RoundManagerFee))
-	}
-	return roundManagerFee
-}
-
-func (m *DistributionFT) GetRoundManagerFeePaid() eos.Asset {
-	roundManagerFeePaid, err := eos.NewAssetFromString(m.RoundManagerFeePaid)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse round manager fee paid: %v to asset", m.RoundManagerFeePaid))
-	}
-	return roundManagerFeePaid
-}
-
-func (m *DistributionFT) GetMinParticipantReward() eos.Asset {
-	minParticipantReward, err := eos.NewAssetFromString(m.MinParticipantReward)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse min participant reward: %v to asset", m.MinParticipantReward))
-	}
-	return minParticipantReward
 }
 
 func (m *DistributionFT) GetNumWinners() uint32 {
@@ -135,11 +102,7 @@ func (m *DistributionFT) GetWinnerPrize(pos uint32) eos.Asset {
 	if pos >= m.GetNumWinners() {
 		panic(fmt.Sprintf("There is no winner for pos: %v number of winners are: %v", pos, m.GetNumWinners()))
 	}
-	winnerPrize, err := eos.NewAssetFromString(m.WinnerPrizes[pos])
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse winner prize: %v to asset", m.WinnerPrizes[pos]))
-	}
-	return winnerPrize
+	return m.WinnerPrizes[pos]
 }
 
 type DistributionNFT struct {

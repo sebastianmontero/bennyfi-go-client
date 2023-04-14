@@ -9,9 +9,10 @@ import (
 )
 
 func TestWinnersUpsert(t *testing.T) {
+	symbol := eos.Symbol{Precision: 4, Symbol: "TLOS"}
 	actual := bennyfi.Winners{}
 	key1 := eos.Name("key1")
-	winnerFT := bennyfi.NewWinnerFT(eos.AN("account1"), "10.0000 TLOS", 1)
+	winnerFT := bennyfi.NewWinnerFT(eos.AN("account1"), eos.Asset{Amount: 100000, Symbol: symbol}, 1)
 
 	distWinnersFT := bennyfi.DistributionWinnersFT{winnerFT}
 	expected := bennyfi.Winners{
@@ -23,7 +24,7 @@ func TestWinnersUpsert(t *testing.T) {
 	actual.Upsert(key1, winnerFT)
 	test.AssertWinners(t, actual, expected)
 
-	winnerFT = bennyfi.NewWinnerFT(eos.AN("account2"), "9.0000 TLOS", 2)
+	winnerFT = bennyfi.NewWinnerFT(eos.AN("account2"), eos.Asset{Amount: 90000, Symbol: symbol}, 2)
 	distWinnersFT = append(distWinnersFT, winnerFT)
 	expected[0].Value.Impl = bennyfi.NewDistributionWinners(distWinnersFT)
 	actual.Upsert(key1, winnerFT)

@@ -8,23 +8,22 @@ import (
 
 	"github.com/eoscanada/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/dto"
-	"github.com/sebastianmontero/eos-go-toolbox/util"
 )
 
 var RexLockPeriodDays = 5
 
 type Stake struct {
-	RoundID              uint64            `json:"round_id"`
-	TotalStake           string            `json:"total_stake"`
-	RexBalance           string            `json:"rex_balance"`
-	TotalReturn          string            `json:"total_return"`
-	RexState             eos.Name          `json:"rex_state"`
-	StakingPeriod        *dto.Microseconds `json:"staking_period"`
-	StakedTime           string            `json:"staked_time"`
-	MovedFromSavingsTime string            `json:"moved_from_savings_time"`
-	StakeEndTime         string            `json:"stake_end_time"`
-	LastNotifiedTime     string            `json:"last_notified_time"`
-	UpdatedDate          string            `json:"updated_date"`
+	RoundID              uint64             `json:"round_id"`
+	TotalStake           eos.Asset          `json:"total_stake"`
+	RexBalance           eos.Asset          `json:"rex_balance"`
+	TotalReturn          eos.Asset          `json:"total_return"`
+	RexState             eos.Name           `json:"rex_state"`
+	StakingPeriod        *dto.Microseconds  `json:"staking_period"`
+	StakedTime           eos.BlockTimestamp `json:"staked_time"`
+	MovedFromSavingsTime eos.BlockTimestamp `json:"moved_from_savings_time"`
+	StakeEndTime         eos.BlockTimestamp `json:"stake_end_time"`
+	LastNotifiedTime     eos.BlockTimestamp `json:"last_notified_time"`
+	UpdatedDate          eos.BlockTimestamp `json:"updated_date"`
 }
 
 func (m *Stake) String() string {
@@ -35,141 +34,66 @@ func (m *Stake) String() string {
 	return string(result)
 }
 
-func (m *Stake) GetTotalStake() eos.Asset {
-	totalStake, err := eos.NewAssetFromString(m.TotalStake)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse total stake: %v to asset", m.TotalStake))
-	}
-	return totalStake
-}
-
-func (m *Stake) GetRexBalance() eos.Asset {
-	rexBalance, err := eos.NewAssetFromString(m.RexBalance)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse rex balance: %v to asset", m.RexBalance))
-	}
-	return rexBalance
-}
-
-func (m *Stake) GetTotalReturn() eos.Asset {
-	totalReturn, err := eos.NewAssetFromString(m.TotalReturn)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse total return: %v to asset", m.TotalReturn))
-	}
-	return totalReturn
-}
-
-func (m *Stake) GetStakedTime() time.Time {
-	stakedTime, err := util.ToTime(m.StakedTime)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse stakedTime: %v to asset", m.StakedTime))
-	}
-	return stakedTime
-}
-
-func (m *Stake) GetMovedFromSavingsTime() time.Time {
-	movedFromSavingsTime, err := util.ToTime(m.MovedFromSavingsTime)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse movedFromSavingsTime: %v to asset", m.MovedFromSavingsTime))
-	}
-	return movedFromSavingsTime
-}
-
-func (m *Stake) GetStakeEndTime() time.Time {
-	stakeEndTime, err := util.ToTime(m.StakeEndTime)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse stakeEndTime: %v to asset", m.StakeEndTime))
-	}
-	return stakeEndTime
-}
-
-func (m *Stake) GetLastNotifiedTime() time.Time {
-	lastNotifiedTime, err := util.ToTime(m.LastNotifiedTime)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse lastNotifiedTime: %v to asset", m.LastNotifiedTime))
-	}
-	return lastNotifiedTime
-}
-
 func (m *Stake) CalculateRexLockPeriodTime() time.Time {
-	stakedTime, err := util.ToTime(m.StakedTime)
-	if err != nil {
-		panic(fmt.Sprintf("failed to calculate Rex Lock Period Time, could not parse staked time: %v, error: %v", m.StakedTime, err))
-	}
-	return stakedTime.Add(time.Hour * time.Duration(m.StakingPeriod.Hrs()-int64(24*RexLockPeriodDays)))
+
+	return m.StakedTime.Add(time.Hour * time.Duration(m.StakingPeriod.Hrs()-int64(24*RexLockPeriodDays)))
 }
 
 func (m *Stake) CalculateSellRexTime() time.Time {
-	movedFromSavingsTime, err := util.ToTime(m.MovedFromSavingsTime)
-	if err != nil {
-		panic(fmt.Sprintf("failed to calculate Sell Rex Time, could not parse moved from savings time: %v, error: %v", m.MovedFromSavingsTime, err))
-	}
-	return movedFromSavingsTime.Add(time.Hour * time.Duration(24*RexLockPeriodDays))
+
+	return m.MovedFromSavingsTime.Add(time.Hour * time.Duration(24*RexLockPeriodDays))
 }
 
 func (m *Stake) CalculateStakeEndTime() time.Time {
-	stakedTime, err := util.ToTime(m.StakedTime)
-	if err != nil {
-		panic(fmt.Sprintf("failed to calculate Unlock Time, could not parse staked time: %v, error: %v", m.StakedTime, err))
-	}
-	return stakedTime.Add(time.Hour * time.Duration(m.StakingPeriod.Hrs()))
+	return m.StakedTime.Add(time.Hour * time.Duration(m.StakingPeriod.Hrs()))
 }
 
-func (m *TlosRexContract) CheckStakeParameters(authorizer, tokenContract, stakeAmount interface{}, stakingPeriodHrs uint32) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["token_contract"] = tokenContract
-	actionData["stake_amount"] = stakeAmount
-	actionData["staking_period_hrs"] = stakingPeriodHrs
+func (m *TlosRexContract) CheckStakeParameters(authorizer, tokenContract eos.AccountName, stakeAmount eos.Asset, stakingPeriodHrs uint32) (string, error) {
+	actionData := struct {
+		TokenContract    eos.AccountName
+		StakeAmount      eos.Asset
+		StakingPeriodHrs uint32
+	}{tokenContract, stakeAmount, stakingPeriodHrs}
 	return m.ExecAction(authorizer, "chckstkparam", actionData)
 }
 
 func (m *TlosRexContract) MoveRoundFromSavings(roundId uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["round_id"] = roundId
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "mvfrmsvngsrn", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "mvfrmsvngsrn", roundId)
 }
 
 func (m *TlosRexContract) SellRoundRex(roundId uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["round_id"] = roundId
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "sellrexrn", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "sellrexrn", roundId)
 }
 
 func (m *TlosRexContract) WithdrawRoundRex(roundId uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["round_id"] = roundId
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "withdrwrexrn", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "withdrwrexrn", roundId)
 }
 
 func (m *TlosRexContract) MoveFromSavings(callCounter uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["call_counter"] = callCounter
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "mvfrmsavings", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "mvfrmsavings", callCounter)
 }
 
 func (m *TlosRexContract) SellRex(callCounter uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["call_counter"] = callCounter
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "sellrex", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "sellrex", callCounter)
 }
 
 func (m *TlosRexContract) WithdrawRex(callCounter uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["call_counter"] = callCounter
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "withdrawrex", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "withdrawrex", callCounter)
 }
 
 func (m *TlosRexContract) TstLapseTime(roundId uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["round_id"] = roundId
-	actionData["call_counter"] = m.NextCallCounter()
+	actionData := struct {
+		RoundId     uint64
+		CallCounter uint64
+	}{roundId, m.NextCallCounter()}
 	return m.ExecAction(eos.AN(m.ContractName), "tstlapsetime", actionData)
 }
 
-func (m *TlosRexContract) TstSetLastNotifiedTime(roundId uint64, lastNotifiedTime string) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["round_id"] = roundId
-	actionData["last_notified_time"] = lastNotifiedTime
+func (m *TlosRexContract) TstSetLastNotifiedTime(roundId uint64, lastNotifiedTime time.Time) (string, error) {
+	actionData := struct {
+		RoundId          uint64
+		LastNotifiedTime eos.BlockTimestamp
+	}{roundId, eos.BlockTimestamp{Time: lastNotifiedTime}}
 	return m.ExecAction(eos.AN(m.ContractName), "setlastnotif", actionData)
 }
 

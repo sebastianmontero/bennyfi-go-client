@@ -184,19 +184,15 @@ func (m *VestingTracker) IncreaseCycle() {
 
 type VestingTrackers []*VestingTracker
 
-func (m VestingTrackers) GetContextForCycle(cycle uint16, startTime string) *VestingContext {
-	st, err := util.ToTime(startTime)
-	if err != nil {
-		panic(fmt.Sprintf("failed parsing vesting start time, error: %v", err))
-	}
+func (m VestingTrackers) GetContextForCycle(cycle uint16, startTime time.Time) *VestingContext {
 	var context *VestingContext
 	for c := uint16(1); c <= cycle; c++ {
-		context = m.findNext(st)
+		context = m.findNext(startTime)
 		if !context.HasConfigs() {
 			panic(fmt.Sprintf("There is no vesting cycle: %v, max vesting cycle:%v", cycle, c-1))
 		}
 	}
-	context.IsLastCycle = !m.findNext(st).HasConfigs()
+	context.IsLastCycle = !m.findNext(startTime).HasConfigs()
 	return context
 }
 

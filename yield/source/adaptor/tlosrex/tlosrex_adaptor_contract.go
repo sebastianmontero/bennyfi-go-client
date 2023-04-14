@@ -95,9 +95,10 @@ func (m *TlosRexContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) erro
 }
 
 func (m *TlosRexContract) Reset(limit uint64, toDelete []string) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["limit"] = limit
-	actionData["to_delete"] = toDelete
-	actionData["call_counter"] = m.NextCallCounter()
+	actionData := struct {
+		Limit       uint64
+		ToDelete    []string
+		CallCounter uint64
+	}{limit, toDelete, m.NextCallCounter()}
 	return m.ExecAction(eos.AN(m.ContractName), "reset", actionData)
 }

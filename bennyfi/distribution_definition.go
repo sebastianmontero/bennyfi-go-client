@@ -24,6 +24,7 @@ package bennyfi
 import (
 	"fmt"
 	"math"
+	"time"
 
 	eos "github.com/eoscanada/eos-go"
 	"github.com/sebastianmontero/bennyfi-go-client/util/utype"
@@ -77,13 +78,13 @@ func (m *BaseDistributionDefinition) GetVesting() *VestingConfig {
 }
 
 type DistributionDefinitionFT struct {
+	AllParticipantsPerc uint32    `json:"all_participants_perc_x100000"`
+	BeneficiaryPerc     uint32    `json:"beneficiary_perc_x100000"`
+	RoundManagerPerc    uint32    `json:"round_manager_perc_x100000"`
+	WinnersPerc         []uint32  `json:"winners_perc_x100000"`
+	Reward              eos.Asset `json:"reward"`
+	YieldSource         eos.Name  `json:"yield_source"`
 	*BaseDistributionDefinition
-	AllParticipantsPerc uint32   `json:"all_participants_perc_x100000"`
-	BeneficiaryPerc     uint32   `json:"beneficiary_perc_x100000"`
-	RoundManagerPerc    uint32   `json:"round_manager_perc_x100000"`
-	WinnersPerc         []uint32 `json:"winners_perc_x100000"`
-	Reward              string   `json:"reward"`
-	YieldSource         eos.Name `json:"yield_source"`
 }
 
 type DistributionDefinitionFTCustomJSON struct {
@@ -106,14 +107,6 @@ func (m *DistributionDefinitionFT) HasBeneficiaryReward() bool {
 	return m.BeneficiaryPerc > 0
 }
 
-func (m *DistributionDefinitionFT) GetReward() eos.Asset {
-	reward, err := eos.NewAssetFromString(m.Reward)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse reward: %v to asset", m.Reward))
-	}
-	return reward
-}
-
 func (m *DistributionDefinitionFT) CalculateDistribution(numParticipantsEntered uint32, totalReward eos.Asset) *Distribution {
 
 	precisionAdj := math.Pow(10, float64(totalReward.Precision))
@@ -126,7 +119,7 @@ func (m *DistributionDefinitionFT) CalculateDistribution(numParticipantsEntered 
 	beneficiaryReward := eos.Asset{Amount: eos.Int64(rewardToBeneficiary * float64(precisionAdj)), Symbol: totalReward.Symbol}
 	managerFee := eos.Asset{Amount: eos.Int64(feeToManager * float64(precisionAdj)), Symbol: totalReward.Symbol}
 	remaining := totalReward.Sub(beneficiaryReward).Sub(managerFee).Sub(util.MultiplyAsset(minParticipantReward, int64(numParticipantsEntered)))
-	winnerPrizes := make([]string, 0)
+	winnerPrizes := make([]eos.Asset, 0)
 	if m.GetNumWinners() > 0 {
 		winnerPrize := remaining
 		winnerPrizeAdj := float64(winnerPrize.Amount) / precisionAdj
@@ -135,10 +128,10 @@ func (m *DistributionDefinitionFT) CalculateDistribution(numParticipantsEntered 
 			prizeAmount := winnerPrizeAdj * float64((float64(winnerPerc) / percAdj))
 			prize := eos.Asset{Amount: eos.Int64(prizeAmount * float64(precisionAdj)), Symbol: totalReward.Symbol}
 			remaining = remaining.Sub(prize)
-			winnerPrizes = append(winnerPrizes, prize.String())
+			winnerPrizes = append(winnerPrizes, prize)
 		}
-		firstPrize, _ := eos.NewAssetFromString(winnerPrizes[0])
-		winnerPrizes[0] = firstPrize.Add(remaining).String()
+		firstPrize := winnerPrizes[0]
+		winnerPrizes[0] = firstPrize.Add(remaining)
 	} else {
 		if m.BeneficiaryPerc > 0 {
 			beneficiaryReward = beneficiaryReward.Add(remaining)
@@ -148,21 +141,21 @@ func (m *DistributionDefinitionFT) CalculateDistribution(numParticipantsEntered 
 	}
 	return NewDistribution(&DistributionFT{
 		WinnerPrizes:          winnerPrizes,
-		BeneficiaryReward:     beneficiaryReward.String(),
-		BeneficiaryRewardPaid: eos.Asset{Amount: 0, Symbol: totalReward.Symbol}.String(),
-		MinParticipantReward:  minParticipantReward.String(),
-		RoundManagerFee:       managerFee.String(),
-		RoundManagerFeePaid:   eos.Asset{Amount: 0, Symbol: totalReward.Symbol}.String(),
+		BeneficiaryReward:     beneficiaryReward,
+		BeneficiaryRewardPaid: eos.Asset{Amount: 0, Symbol: totalReward.Symbol},
+		MinParticipantReward:  minParticipantReward,
+		RoundManagerFee:       managerFee,
+		RoundManagerFeePaid:   eos.Asset{Amount: 0, Symbol: totalReward.Symbol},
 	})
 }
 
 type DistributionDefinitionNFT struct {
-	*BaseDistributionDefinition
 	EachParticipantReward uint16     `json:"each_participant_reward"`
 	BeneficiaryReward     uint16     `json:"beneficiary_reward"`
 	RoundManagerFee       uint16     `json:"round_manager_fee"`
 	WinnerPrizes          []uint16   `json:"winner_prizes"`
 	NFTConfig             *NFTConfig `json:"nft_config"`
+	*BaseDistributionDefinition
 }
 
 type DistributionDefinitionNFTCustomJSON struct {
@@ -432,6 +425,6 @@ func (m DistributionDefinitions) GetVestingTrackers() VestingTrackers {
 	return trackers
 }
 
-func (m DistributionDefinitions) GetVestingContext(cycle uint16, startTime string) *VestingContext {
+func (m DistributionDefinitions) GetVestingContext(cycle uint16, startTime time.Time) *VestingContext {
 	return m.GetVestingTrackers().GetContextForCycle(cycle, startTime)
 }

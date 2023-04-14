@@ -58,12 +58,12 @@ func (m Attributes) Find(key string) *Attribute {
 }
 
 type Project struct {
-	ProjectID   uint64          `json:"project_id"`
-	Authorizer  eos.AccountName `json:"authorizer"`
-	Beneficiary eos.AccountName `json:"beneficiary"`
-	Attributes  Attributes      `json:"attributes"`
-	CreatedDate string          `json:"created_date"`
-	UpdatedDate string          `json:"updated_date"`
+	ProjectID   uint64             `json:"project_id"`
+	Authorizer  eos.AccountName    `json:"authorizer"`
+	Beneficiary eos.AccountName    `json:"beneficiary"`
+	Attributes  Attributes         `json:"attributes"`
+	CreatedDate eos.BlockTimestamp `json:"created_date"`
+	UpdatedDate eos.BlockTimestamp `json:"updated_date"`
 	*Deletable
 }
 

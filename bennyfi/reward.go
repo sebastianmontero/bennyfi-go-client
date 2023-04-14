@@ -62,15 +62,7 @@ func (m *BaseReward) Clone() *BaseReward {
 
 type RewardFT struct {
 	*BaseReward
-	Reward string `json:"reward"`
-}
-
-func (m *RewardFT) GetReward() eos.Asset {
-	reward, err := eos.NewAssetFromString(m.Reward)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse reward: %v to asset", m.Reward))
-	}
-	return reward
+	Reward eos.Asset `json:"reward"`
 }
 
 func (m *RewardFT) Clone() interface{} {
@@ -191,8 +183,8 @@ func (m *RewardEntry) AsRewardNFT() *RewardNFT {
 }
 
 type FTRewardArgEntry struct {
-	Key   eos.Name `json:"first"`
-	Value string   `json:"second"`
+	Key   eos.Name  `json:"first"`
+	Value eos.Asset `json:"second"`
 }
 
 func (m *FTRewardArgEntry) String() string {

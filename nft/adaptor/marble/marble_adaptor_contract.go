@@ -41,17 +41,17 @@ var (
 )
 
 type Reward struct {
-	RewardID     uint64          `json:"reward_id"`
-	RoundID      uint64          `json:"round_id"`
-	Distribution eos.Name        `json:"distribution"`
-	Description  string          `json:"description"`
-	GroupName    eos.Name        `json:"group_name"`
-	FrameName    eos.Name        `json:"frame_name"`
-	CurrentState eos.Name        `json:"current_state"`
-	Funder       eos.AccountName `json:"funder"`
-	NFTContract  eos.AccountName `json:"nft_contract"`
-	CreatedDate  string          `json:"created_date"`
-	UpdatedDate  string          `json:"updated_date"`
+	RewardID     uint64             `json:"reward_id"`
+	RoundID      uint64             `json:"round_id"`
+	Distribution eos.Name           `json:"distribution"`
+	Description  string             `json:"description"`
+	GroupName    eos.Name           `json:"group_name"`
+	FrameName    eos.Name           `json:"frame_name"`
+	CurrentState eos.Name           `json:"current_state"`
+	Funder       eos.AccountName    `json:"funder"`
+	NFTContract  eos.AccountName    `json:"nft_contract"`
+	CreatedDate  eos.BlockTimestamp `json:"created_date"`
+	UpdatedDate  eos.BlockTimestamp `json:"updated_date"`
 }
 
 func (m *Reward) NewRewardArgs() *NewRewardArgs {

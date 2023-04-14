@@ -66,6 +66,21 @@ var (
 	FundingStateYield                      = eos.Name("yield")
 )
 
+type FundRoundArgs struct {
+	RoundID uint64          `json:"round_id"`
+	Funder  eos.AccountName `json:"funder"`
+}
+
+type TstLapseTimeArgs struct {
+	RoundID     uint64 `json:"round_id"`
+	CallCounter uint64 `json:"call_counter"`
+}
+
+type ReceiveRandArgs struct {
+	AssocID uint64 `json:"assoc_id"`
+	Random  string `json:"random"`
+}
+
 type Round struct {
 	RoundID                  uint64                   `json:"round_id"`
 	TermID                   uint64                   `json:"term_id"`
@@ -78,11 +93,11 @@ type Round struct {
 	StakingPeriod            *dto.Microseconds        `json:"staking_period"`
 	EnrollmentTimeOut        *dto.Microseconds        `json:"enrollment_time_out"`
 	NumParticipants          uint32                   `json:"num_participants"`
-	ParticipantEntryFee      string                   `json:"participant_entry_fee"`
-	RoundManagerEntryFee     string                   `json:"round_manager_entry_fee"`
-	BeneficiaryEntryFee      string                   `json:"beneficiary_entry_fee"`
+	ParticipantEntryFee      eos.Asset                `json:"participant_entry_fee"`
+	RoundManagerEntryFee     eos.Asset                `json:"round_manager_entry_fee"`
+	BeneficiaryEntryFee      eos.Asset                `json:"beneficiary_entry_fee"`
 	BeneficiaryEntryFeeState eos.Name                 `json:"beneficiary_entry_fee_state"`
-	EntryStake               string                   `json:"entry_stake"`
+	EntryStake               eos.Asset                `json:"entry_stake"`
 	Rewards                  Rewards                  `json:"rewards"`
 	NumParticipantsEntered   uint32                   `json:"num_participants_entered"`
 	NumClaimedReturns        uint32                   `json:"num_claimed_returns"`
@@ -93,21 +108,21 @@ type Round struct {
 	CurrentState             eos.Name                 `json:"current_state"`
 	StakeState               eos.Name                 `json:"stake_state"`
 	VestingState             eos.Name                 `json:"vesting_state"`
-	TotalDeposits            string                   `json:"total_deposits"`
+	TotalDeposits            eos.Asset                `json:"total_deposits"`
 	Winners                  Winners                  `json:"winners"`
 	Beneficiary              eos.AccountName          `json:"beneficiary"`
 	Distributions            Distributions            `json:"distributions"`
-	TotalEarlyExitStake      string                   `json:"total_early_exit_stake"`
+	TotalEarlyExitStake      eos.Asset                `json:"total_early_exit_stake"`
 	TotalEarlyExitRewardFees TotalEarlyExitRewardFees `json:"total_early_exit_reward_fees"`
 	RoundManager             eos.AccountName          `json:"round_manager"`
-	StartTime                string                   `json:"start_time"`
-	ClosedTime               string                   `json:"closed_time"`
-	StakedTime               string                   `json:"staked_time"`
-	StakeEndTime             string                   `json:"stake_end_time"`
-	EnrollmentTimeEnd        string                   `json:"enrollment_time_end"`
-	NextVestingTime          string                   `json:"next_vesting_time"`
-	CreatedDate              string                   `json:"created_date"`
-	UpdatedDate              string                   `json:"updated_date"`
+	StartTime                eos.BlockTimestamp       `json:"start_time"`
+	ClosedTime               eos.BlockTimestamp       `json:"closed_time"`
+	StakedTime               eos.BlockTimestamp       `json:"staked_time"`
+	StakeEndTime             eos.BlockTimestamp       `json:"stake_end_time"`
+	EnrollmentTimeEnd        eos.BlockTimestamp       `json:"enrollment_time_end"`
+	NextVestingTime          eos.BlockTimestamp       `json:"next_vesting_time"`
+	CreatedDate              eos.BlockTimestamp       `json:"created_date"`
+	UpdatedDate              eos.BlockTimestamp       `json:"updated_date"`
 }
 
 type RoundCustomJSON struct {
@@ -142,57 +157,17 @@ func (m *Round) RequiresRoundManagerFunding() bool {
 }
 
 func (m *Round) RequiresBeneficiaryFunding() bool {
-	return m.Rewards.Has(DistributionProjectToken) || m.Rewards.Has(DistributionProjectNFT) || m.GetBeneficiaryEntryFee().Amount > 0
-}
-
-func (m *Round) GetTotalDeposits() eos.Asset {
-	totalDeposits, err := eos.NewAssetFromString(m.TotalDeposits)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse total deposits: %v to asset", m.TotalDeposits))
-	}
-	return totalDeposits
-}
-
-func (m *Round) GetEntryStake() eos.Asset {
-	entryStake, err := eos.NewAssetFromString(m.EntryStake)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse entry stake: %v to asset", m.EntryStake))
-	}
-	return entryStake
+	return m.Rewards.Has(DistributionProjectToken) || m.Rewards.Has(DistributionProjectNFT) || m.BeneficiaryEntryFee.Amount > 0
 }
 
 func (m *Round) CalculateMaxTotalDeposits() eos.Asset {
-	totalStake := m.GetEntryStake()
+	totalStake := m.EntryStake
 	totalStake.Amount = totalStake.Amount * eos.Int64(m.NumParticipants)
 	return totalStake
 }
 
-func (m *Round) GetRoundManagerEntryFee() eos.Asset {
-	roundManagerEntryFee, err := eos.NewAssetFromString(m.RoundManagerEntryFee)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse round manager entry fee: %v to asset", m.RoundManagerEntryFee))
-	}
-	return roundManagerEntryFee
-}
-
-func (m *Round) GetBeneficiaryEntryFee() eos.Asset {
-	beneficiaryEntryFee, err := eos.NewAssetFromString(m.BeneficiaryEntryFee)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse beneficiary entry fee: %v to asset", m.BeneficiaryEntryFee))
-	}
-	return beneficiaryEntryFee
-}
-
-func (m *Round) GetParticipantEntryFee() eos.Asset {
-	participantEntryFee, err := eos.NewAssetFromString(m.ParticipantEntryFee)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse participant entry fee: %v to asset", m.ParticipantEntryFee))
-	}
-	return participantEntryFee
-}
-
 func (m *Round) GetTotalEntryFee() eos.Asset {
-	return m.GetBeneficiaryEntryFee().Add(m.GetRoundManagerEntryFee()).Add(util.MultiplyAsset(m.GetParticipantEntryFee(), int64(m.NumParticipants)))
+	return m.BeneficiaryEntryFee.Add(m.RoundManagerEntryFee).Add(util.MultiplyAsset(m.ParticipantEntryFee, int64(m.NumParticipants)))
 }
 
 func (m *Round) NumEntriesToClose() uint32 {
@@ -233,7 +208,7 @@ func (m *Round) RemoveReward(name eos.Name) {
 	m.Rewards.Remove(name)
 }
 
-func (m *Round) UpsertEarlyExitRewardFee(name eos.Name, earlyExitRewardFee string) {
+func (m *Round) UpsertEarlyExitRewardFee(name eos.Name, earlyExitRewardFee eos.Asset) {
 	if m.TotalEarlyExitRewardFees == nil {
 		m.TotalEarlyExitRewardFees = make(TotalEarlyExitRewardFees, 0, 1)
 	}
@@ -269,7 +244,7 @@ func (m *Round) CalculateEntryFee(settings *EntryFeeSettings) eos.Asset {
 		return util.MultiplyAsset(settings.SelfFundedPerUser, int64(m.NumParticipants))
 	} else {
 
-		totalStake := util.MultiplyAsset(m.GetEntryStake(), int64(m.NumParticipants))
+		totalStake := util.MultiplyAsset(m.EntryStake, int64(m.NumParticipants))
 		yield := util.CalculateAssetPercentage(util.MultiplyAsset(totalStake, int64(m.StakingPeriod.Hrs())), settings.HourlyYield())
 		yieldUSD := util.DivideAssets(yield, settings.ValueTLOS)
 		yieldPerc := util.CalculateAssetPercentage(yieldUSD, settings.PercOfYield)
@@ -288,20 +263,20 @@ func (m *Round) CalculateEntryFees(settings *EntryFeeSettings, term *Term) {
 	// fmt.Printf("Round manager percent fee: %v, beneficiary percent fee: %v\n", term.RoundManagerEntryFeePerc, term.BeneficiaryEntryFeePerc)
 	// fmt.Printf("Entryfee: %v, Beneficiary Entry fee: %v, Round Manager Entry fee: %v, Participant Entry Fee total: %v \n", entryFee, beneficiaryEntryFee, roundManagerEntryFee, participantEntryFee)
 	participantEntryFee = util.DivideAsset(participantEntryFee, uint64(m.NumParticipants))
-	m.RoundManagerEntryFee = roundManagerEntryFee.String()
-	m.BeneficiaryEntryFee = beneficiaryEntryFee.String()
-	m.ParticipantEntryFee = participantEntryFee.String()
+	m.RoundManagerEntryFee = roundManagerEntryFee
+	m.BeneficiaryEntryFee = beneficiaryEntryFee
+	m.ParticipantEntryFee = participantEntryFee
 }
 
 func (m *Round) CalculateReturns(entryOwner eos.AccountName, distName eos.Name, isEarlyExit bool, earlyExitFeePerc uint32) interface{} {
 
 	if IsFTDistribution(distName) {
 		dist := m.Distributions.FindFT(distName)
-		minParticipantReward := dist.GetMinParticipantReward()
+		minParticipantReward := dist.MinParticipantReward
 		winner := m.Winners.FindWinnerFT(distName, entryOwner)
 		winnerPrize := eos.Asset{Amount: 0, Symbol: minParticipantReward.Symbol}
 		if winner != nil {
-			winnerPrize = winner.GetPrize()
+			winnerPrize = winner.Prize
 		}
 		earlyExitRewardFee := util.CalculateAssetPercentage(winnerPrize, earlyExitFeePerc)
 		if isEarlyExit {
@@ -310,10 +285,10 @@ func (m *Round) CalculateReturns(entryOwner eos.AccountName, distName eos.Name, 
 			minParticipantReward = eos.Asset{Amount: 0, Symbol: minParticipantReward.Symbol}
 		}
 		return &ReturnsFT{
-			Prize:              winnerPrize.String(),
-			MinimumPayout:      minParticipantReward.String(),
-			EarlyExitReturnFee: earlyExitRewardFee.String(),
-			AmountPaidOut:      eos.Asset{Amount: 0, Symbol: winnerPrize.Symbol}.String(),
+			Prize:              winnerPrize,
+			MinimumPayout:      minParticipantReward,
+			EarlyExitReturnFee: earlyExitRewardFee,
+			AmountPaidOut:      eos.Asset{Amount: 0, Symbol: winnerPrize.Symbol},
 		}
 	} else {
 		dist := m.Distributions.FindNFT(distName)
@@ -330,33 +305,29 @@ func (m *Round) CalculateReturns(entryOwner eos.AccountName, distName eos.Name, 
 }
 
 func (m *Round) CalculateUnlockTime() time.Time {
-	stakedTime, err := util.ToTime(m.StakedTime)
-	if err != nil {
-		panic(fmt.Sprintf("failed to calculate Unlock Time, could not parse staked time: %v, error: %v", m.StakedTime, err))
-	}
-	return stakedTime.Add(time.Hour * time.Duration(m.StakingPeriod.Hrs()))
+	return m.StakedTime.Add(time.Hour * time.Duration(m.StakingPeriod.Hrs()))
 }
 
 func (m *Round) SetYieldReward(totalReturn eos.Asset) {
 	r := m.Rewards.FindFT(DistributionMainToken)
 	r.FundingState = FundingStateFunded
-	totalDeposits := m.GetTotalDeposits()
+	totalDeposits := m.TotalDeposits
 	reward := totalReturn.Sub(totalDeposits)
 	if reward.Amount > 0 {
-		r.Reward = reward.String()
+		r.Reward = reward
 	} else {
-		r.Reward = eos.Asset{Amount: 0, Symbol: totalReturn.Symbol}.String()
+		r.Reward = eos.Asset{Amount: 0, Symbol: totalReturn.Symbol}
 	}
 }
 
 type NewRoundArgs struct {
-	RoundManager     eos.AccountName `json:"round_manager"`
-	TermID           uint64          `json:"term_id"`
-	ProjectID        uint64          `json:"project_id"`
-	RoundName        string          `json:"round_name"`
-	RoundDescription string          `json:"round_description"`
-	RoundCategory    eos.Name        `json:"round_category"`
-	StartTime        string          `json:"start_time"`
+	RoundManager     eos.AccountName    `json:"round_manager"`
+	TermID           uint64             `json:"term_id"`
+	ProjectID        uint64             `json:"project_id"`
+	RoundName        string             `json:"round_name"`
+	RoundDescription string             `json:"round_description"`
+	RoundCategory    eos.Name           `json:"round_category"`
+	StartTime        eos.BlockTimestamp `json:"start_time"`
 }
 
 func RoundToNewRoundArgs(round *Round) *NewRoundArgs {
@@ -422,29 +393,22 @@ func (m *BennyfiContract) NewRound(round *Round) (string, error) {
 }
 
 func (m *BennyfiContract) NewRoundFromRoundArgs(roundArgs *NewRoundArgs) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["round_manager"] = roundArgs.RoundManager
-	actionData["round_name"] = roundArgs.RoundName
-	actionData["round_description"] = roundArgs.RoundDescription
-	actionData["round_category"] = roundArgs.RoundCategory
-	actionData["term_id"] = roundArgs.TermID
-	actionData["project_id"] = roundArgs.ProjectID
-	actionData["start_time"] = roundArgs.StartTime
-	// fmt.Println("New Round: ", actionData)
-	return m.ExecAction(roundArgs.RoundManager, "newround", actionData)
+	return m.ExecAction(roundArgs.RoundManager, "newround", roundArgs)
 }
 
 func (m *BennyfiContract) StartRound(roundID uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["round_id"] = roundID
-
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "startround", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "startround", roundID)
 }
 
 func (m *BennyfiContract) FundRound(roundID uint64, funder interface{}) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["round_id"] = roundID
-	actionData["funder"] = funder
+	f, err := util.ToAccountName(funder)
+	if err != nil {
+		return "", fmt.Errorf("failed parsing funder account: %v, error: %v", funder, err)
+	}
+	actionData := &FundRoundArgs{
+		RoundID: roundID,
+		Funder:  f,
+	}
 
 	return m.ExecAction(funder, "fundround", actionData)
 }
@@ -454,39 +418,27 @@ func (m *BennyfiContract) TimedEvents() (string, error) {
 }
 
 func (m *BennyfiContract) StartRounds(callCounter uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["call_counter"] = callCounter
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "startrounds", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "startrounds", callCounter)
 }
 
 func (m *BennyfiContract) TimeoutRounds(callCounter uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["call_counter"] = callCounter
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "timeoutrnds", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "timeoutrnds", callCounter)
 }
 
 func (m *BennyfiContract) UnlockRounds(callCounter uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["call_counter"] = callCounter
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unlockrnds", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unlockrnds", callCounter)
 }
 
 func (m *BennyfiContract) UnlockRound(roundId uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["round_id"] = roundId
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unlockrnd", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unlockrnd", roundId)
 }
 
 func (m *BennyfiContract) UnstakeUnlockedRounds(callCounter uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["call_counter"] = callCounter
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "ustkulckrnds", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "ustkulckrnds", callCounter)
 }
 
 func (m *BennyfiContract) UnstakeTimedoutRounds(callCounter uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["call_counter"] = callCounter
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "ustktmdrnds", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "ustktmdrnds", callCounter)
 }
 
 func (m *BennyfiContract) Redraw() (string, error) {
@@ -494,22 +446,22 @@ func (m *BennyfiContract) Redraw() (string, error) {
 }
 
 func (m *BennyfiContract) VestingRounds(callCounter uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["call_counter"] = callCounter
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "vestingrnds", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "vestingrnds", callCounter)
 }
 
 func (m *BennyfiContract) TstLapseTime(roundId uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["round_id"] = roundId
-	actionData["call_counter"] = m.NextCallCounter()
+	actionData := &TstLapseTimeArgs{
+		RoundID:     roundId,
+		CallCounter: m.NextCallCounter(),
+	}
 	return m.ExecAction(eos.AN(m.ContractName), "tstlapsetime", actionData)
 }
 
 func (m *BennyfiContract) ReceiveRand(actor eos.AccountName, roundId uint64, randomNumber string) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["assoc_id"] = roundId
-	actionData["random"] = randomNumber
+	actionData := &ReceiveRandArgs{
+		AssocID: roundId,
+		Random:  randomNumber,
+	}
 	return m.ExecAction(actor, "receiverand", actionData)
 }
 

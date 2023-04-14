@@ -35,16 +35,21 @@ var (
 	EntryEarlyExit  = eos.Name("earlyexit")
 )
 
+type EnterRoundArgs struct {
+	RoundID     uint64          `json:"round_id"`
+	Participant eos.AccountName `json:"participant"`
+}
+
 type Entry struct {
-	EntryID      uint64          `json:"entry_id"`
-	RoundID      uint64          `json:"round_id"`
-	Position     uint64          `json:"position"`
-	Participant  eos.AccountName `json:"participant"`
-	EntryStake   string          `json:"entry_stake"`
-	Returns      ReturnEntries   `json:"returns"`
-	EntryStatus  eos.Name        `json:"entry_status"`
-	VestingState eos.Name        `json:"vesting_state"`
-	EnteredDate  string          `json:"entered_date"`
+	EntryID      uint64             `json:"entry_id"`
+	RoundID      uint64             `json:"round_id"`
+	Position     uint64             `json:"position"`
+	Participant  eos.AccountName    `json:"participant"`
+	EntryStake   eos.Asset          `json:"entry_stake"`
+	Returns      ReturnEntries      `json:"returns"`
+	EntryStatus  eos.Name           `json:"entry_status"`
+	VestingState eos.Name           `json:"vesting_state"`
+	EnteredDate  eos.BlockTimestamp `json:"entered_date"`
 }
 
 type EntryCustomJSON struct {
@@ -59,14 +64,6 @@ func (m Entry) ToCustomJSON() EntryCustomJSON {
 	}
 }
 
-func (m *Entry) GetEntryStake() eos.Asset {
-	entryStake, err := eos.NewAssetFromString(m.EntryStake)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse entry stake: %v to asset", m.EntryStake))
-	}
-	return entryStake
-}
-
 func (m *Entry) UpsertReturn(name eos.Name, ret interface{}) {
 	if m.Returns == nil {
 		m.Returns = make(ReturnEntries, 0, 1)
@@ -79,35 +76,28 @@ func (m *Entry) RemoveReturn(name eos.Name) {
 }
 
 func (m *BennyfiContract) EnterRound(roundId uint64, participant eos.AccountName) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["round_id"] = roundId
-	actionData["participant"] = participant
+	actionData := &EnterRoundArgs{
+		RoundID:     roundId,
+		Participant: participant,
+	}
 
 	return m.ExecAction(participant, "enterround", actionData)
 }
 
 func (m *BennyfiContract) ClaimReturn(entryId uint64, claimer eos.AccountName) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["entry_id"] = entryId
-	return m.ExecAction(claimer, "claimreturn", actionData)
+	return m.ExecAction(claimer, "claimreturn", entryId)
 }
 
 func (m *BennyfiContract) Unstake(entryId uint64, permissionLevel interface{}) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["entry_id"] = entryId
-	return m.ExecAction(permissionLevel, "unstake", actionData)
+	return m.ExecAction(permissionLevel, "unstake", entryId)
 }
 
 func (m *BennyfiContract) UnstakeOpen(entryId uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["entry_id"] = entryId
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unstakeopen", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unstakeopen", entryId)
 }
 
 func (m *BennyfiContract) Vesting(entryId uint64, permissionLevel interface{}) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["entry_id"] = entryId
-	return m.ExecAction(permissionLevel, "vesting", actionData)
+	return m.ExecAction(permissionLevel, "vesting", entryId)
 }
 
 func (m *BennyfiContract) GetEntries() ([]Entry, error) {
