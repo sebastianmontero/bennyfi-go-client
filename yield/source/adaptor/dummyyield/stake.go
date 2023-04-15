@@ -39,18 +39,20 @@ func (m *Stake) GetTotalReturn() eos.Asset {
 	return totalReturn
 }
 
-func (m *DummyYieldContract) CheckStakeParameters(authorizer, tokenContract, stakeAmount interface{}, stakingPeriodHrs uint32) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["token_contract"] = tokenContract
-	actionData["stake_amount"] = stakeAmount
-	actionData["staking_period_hrs"] = stakingPeriodHrs
+func (m *DummyYieldContract) CheckStakeParameters(authorizer, tokenContract eos.AccountName, stakeAmount eos.Asset, stakingPeriodHrs uint32) (string, error) {
+	actionData := struct {
+		TokenContract    eos.AccountName
+		StakeAmount      eos.Asset
+		StakingPeriodHrs uint32
+	}{tokenContract, stakeAmount, stakingPeriodHrs}
 	return m.ExecAction(authorizer, "chckstkparam", actionData)
 }
 
 func (m *DummyYieldContract) Withdraw(roundID uint64, yieldPercx100000 uint32) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["round_id"] = roundID
-	actionData["yield_perc_x100000"] = yieldPercx100000
+	actionData := struct {
+		RoundID          uint64
+		YieldPercx100000 uint32
+	}{roundID, yieldPercx100000}
 	return m.ExecAction(m.ContractName, "withdraw", actionData)
 }
 

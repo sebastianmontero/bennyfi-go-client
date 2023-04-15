@@ -22,6 +22,7 @@
 package bennyfi
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -76,11 +77,6 @@ type TstLapseTimeArgs struct {
 	CallCounter uint64 `json:"call_counter"`
 }
 
-type ReceiveRandArgs struct {
-	AssocID uint64 `json:"assoc_id"`
-	Random  string `json:"random"`
-}
-
 type Round struct {
 	RoundID                  uint64                   `json:"round_id"`
 	TermID                   uint64                   `json:"term_id"`
@@ -115,14 +111,14 @@ type Round struct {
 	TotalEarlyExitStake      eos.Asset                `json:"total_early_exit_stake"`
 	TotalEarlyExitRewardFees TotalEarlyExitRewardFees `json:"total_early_exit_reward_fees"`
 	RoundManager             eos.AccountName          `json:"round_manager"`
-	StartTime                eos.BlockTimestamp       `json:"start_time"`
-	ClosedTime               eos.BlockTimestamp       `json:"closed_time"`
-	StakedTime               eos.BlockTimestamp       `json:"staked_time"`
-	StakeEndTime             eos.BlockTimestamp       `json:"stake_end_time"`
-	EnrollmentTimeEnd        eos.BlockTimestamp       `json:"enrollment_time_end"`
-	NextVestingTime          eos.BlockTimestamp       `json:"next_vesting_time"`
-	CreatedDate              eos.BlockTimestamp       `json:"created_date"`
-	UpdatedDate              eos.BlockTimestamp       `json:"updated_date"`
+	StartTime                eos.TimePoint            `json:"start_time"`
+	ClosedTime               eos.TimePoint            `json:"closed_time"`
+	StakedTime               eos.TimePoint            `json:"staked_time"`
+	StakeEndTime             eos.TimePoint            `json:"stake_end_time"`
+	EnrollmentTimeEnd        eos.TimePoint            `json:"enrollment_time_end"`
+	NextVestingTime          eos.TimePoint            `json:"next_vesting_time"`
+	CreatedDate              eos.TimePoint            `json:"created_date"`
+	UpdatedDate              eos.TimePoint            `json:"updated_date"`
 }
 
 type RoundCustomJSON struct {
@@ -304,8 +300,8 @@ func (m *Round) CalculateReturns(entryOwner eos.AccountName, distName eos.Name, 
 	}
 }
 
-func (m *Round) CalculateUnlockTime() time.Time {
-	return m.StakedTime.Add(time.Hour * time.Duration(m.StakingPeriod.Hrs()))
+func (m *Round) CalculateUnlockTime() eos.TimePoint {
+	return eos.TimePoint(m.StakedTime.Time().Add(time.Hour * time.Duration(m.StakingPeriod.Hrs())).UnixMicro())
 }
 
 func (m *Round) SetYieldReward(totalReturn eos.Asset) {
@@ -321,13 +317,13 @@ func (m *Round) SetYieldReward(totalReturn eos.Asset) {
 }
 
 type NewRoundArgs struct {
-	RoundManager     eos.AccountName    `json:"round_manager"`
-	TermID           uint64             `json:"term_id"`
-	ProjectID        uint64             `json:"project_id"`
-	RoundName        string             `json:"round_name"`
-	RoundDescription string             `json:"round_description"`
-	RoundCategory    eos.Name           `json:"round_category"`
-	StartTime        eos.BlockTimestamp `json:"start_time"`
+	RoundManager     eos.AccountName `json:"round_manager"`
+	TermID           uint64          `json:"term_id"`
+	ProjectID        uint64          `json:"project_id"`
+	RoundName        string          `json:"round_name"`
+	RoundDescription string          `json:"round_description"`
+	RoundCategory    eos.Name        `json:"round_category"`
+	StartTime        eos.TimePoint   `json:"start_time"`
 }
 
 func RoundToNewRoundArgs(round *Round) *NewRoundArgs {
@@ -458,10 +454,14 @@ func (m *BennyfiContract) TstLapseTime(roundId uint64) (string, error) {
 }
 
 func (m *BennyfiContract) ReceiveRand(actor eos.AccountName, roundId uint64, randomNumber string) (string, error) {
-	actionData := &ReceiveRandArgs{
-		AssocID: roundId,
-		Random:  randomNumber,
+	rand, err := hex.DecodeString(randomNumber)
+	if err != nil {
+		return "", fmt.Errorf("failed decoding random number: %v, error: %v", randomNumber, err)
 	}
+	actionData := struct {
+		AssocID uint64
+		Random  eos.Checksum256
+	}{roundId, eos.Checksum256(rand)}
 	return m.ExecAction(actor, "receiverand", actionData)
 }
 

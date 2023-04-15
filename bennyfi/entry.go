@@ -41,15 +41,15 @@ type EnterRoundArgs struct {
 }
 
 type Entry struct {
-	EntryID      uint64             `json:"entry_id"`
-	RoundID      uint64             `json:"round_id"`
-	Position     uint64             `json:"position"`
-	Participant  eos.AccountName    `json:"participant"`
-	EntryStake   eos.Asset          `json:"entry_stake"`
-	Returns      ReturnEntries      `json:"returns"`
-	EntryStatus  eos.Name           `json:"entry_status"`
-	VestingState eos.Name           `json:"vesting_state"`
-	EnteredDate  eos.BlockTimestamp `json:"entered_date"`
+	EntryID      uint64          `json:"entry_id"`
+	RoundID      uint64          `json:"round_id"`
+	Position     uint64          `json:"position"`
+	Participant  eos.AccountName `json:"participant"`
+	EntryStake   eos.Asset       `json:"entry_stake"`
+	Returns      ReturnEntries   `json:"returns"`
+	EntryStatus  eos.Name        `json:"entry_status"`
+	VestingState eos.Name        `json:"vesting_state"`
+	EnteredDate  eos.TimePoint   `json:"entered_date"`
 }
 
 type EntryCustomJSON struct {

@@ -13,17 +13,17 @@ import (
 var RexLockPeriodDays = 5
 
 type Stake struct {
-	RoundID              uint64             `json:"round_id"`
-	TotalStake           eos.Asset          `json:"total_stake"`
-	RexBalance           eos.Asset          `json:"rex_balance"`
-	TotalReturn          eos.Asset          `json:"total_return"`
-	RexState             eos.Name           `json:"rex_state"`
-	StakingPeriod        *dto.Microseconds  `json:"staking_period"`
-	StakedTime           eos.BlockTimestamp `json:"staked_time"`
-	MovedFromSavingsTime eos.BlockTimestamp `json:"moved_from_savings_time"`
-	StakeEndTime         eos.BlockTimestamp `json:"stake_end_time"`
-	LastNotifiedTime     eos.BlockTimestamp `json:"last_notified_time"`
-	UpdatedDate          eos.BlockTimestamp `json:"updated_date"`
+	RoundID              uint64            `json:"round_id"`
+	TotalStake           eos.Asset         `json:"total_stake"`
+	RexBalance           eos.Asset         `json:"rex_balance"`
+	TotalReturn          eos.Asset         `json:"total_return"`
+	RexState             eos.Name          `json:"rex_state"`
+	StakingPeriod        *dto.Microseconds `json:"staking_period"`
+	StakedTime           eos.TimePoint     `json:"staked_time"`
+	MovedFromSavingsTime eos.TimePoint     `json:"moved_from_savings_time"`
+	StakeEndTime         eos.TimePoint     `json:"stake_end_time"`
+	LastNotifiedTime     eos.TimePoint     `json:"last_notified_time"`
+	UpdatedDate          eos.TimePoint     `json:"updated_date"`
 }
 
 func (m *Stake) String() string {
@@ -34,18 +34,18 @@ func (m *Stake) String() string {
 	return string(result)
 }
 
-func (m *Stake) CalculateRexLockPeriodTime() time.Time {
+func (m *Stake) CalculateRexLockPeriodTime() eos.TimePoint {
 
-	return m.StakedTime.Add(time.Hour * time.Duration(m.StakingPeriod.Hrs()-int64(24*RexLockPeriodDays)))
+	return eos.TimePoint(m.StakedTime.Time().Add(time.Hour * time.Duration(m.StakingPeriod.Hrs()-int64(24*RexLockPeriodDays))).UnixMicro())
 }
 
-func (m *Stake) CalculateSellRexTime() time.Time {
+func (m *Stake) CalculateSellRexTime() eos.TimePoint {
 
-	return m.MovedFromSavingsTime.Add(time.Hour * time.Duration(24*RexLockPeriodDays))
+	return eos.TimePoint(m.MovedFromSavingsTime.Time().Add(time.Hour * time.Duration(24*RexLockPeriodDays)).UnixMicro())
 }
 
-func (m *Stake) CalculateStakeEndTime() time.Time {
-	return m.StakedTime.Add(time.Hour * time.Duration(m.StakingPeriod.Hrs()))
+func (m *Stake) CalculateStakeEndTime() eos.TimePoint {
+	return eos.TimePoint(m.StakedTime.Time().Add(time.Hour * time.Duration(m.StakingPeriod.Hrs())).UnixMicro())
 }
 
 func (m *TlosRexContract) CheckStakeParameters(authorizer, tokenContract eos.AccountName, stakeAmount eos.Asset, stakingPeriodHrs uint32) (string, error) {
@@ -89,11 +89,11 @@ func (m *TlosRexContract) TstLapseTime(roundId uint64) (string, error) {
 	return m.ExecAction(eos.AN(m.ContractName), "tstlapsetime", actionData)
 }
 
-func (m *TlosRexContract) TstSetLastNotifiedTime(roundId uint64, lastNotifiedTime time.Time) (string, error) {
+func (m *TlosRexContract) TstSetLastNotifiedTime(roundId uint64, lastNotifiedTime eos.TimePoint) (string, error) {
 	actionData := struct {
 		RoundId          uint64
-		LastNotifiedTime eos.BlockTimestamp
-	}{roundId, eos.BlockTimestamp{Time: lastNotifiedTime}}
+		LastNotifiedTime eos.TimePoint
+	}{roundId, lastNotifiedTime}
 	return m.ExecAction(eos.AN(m.ContractName), "setlastnotif", actionData)
 }
 

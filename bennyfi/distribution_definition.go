@@ -24,7 +24,6 @@ package bennyfi
 import (
 	"fmt"
 	"math"
-	"time"
 
 	eos "github.com/eoscanada/eos-go"
 	"github.com/sebastianmontero/bennyfi-go-client/util/utype"
@@ -425,6 +424,6 @@ func (m DistributionDefinitions) GetVestingTrackers() VestingTrackers {
 	return trackers
 }
 
-func (m DistributionDefinitions) GetVestingContext(cycle uint16, startTime time.Time) *VestingContext {
+func (m DistributionDefinitions) GetVestingContext(cycle uint16, startTime eos.TimePoint) *VestingContext {
 	return m.GetVestingTrackers().GetContextForCycle(cycle, startTime)
 }

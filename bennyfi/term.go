@@ -78,8 +78,8 @@ type Term struct {
 	RoundManagerEntryFeePerc uint32                  `json:"round_manager_entry_fee_perc_x100000"`
 	DistributionDefinitions  DistributionDefinitions `json:"distribution_definitions"`
 	DefaultValues            DefaultValues           `json:"default_values"`
-	CreatedDate              eos.BlockTimestamp      `json:"created_date"`
-	UpdatedDate              eos.BlockTimestamp      `json:"updated_date"`
+	CreatedDate              eos.TimePoint           `json:"created_date"`
+	UpdatedDate              eos.TimePoint           `json:"updated_date"`
 	*Deletable
 }
 

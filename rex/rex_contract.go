@@ -41,8 +41,8 @@ var (
 )
 
 type Config struct {
-	TokenContract     eos.Name `json:"token_contract"`
-	LendableIncrement uint64   `json:"lendable_increment"`
+	TokenContract     eos.AccountName `json:"token_contract"`
+	LendableIncrement uint64          `json:"lendable_increment"`
 }
 
 type Balance struct {
@@ -221,7 +221,7 @@ func (m *RexContract) SellRex(from eos.AccountName, rex eos.Asset) (string, erro
 func (m *RexContract) Withdraw(owner eos.AccountName, amount eos.Asset) (string, error) {
 	actionData := struct {
 		Owner  eos.AccountName
-		amount eos.Asset
+		Amount eos.Asset
 	}{owner, amount}
 
 	return m.ExecAction(owner, "withdraw", actionData)
