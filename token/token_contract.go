@@ -22,10 +22,10 @@
 package token
 
 import (
-	"github.com/eoscanada/eos-go/token"
 	"github.com/sebastianmontero/eos-go-toolbox/contract"
 	"github.com/sebastianmontero/eos-go-toolbox/service"
 	"github.com/sebastianmontero/eos-go-toolbox/util"
+	"github.com/sebastianmontero/eos-go/token"
 )
 
 type TokenContract struct {

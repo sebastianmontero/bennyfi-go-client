@@ -3,9 +3,9 @@ package bennyfi_test
 import (
 	"testing"
 
-	"github.com/eoscanada/eos-go"
 	"github.com/sebastianmontero/bennyfi-go-client/bennyfi"
 	"github.com/sebastianmontero/bennyfi-go-client/bennyfi/test"
+	"github.com/sebastianmontero/eos-go"
 )
 
 func TestDistributionAssert(t *testing.T) {

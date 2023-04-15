@@ -24,7 +24,7 @@ package bennyfi
 import (
 	"fmt"
 
-	eos "github.com/eoscanada/eos-go"
+	eos "github.com/sebastianmontero/eos-go"
 )
 
 type BaseWinner struct {

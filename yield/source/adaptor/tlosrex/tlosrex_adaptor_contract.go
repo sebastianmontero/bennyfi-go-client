@@ -24,10 +24,10 @@ package tlosrex
 import (
 	"fmt"
 
-	"github.com/eoscanada/eos-go"
-	"github.com/eoscanada/eos-go/ecc"
+	"github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/contract"
 	"github.com/sebastianmontero/eos-go-toolbox/service"
+	"github.com/sebastianmontero/eos-go/ecc"
 )
 
 var (

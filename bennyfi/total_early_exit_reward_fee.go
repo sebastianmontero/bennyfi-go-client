@@ -22,7 +22,7 @@
 package bennyfi
 
 import (
-	eos "github.com/eoscanada/eos-go"
+	eos "github.com/sebastianmontero/eos-go"
 )
 
 type TotalEarlyExitRewardFeeEntry struct {

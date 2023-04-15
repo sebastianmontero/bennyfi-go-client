@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/eoscanada/eos-go"
+	"github.com/sebastianmontero/eos-go"
 )
 
 type Stake struct {

@@ -3,8 +3,8 @@ package nft
 import (
 	"fmt"
 
-	"github.com/eoscanada/eos-go"
 	"github.com/sebastianmontero/bennyfi-go-client/nft/marble"
+	"github.com/sebastianmontero/eos-go"
 )
 
 const (

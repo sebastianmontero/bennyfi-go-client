@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/eoscanada/eos-go"
+	"github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/dto"
 )
 

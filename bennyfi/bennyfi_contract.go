@@ -25,10 +25,10 @@ import (
 	"fmt"
 	"time"
 
-	eos "github.com/eoscanada/eos-go"
-	"github.com/eoscanada/eos-go/ecc"
+	eos "github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/contract"
 	"github.com/sebastianmontero/eos-go-toolbox/service"
+	"github.com/sebastianmontero/eos-go/ecc"
 )
 
 var (

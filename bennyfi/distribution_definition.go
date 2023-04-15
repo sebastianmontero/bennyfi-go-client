@@ -25,8 +25,8 @@ import (
 	"fmt"
 	"math"
 
-	eos "github.com/eoscanada/eos-go"
 	"github.com/sebastianmontero/bennyfi-go-client/util/utype"
+	eos "github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/err"
 	"github.com/sebastianmontero/eos-go-toolbox/util"
 )

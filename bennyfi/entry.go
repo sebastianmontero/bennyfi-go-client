@@ -25,7 +25,7 @@ import (
 	"fmt"
 	"strconv"
 
-	eos "github.com/eoscanada/eos-go"
+	eos "github.com/sebastianmontero/eos-go"
 )
 
 var (

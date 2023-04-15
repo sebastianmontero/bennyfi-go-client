@@ -3,8 +3,8 @@ package bennyfi
 import (
 	"fmt"
 
-	eos "github.com/eoscanada/eos-go"
 	"github.com/sebastianmontero/bennyfi-go-client/util/utype"
+	eos "github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/err"
 )
 
