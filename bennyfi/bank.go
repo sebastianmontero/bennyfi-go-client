@@ -35,6 +35,8 @@ type Balance struct {
 	LiquidBalance eos.Asset       `json:"liquid_balance"`
 	StakedBalance eos.Asset       `json:"staked_balance"`
 	TokenContract eos.AccountName `json:"token_contract"`
+	// NOT USED AT THE MOMENT
+	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
 }
 
 type WithdrawArgs struct {

@@ -26,32 +26,7 @@ import (
 	"fmt"
 
 	eos "github.com/sebastianmontero/eos-go"
-	"github.com/sebastianmontero/eos-go-toolbox/dto"
 )
-
-type AdditionalParam struct {
-	Key   string         `json:"first"`
-	Value *dto.FlexValue `json:"second"`
-}
-
-type AdditionalParams []*AdditionalParam
-
-func (m AdditionalParams) FindPos(key string) int {
-	for i, attr := range m {
-		if attr.Key == key {
-			return i
-		}
-	}
-	return -1
-}
-
-func (m AdditionalParams) Find(key string) *AdditionalParam {
-	pos := m.FindPos(key)
-	if pos >= 0 {
-		return m[pos]
-	}
-	return nil
-}
 
 type YieldSourceStruct = YieldSource
 
@@ -68,7 +43,7 @@ type YieldSource struct {
 	BenyValue                        eos.Asset       `json:"beny_value"`
 	Authorizer                       eos.AccountName `json:"authorizer"`
 	// NOT USED AT THE MOMENT
-	// AdditionalParams                 AdditionalParams `json:"additional_params"`
+	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
 }
 
 type EraseYieldSourceArgs struct {

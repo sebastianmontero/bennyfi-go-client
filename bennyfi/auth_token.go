@@ -67,6 +67,8 @@ type AuthToken struct {
 	TokenContract eos.AccountName `json:"token_contract"`
 	ArtifactCID   string          `json:"artifact_cid"`
 	TokenRoles    TokenRoles      `json:"token_roles"`
+	// NOT USED AT THE MOMENT
+	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
 }
 
 func (m *AuthToken) ToSetTokenArgs() *SetTokenArgs {

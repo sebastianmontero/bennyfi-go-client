@@ -81,6 +81,8 @@ type Term struct {
 	CreatedDate              eos.TimePoint           `json:"created_date"`
 	UpdatedDate              eos.TimePoint           `json:"updated_date"`
 	*Deletable
+	// NOT USED AT THE MOMENT
+	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
 }
 
 type TermCustomJSON struct {

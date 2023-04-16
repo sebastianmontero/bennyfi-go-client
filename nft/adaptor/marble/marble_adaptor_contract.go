@@ -52,6 +52,8 @@ type Reward struct {
 	NFTContract  eos.AccountName `json:"nft_contract"`
 	CreatedDate  eos.TimePoint   `json:"created_date"`
 	UpdatedDate  eos.TimePoint   `json:"updated_date"`
+	// NOT USED AT THE MOMENT
+	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
 }
 
 func (m *Reward) NewRewardArgs() *NewRewardArgs {

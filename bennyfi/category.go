@@ -32,6 +32,8 @@ type Category struct {
 	CategoryName        string   `json:"category_name"`
 	CategoryDescription string   `json:"category_description"`
 	CategoryImage       string   `json:"category_image"`
+	// NOT USED AT THE MOMENT
+	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
 }
 
 type SetCategoryArgs struct {

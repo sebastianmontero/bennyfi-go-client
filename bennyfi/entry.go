@@ -50,6 +50,8 @@ type Entry struct {
 	EntryStatus  eos.Name        `json:"entry_status"`
 	VestingState eos.Name        `json:"vesting_state"`
 	EnteredDate  eos.TimePoint   `json:"entered_date"`
+	// NOT USED AT THE MOMENT
+	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
 }
 
 type EntryCustomJSON struct {

@@ -87,6 +87,8 @@ type Auth struct {
 	ArtifactCID  string          `json:"artifact_cid"`
 	Notes        string          `json:"notes"`
 	StakedAmount string          `json:"staked_amount"`
+	// NOT USED AT THE MOMENT
+	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
 }
 
 func (m *Auth) ToSetAuthArgs() *SetAuthArgs {

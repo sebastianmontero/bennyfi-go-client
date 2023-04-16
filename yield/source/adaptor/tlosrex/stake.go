@@ -24,6 +24,8 @@ type Stake struct {
 	StakeEndTime         eos.TimePoint     `json:"stake_end_time"`
 	LastNotifiedTime     eos.TimePoint     `json:"last_notified_time"`
 	UpdatedDate          eos.TimePoint     `json:"updated_date"`
+	// NOT USED AT THE MOMENT
+	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
 }
 
 func (m *Stake) String() string {

@@ -119,6 +119,8 @@ type Round struct {
 	NextVestingTime          eos.TimePoint            `json:"next_vesting_time"`
 	CreatedDate              eos.TimePoint            `json:"created_date"`
 	UpdatedDate              eos.TimePoint            `json:"updated_date"`
+	// NOT USED AT THE MOMENT
+	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
 }
 
 type RoundCustomJSON struct {
