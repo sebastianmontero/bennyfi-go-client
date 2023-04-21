@@ -9,7 +9,7 @@ import (
 )
 
 type Stake struct {
-	RoundID      uint64   `json:"round_id"`
+	RoundID      uint64   `json:"pool_id"`
 	TotalStake   string   `json:"total_stake"`
 	TotalReturn  string   `json:"total_return"`
 	CurrentState eos.Name `json:"current_state"`

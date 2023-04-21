@@ -15,7 +15,7 @@ const (
 	SettingEntryFeeRefundOnCancelPm      = "ENTRY_FEE_REFUND_ON_CANCEL_PM"
 	SettingEntryFeeBurnYes               = "ENTRY_FEE_BURN_YES"
 	SettingBenyToken                     = "BENY_TOKEN"
-	SettingRoundManagerStakeAmount       = "ROUND_MANAGER_STAKE_AMOUNT"
+	SettingRoundManagerStakeAmount       = "POOL_MANAGER_STAKE_AMOUNT"
 	SettingBeneficiaryStakeAmount        = "BENEFICIARY_STAKE_AMOUNT"
 	SettingCreationFee                   = "CREATION_FEE"
 )

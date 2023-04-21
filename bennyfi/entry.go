@@ -36,13 +36,13 @@ var (
 )
 
 type EnterRoundArgs struct {
-	RoundID     uint64          `json:"round_id"`
+	RoundID     uint64          `json:"pool_id"`
 	Participant eos.AccountName `json:"participant"`
 }
 
 type Entry struct {
 	EntryID      uint64          `json:"entry_id"`
-	RoundID      uint64          `json:"round_id"`
+	RoundID      uint64          `json:"pool_id"`
 	Position     uint64          `json:"position"`
 	Participant  eos.AccountName `json:"participant"`
 	EntryStake   eos.Asset       `json:"entry_stake"`
@@ -83,7 +83,7 @@ func (m *BennyfiContract) EnterRound(roundId uint64, participant eos.AccountName
 		Participant: participant,
 	}
 
-	return m.ExecAction(participant, "enterround", actionData)
+	return m.ExecAction(participant, "enterpool", actionData)
 }
 
 func (m *BennyfiContract) ClaimReturn(entryId uint64, claimer eos.AccountName) (string, error) {

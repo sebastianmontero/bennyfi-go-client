@@ -68,14 +68,14 @@ type Term struct {
 	TermID                   uint64                  `json:"term_id"`
 	TermName                 string                  `json:"term_name"`
 	Authorizer               eos.AccountName         `json:"authorizer"`
-	RoundType                eos.Name                `json:"round_type"`
-	RoundAccess              eos.Name                `json:"round_access"`
+	RoundType                eos.Name                `json:"pool_type"`
+	RoundAccess              eos.Name                `json:"pool_access"`
 	NumParticipants          uint32                  `json:"num_participants"`
 	EntryStake               eos.Asset               `json:"entry_stake"`
 	StakingPeriod            *dto.Microseconds       `json:"staking_period"`
 	EnrollmentTimeOut        *dto.Microseconds       `json:"enrollment_time_out"`
 	BeneficiaryEntryFeePerc  uint32                  `json:"beneficiary_entry_fee_perc_x100000"`
-	RoundManagerEntryFeePerc uint32                  `json:"round_manager_entry_fee_perc_x100000"`
+	RoundManagerEntryFeePerc uint32                  `json:"pool_manager_entry_fee_perc_x100000"`
 	DistributionDefinitions  DistributionDefinitions `json:"distribution_definitions"`
 	DefaultValues            DefaultValues           `json:"default_values"`
 	CreatedDate              eos.TimePoint           `json:"created_date"`
@@ -151,14 +151,14 @@ func (m *Term) RequiresBeneficiary() bool {
 type NewTermArgs struct {
 	Authorizer               eos.AccountName         `json:"authorizer"`
 	TermName                 string                  `json:"term_name"`
-	RoundType                eos.Name                `json:"round_type"`
-	RoundAccess              eos.Name                `json:"round_access"`
+	RoundType                eos.Name                `json:"pool_type"`
+	RoundAccess              eos.Name                `json:"pool_access"`
 	NumParticipants          uint32                  `json:"num_participants"`
 	EntryStake               eos.Asset               `json:"entry_stake"`
 	StakingPeriodHrs         uint32                  `json:"staking_period_hrs"`
 	EnrollmentTimeOutHrs     uint32                  `json:"enrollment_time_out_hrs"`
 	BeneficiaryEntryFeePerc  uint32                  `json:"beneficiary_entry_fee_perc_x100000"`
-	RoundManagerEntryFeePerc uint32                  `json:"round_manager_entry_fee_perc_x100000"`
+	RoundManagerEntryFeePerc uint32                  `json:"pool_manager_entry_fee_perc_x100000"`
 	DistributionDefinitions  DistributionDefinitions `json:"distribution_definitions"`
 	DefaultValues            DefaultValues           `json:"default_values"`
 }

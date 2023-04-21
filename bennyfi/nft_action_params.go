@@ -32,8 +32,8 @@ type NFTActionParams struct {
 	TermId          uint64          `json:"term_id"`
 	TermName        string          `json:"term_name"`
 	ProjectId       uint64          `json:"project_id"`
-	RoundId         uint64          `json:"round_id"`
-	RoundName       string          `json:"round_name"`
+	RoundId         uint64          `json:"pool_id"`
+	RoundName       string          `json:"pool_name"`
 	Distribution    eos.Name        `json:"distribution"`
 	NumParticipants uint32          `json:"num_participants"`
 	Funder          eos.AccountName `json:"funder"`

@@ -79,7 +79,7 @@ func (m *BaseDistributionDefinition) GetVesting() *VestingConfig {
 type DistributionDefinitionFT struct {
 	AllParticipantsPerc uint32    `json:"all_participants_perc_x100000"`
 	BeneficiaryPerc     uint32    `json:"beneficiary_perc_x100000"`
-	RoundManagerPerc    uint32    `json:"round_manager_perc_x100000"`
+	RoundManagerPerc    uint32    `json:"pool_manager_perc_x100000"`
 	WinnersPerc         []uint32  `json:"winners_perc_x100000"`
 	Reward              eos.Asset `json:"reward"`
 	YieldSource         eos.Name  `json:"yield_source"`
@@ -151,7 +151,7 @@ func (m *DistributionDefinitionFT) CalculateDistribution(numParticipantsEntered 
 type DistributionDefinitionNFT struct {
 	EachParticipantReward uint16     `json:"each_participant_reward"`
 	BeneficiaryReward     uint16     `json:"beneficiary_reward"`
-	RoundManagerFee       uint16     `json:"round_manager_fee"`
+	RoundManagerFee       uint16     `json:"pool_manager_fee"`
 	WinnerPrizes          []uint16   `json:"winner_prizes"`
 	NFTConfig             *NFTConfig `json:"nft_config"`
 	*BaseDistributionDefinition

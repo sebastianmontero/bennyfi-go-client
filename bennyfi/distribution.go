@@ -43,8 +43,8 @@ type IDistribution interface {
 type DistributionFT struct {
 	BeneficiaryReward     eos.Asset   `json:"beneficiary_reward"`
 	BeneficiaryRewardPaid eos.Asset   `json:"beneficiary_reward_paid"`
-	RoundManagerFee       eos.Asset   `json:"round_manager_fee"`
-	RoundManagerFeePaid   eos.Asset   `json:"round_manager_fee_paid"`
+	RoundManagerFee       eos.Asset   `json:"pool_manager_fee"`
+	RoundManagerFeePaid   eos.Asset   `json:"pool_manager_fee_paid"`
 	MinParticipantReward  eos.Asset   `json:"min_participant_reward"`
 	WinnerPrizes          []eos.Asset `json:"winner_prizes"`
 }
@@ -108,8 +108,8 @@ func (m *DistributionFT) GetWinnerPrize(pos uint32) eos.Asset {
 type DistributionNFT struct {
 	BeneficiaryReward     uint16   `json:"beneficiary_reward"`
 	BeneficiaryRewardPaid uint16   `json:"beneficiary_reward_paid"`
-	RoundManagerFee       uint16   `json:"round_manager_fee"`
-	RoundManagerFeePaid   uint16   `json:"round_manager_fee_paid"`
+	RoundManagerFee       uint16   `json:"pool_manager_fee"`
+	RoundManagerFeePaid   uint16   `json:"pool_manager_fee_paid"`
 	MinParticipantReward  uint16   `json:"each_participant_reward"`
 	WinnerPrizes          []uint16 `json:"winner_prizes"`
 }

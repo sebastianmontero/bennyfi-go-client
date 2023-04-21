@@ -42,7 +42,7 @@ var (
 
 type Reward struct {
 	RewardID     uint64          `json:"reward_id"`
-	RoundID      uint64          `json:"round_id"`
+	RoundID      uint64          `json:"pool_id"`
 	Distribution eos.Name        `json:"distribution"`
 	Description  string          `json:"description"`
 	GroupName    eos.Name        `json:"group_name"`
@@ -71,7 +71,7 @@ func (m *Reward) NewRewardArgs() *NewRewardArgs {
 // Order of struct properties for action must be on the same order as the action parameters for the call to succeed
 type NewRewardArgs struct {
 	Funder       eos.AccountName `json:"funder"`
-	RoundID      uint64          `json:"round_id"`
+	RoundID      uint64          `json:"pool_id"`
 	Distribution eos.Name        `json:"distribution"`
 	Description  string          `json:"description"`
 	GroupName    eos.Name        `json:"group_name"`

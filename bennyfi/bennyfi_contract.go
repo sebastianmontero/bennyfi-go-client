@@ -72,16 +72,16 @@ func (m *BennyfiContract) ProposeAction(proposerName interface{}, requested []eo
 func (m *BennyfiContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) error {
 	openActions := []string{
 		"timedevents",
-		"startround",
-		"startrounds",
-		"timeoutrnds",
-		"unlockrnd",
-		"unlockrnds",
+		"startpool",
+		"startpools",
+		"timeoutpools",
+		"unlockpool",
+		"unlockpools",
 		"redraw",
 		"unstakeopen",
-		"ustkulckrnds",
-		"ustktmdrnds",
-		"vestingrnds",
+		"ustkulkpools",
+		"ustktmdpools",
+		"vestingpools",
 	}
 	err := m.EOS.CreateSimplePermission(m.ContractName, "open", publicKey)
 	if err != nil {

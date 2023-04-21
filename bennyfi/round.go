@@ -68,29 +68,29 @@ var (
 )
 
 type FundRoundArgs struct {
-	RoundID uint64          `json:"round_id"`
+	RoundID uint64          `json:"pool_id"`
 	Funder  eos.AccountName `json:"funder"`
 }
 
 type TstLapseTimeArgs struct {
-	RoundID     uint64 `json:"round_id"`
+	RoundID     uint64 `json:"pool_id"`
 	CallCounter uint64 `json:"call_counter"`
 }
 
 type Round struct {
-	RoundID                  uint64                   `json:"round_id"`
+	RoundID                  uint64                   `json:"pool_id"`
 	TermID                   uint64                   `json:"term_id"`
 	ProjectID                uint64                   `json:"project_id"`
-	RoundName                string                   `json:"round_name"`
-	RoundDescription         string                   `json:"round_description"`
-	RoundCategory            eos.Name                 `json:"round_category"`
-	RoundType                eos.Name                 `json:"round_type"`
-	RoundAccess              eos.Name                 `json:"round_access"`
+	RoundName                string                   `json:"pool_name"`
+	RoundDescription         string                   `json:"pool_description"`
+	RoundCategory            eos.Name                 `json:"pool_category"`
+	RoundType                eos.Name                 `json:"pool_type"`
+	RoundAccess              eos.Name                 `json:"pool_access"`
 	StakingPeriod            *dto.Microseconds        `json:"staking_period"`
 	EnrollmentTimeOut        *dto.Microseconds        `json:"enrollment_time_out"`
 	NumParticipants          uint32                   `json:"num_participants"`
 	ParticipantEntryFee      eos.Asset                `json:"participant_entry_fee"`
-	RoundManagerEntryFee     eos.Asset                `json:"round_manager_entry_fee"`
+	RoundManagerEntryFee     eos.Asset                `json:"pool_manager_entry_fee"`
 	BeneficiaryEntryFee      eos.Asset                `json:"beneficiary_entry_fee"`
 	BeneficiaryEntryFeeState eos.Name                 `json:"beneficiary_entry_fee_state"`
 	EntryStake               eos.Asset                `json:"entry_stake"`
@@ -110,7 +110,7 @@ type Round struct {
 	Distributions            Distributions            `json:"distributions"`
 	TotalEarlyExitStake      eos.Asset                `json:"total_early_exit_stake"`
 	TotalEarlyExitRewardFees TotalEarlyExitRewardFees `json:"total_early_exit_reward_fees"`
-	RoundManager             eos.AccountName          `json:"round_manager"`
+	RoundManager             eos.AccountName          `json:"pool_manager"`
 	StartTime                eos.TimePoint            `json:"start_time"`
 	ClosedTime               eos.TimePoint            `json:"closed_time"`
 	StakedTime               eos.TimePoint            `json:"staked_time"`
@@ -319,12 +319,12 @@ func (m *Round) SetYieldReward(totalReturn eos.Asset) {
 }
 
 type NewRoundArgs struct {
-	RoundManager     eos.AccountName `json:"round_manager"`
+	RoundManager     eos.AccountName `json:"pool_manager"`
 	TermID           uint64          `json:"term_id"`
 	ProjectID        uint64          `json:"project_id"`
-	RoundName        string          `json:"round_name"`
-	RoundDescription string          `json:"round_description"`
-	RoundCategory    eos.Name        `json:"round_category"`
+	RoundName        string          `json:"pool_name"`
+	RoundDescription string          `json:"pool_description"`
+	RoundCategory    eos.Name        `json:"pool_category"`
 	StartTime        eos.TimePoint   `json:"start_time"`
 }
 
@@ -391,11 +391,11 @@ func (m *BennyfiContract) NewRound(round *Round) (string, error) {
 }
 
 func (m *BennyfiContract) NewRoundFromRoundArgs(roundArgs *NewRoundArgs) (string, error) {
-	return m.ExecAction(roundArgs.RoundManager, "newround", roundArgs)
+	return m.ExecAction(roundArgs.RoundManager, "newpool", roundArgs)
 }
 
 func (m *BennyfiContract) StartRound(roundID uint64) (string, error) {
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "startround", roundID)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "startpool", roundID)
 }
 
 func (m *BennyfiContract) FundRound(roundID uint64, funder interface{}) (string, error) {
@@ -408,7 +408,7 @@ func (m *BennyfiContract) FundRound(roundID uint64, funder interface{}) (string,
 		Funder:  f,
 	}
 
-	return m.ExecAction(funder, "fundround", actionData)
+	return m.ExecAction(funder, "fundpool", actionData)
 }
 
 func (m *BennyfiContract) TimedEvents() (string, error) {
@@ -416,27 +416,27 @@ func (m *BennyfiContract) TimedEvents() (string, error) {
 }
 
 func (m *BennyfiContract) StartRounds(callCounter uint64) (string, error) {
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "startrounds", callCounter)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "startpools", callCounter)
 }
 
 func (m *BennyfiContract) TimeoutRounds(callCounter uint64) (string, error) {
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "timeoutrnds", callCounter)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "timeoutpools", callCounter)
 }
 
 func (m *BennyfiContract) UnlockRounds(callCounter uint64) (string, error) {
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unlockrnds", callCounter)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unlockpools", callCounter)
 }
 
 func (m *BennyfiContract) UnlockRound(roundId uint64) (string, error) {
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unlockrnd", roundId)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unlockpool", roundId)
 }
 
 func (m *BennyfiContract) UnstakeUnlockedRounds(callCounter uint64) (string, error) {
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "ustkulckrnds", callCounter)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "ustkulkpools", callCounter)
 }
 
 func (m *BennyfiContract) UnstakeTimedoutRounds(callCounter uint64) (string, error) {
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "ustktmdrnds", callCounter)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "ustktmdpools", callCounter)
 }
 
 func (m *BennyfiContract) Redraw() (string, error) {
@@ -444,7 +444,7 @@ func (m *BennyfiContract) Redraw() (string, error) {
 }
 
 func (m *BennyfiContract) VestingRounds(callCounter uint64) (string, error) {
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "vestingrnds", callCounter)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "vestingpools", callCounter)
 }
 
 func (m *BennyfiContract) TstLapseTime(roundId uint64) (string, error) {
@@ -478,9 +478,9 @@ func (m *BennyfiContract) GetAllRoundsAsMap() ([]map[string]interface{}, error) 
 
 func (m *BennyfiContract) GetAllRoundsFromAsMap(roundID uint64) ([]map[string]interface{}, error) {
 	req := eos.GetTableRowsRequest{
-		Table: "rounds",
+		Table: "pools",
 	}
-	return m.GetAllTableRowsFromAsMap(req, "round_id", strconv.FormatUint(roundID, 10))
+	return m.GetAllTableRowsFromAsMap(req, "pool_id", strconv.FormatUint(roundID, 10))
 }
 
 func (m *BennyfiContract) GetAllRoundsFrom(roundID uint64) ([]Round, error) {
@@ -564,7 +564,7 @@ func (m *BennyfiContract) GetRoundsReq(req *eos.GetTableRowsRequest) ([]Round, e
 	if req == nil {
 		req = &eos.GetTableRowsRequest{}
 	}
-	req.Table = "rounds"
+	req.Table = "pools"
 	err := m.GetTableRows(*req, &rounds)
 	if err != nil {
 		return nil, fmt.Errorf("get table rows %v", err)

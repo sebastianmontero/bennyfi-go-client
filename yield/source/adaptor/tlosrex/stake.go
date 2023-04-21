@@ -13,7 +13,7 @@ import (
 var RexLockPeriodDays = 5
 
 type Stake struct {
-	RoundID              uint64            `json:"round_id"`
+	RoundID              uint64            `json:"pool_id"`
 	TotalStake           eos.Asset         `json:"total_stake"`
 	RexBalance           eos.Asset         `json:"rex_balance"`
 	TotalReturn          eos.Asset         `json:"total_return"`
