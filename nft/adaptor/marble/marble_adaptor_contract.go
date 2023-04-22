@@ -121,6 +121,13 @@ func (m *MarbleAdaptorContract) Transfer(args *bennyfi.NFTActionParams, caller e
 	return m.ExecAction(caller, "transfer", args)
 }
 
+func (m *MarbleAdaptorContract) Reset(all bool) (string, error) {
+	actionData := struct {
+		All bool
+	}{all}
+	return m.ExecAction(eos.AN(m.ContractName), "reset", actionData)
+}
+
 func (m *MarbleAdaptorContract) GetRewardByRoundDistribution(roundId uint64, distribution eos.Name) (*Reward, error) {
 
 	rndAndDist, err := m.EOS.GetComposedIndexValue(roundId, distribution)
@@ -170,10 +177,4 @@ func (m *MarbleAdaptorContract) GetRewardsReq(req *eos.GetTableRowsRequest) ([]*
 		return nil, fmt.Errorf("get table rows %v", err)
 	}
 	return rewards, nil
-}
-
-func (m *MarbleAdaptorContract) Reset(all bool) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["all"] = all
-	return m.ExecAction(eos.AN(m.ContractName), "reset", actionData)
 }
