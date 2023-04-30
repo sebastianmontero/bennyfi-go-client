@@ -18,6 +18,8 @@ const (
 	SettingRoundManagerStakeAmount       = "POOL_MANAGER_STAKE_AMOUNT"
 	SettingBeneficiaryStakeAmount        = "BENEFICIARY_STAKE_AMOUNT"
 	SettingCreationFee                   = "CREATION_FEE"
+	SettingPoolManagerUnstakingPeriodHrs = "POOL_MANAGER_UNSTAKING_PERIOD_HRS"
+	SettingBeneficiaryUnstakingPeriodHrs = "BENEFICIARY_UNSTAKING_PERIOD_HRS"
 )
 
 type EntryFeeSettings struct {
@@ -93,4 +95,12 @@ func (m *BennyfiContract) GetActiveFeeAccount() (eos.AccountName, error) {
 		return "", err
 	}
 	return eos.AccountName(feeAccount), nil
+}
+
+func (m *BennyfiContract) GetAuthUnstakeWaitingPeriodHrs(authLevel uint64) (uint32, error) {
+	settingKey := SettingPoolManagerUnstakingPeriodHrs
+	if authLevel == Beneficiary {
+		settingKey = SettingBeneficiaryUnstakingPeriodHrs
+	}
+	return m.SettingAsUint32(settingKey)
 }

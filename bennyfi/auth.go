@@ -23,8 +23,10 @@ package bennyfi
 
 import (
 	"fmt"
+	"time"
 
 	eos "github.com/sebastianmontero/eos-go"
+	"github.com/sebastianmontero/eos-go-toolbox/util"
 )
 
 var (
@@ -80,15 +82,20 @@ type EraseAuthArgs struct {
 }
 
 type Auth struct {
-	Authorizer   eos.AccountName `json:"authorizer"`
-	Account      eos.AccountName `json:"account"`
-	Level        uint64          `json:"auth_level"`
-	DisplayName  string          `json:"display_name"`
-	ArtifactCID  string          `json:"artifact_cid"`
-	Notes        string          `json:"notes"`
-	StakedAmount string          `json:"staked_amount"`
+	Authorizer              eos.AccountName `json:"authorizer"`
+	Account                 eos.AccountName `json:"account"`
+	Level                   uint64          `json:"auth_level"`
+	DisplayName             string          `json:"display_name"`
+	ArtifactCID             string          `json:"artifact_cid"`
+	Notes                   string          `json:"notes"`
+	StakedAmount            string          `json:"staked_amount"`
+	UnstakeWaitingPeriodEnd eos.TimePoint   `json:"unstake_waiting_period_end"`
 	// NOT USED AT THE MOMENT
 	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
+}
+
+func (m *Auth) SetUnstakeWaitingPeriodEnd(waitingPeriodHrs uint32) {
+	m.UnstakeWaitingPeriodEnd = util.ShiftedTimePoint(time.Hour * time.Duration(waitingPeriodHrs))
 }
 
 func (m *Auth) ToSetAuthArgs() *SetAuthArgs {
@@ -191,12 +198,24 @@ func (m *BennyfiContract) UnstakeAuth(authorizer, account eos.AccountName) (stri
 	return "", nil
 }
 
+func (m *BennyfiContract) ClaimAuthStakes(callCounter uint64) (string, error) {
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "claimathstks", callCounter)
+}
+
 func (m *BennyfiContract) CanCreateToken(user eos.AccountName) (string, error) {
 	_, err := m.Contract.ExecAction(string(user), "cancreatetkn", &CanCreateTokenArgs{User: user})
 	if err != nil {
 		return "", err
 	}
 	return "", nil
+}
+
+func (m *BennyfiContract) TstAuthLapseTime(account eos.AccountName) (string, error) {
+	actionData := struct {
+		Account     eos.AccountName
+		CallCounter uint64
+	}{account, m.NextCallCounter()}
+	return m.ExecAction(eos.AN(m.ContractName), "tstathlpstm", actionData)
 }
 
 func (m *BennyfiContract) GetAuths() ([]Auth, error) {
