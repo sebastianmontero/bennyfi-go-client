@@ -88,7 +88,7 @@ type Auth struct {
 	DisplayName             string          `json:"display_name"`
 	ArtifactCID             string          `json:"artifact_cid"`
 	Notes                   string          `json:"notes"`
-	StakedAmount            string          `json:"staked_amount"`
+	StakedAmount            eos.Asset       `json:"staked_amount"`
 	UnstakeWaitingPeriodEnd eos.TimePoint   `json:"unstake_waiting_period_end"`
 	// NOT USED AT THE MOMENT
 	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
