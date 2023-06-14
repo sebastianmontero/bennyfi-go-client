@@ -1,6 +1,6 @@
 package bennyfi
 
-import eos "github.com/eoscanada/eos-go"
+import eos "github.com/sebastianmontero/eos-go"
 
 const (
 	SettingEntryFeeAccount               = "ENTRY_FEE_ACCOUNT"

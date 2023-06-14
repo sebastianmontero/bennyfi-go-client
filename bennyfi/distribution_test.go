@@ -5,27 +5,29 @@ import (
 
 	"github.com/sebastianmontero/bennyfi-go-client/bennyfi"
 	"github.com/sebastianmontero/bennyfi-go-client/bennyfi/test"
+	"github.com/sebastianmontero/eos-go"
 )
 
 func TestDistributionAssert(t *testing.T) {
+	symbol := eos.Symbol{Precision: 2, Symbol: "TLOS"}
 	expected := bennyfi.NewDistribution(&bennyfi.DistributionFT{
-		BeneficiaryReward:    "190.00 TLOS",
-		MinParticipantReward: "290.00 TLOS",
-		RoundManagerFee:      "390.00 TLOS",
-		WinnerPrizes: []string{
-			"380.00 TLOS",
-			"370.00 TLOS",
-			"350.00 TLOS",
+		BeneficiaryReward:    eos.Asset{Amount: 19000, Symbol: symbol},
+		MinParticipantReward: eos.Asset{Amount: 29000, Symbol: symbol},
+		RoundManagerFee:      eos.Asset{Amount: 39000, Symbol: symbol},
+		WinnerPrizes: []eos.Asset{
+			{Amount: 38000, Symbol: symbol},
+			{Amount: 37000, Symbol: symbol},
+			{Amount: 35000, Symbol: symbol},
 		},
 	})
 	actual := bennyfi.NewDistribution(&bennyfi.DistributionFT{
-		BeneficiaryReward:    "190.00 TLOS",
-		MinParticipantReward: "290.00 TLOS",
-		RoundManagerFee:      "390.00 TLOS",
-		WinnerPrizes: []string{
-			"380.00 TLOS",
-			"370.00 TLOS",
-			"350.00 TLOS",
+		BeneficiaryReward:    eos.Asset{Amount: 19000, Symbol: symbol},
+		MinParticipantReward: eos.Asset{Amount: 29000, Symbol: symbol},
+		RoundManagerFee:      eos.Asset{Amount: 39000, Symbol: symbol},
+		WinnerPrizes: []eos.Asset{
+			{Amount: 38000, Symbol: symbol},
+			{Amount: 37000, Symbol: symbol},
+			{Amount: 35000, Symbol: symbol},
 		},
 	})
 

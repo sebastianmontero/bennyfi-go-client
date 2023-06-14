@@ -24,9 +24,10 @@ package bennyfi
 import (
 	"fmt"
 
-	eos "github.com/eoscanada/eos-go"
 	"github.com/sebastianmontero/bennyfi-go-client/util/utype"
+	eos "github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/err"
+	"github.com/sebastianmontero/eos-go-toolbox/util"
 )
 
 type IReturn interface {
@@ -34,63 +35,34 @@ type IReturn interface {
 }
 
 type ReturnsFT struct {
-	Prize              string `json:"prize"`
-	MinimumPayout      string `json:"minimum_payout"`
-	AmountPaidOut      string `json:"amount_paid_out"`
-	EarlyExitReturnFee string `json:"early_exit_return_fee"`
+	Prize              eos.Asset `json:"prize"`
+	MinimumPayout      eos.Asset `json:"minimum_payout"`
+	AmountPaidOut      eos.Asset `json:"amount_paid_out"`
+	EarlyExitReturnFee eos.Asset `json:"early_exit_return_fee"`
 }
 
 func (m *ReturnsFT) HasReturns() bool {
 	return m.GetTotalReturn().Amount > 0
 }
 
-func (m *ReturnsFT) GetPrize() eos.Asset {
-	prize, err := eos.NewAssetFromString(m.Prize)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse prize: %v to asset", m.Prize))
-	}
-	return prize
-}
-
-func (m *ReturnsFT) GetMinimumPayout() eos.Asset {
-	minPayout, err := eos.NewAssetFromString(m.MinimumPayout)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse minimum payout: %v to asset", m.MinimumPayout))
-	}
-	return minPayout
-}
-
-func (m *ReturnsFT) GetAmountPaidOut() eos.Asset {
-	amountPaidOut, err := eos.NewAssetFromString(m.AmountPaidOut)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse amount paid out: %v to asset", m.AmountPaidOut))
-	}
-	return amountPaidOut
-}
-
-func (m *ReturnsFT) GetEarlyExitReturnFee() eos.Asset {
-	earlyExitFee, err := eos.NewAssetFromString(m.EarlyExitReturnFee)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse early exit return fee: %v to asset", m.EarlyExitReturnFee))
-	}
-	return earlyExitFee
-}
-
 func (m *ReturnsFT) GetTotalReturn() eos.Asset {
-	return m.GetPrize().Add(m.GetMinimumPayout())
+	return m.Prize.Add(m.MinimumPayout)
 }
 
 func (m *ReturnsFT) PaidTotalAmount() {
-	m.AmountPaidOut = m.GetTotalReturn().String()
+	m.AmountPaidOut = m.GetTotalReturn()
 }
 
 func (m *ReturnsFT) PaidAmount(amount interface{}) {
-	amnt := amount.(eos.Asset)
-	paid := m.GetAmountPaidOut().Add(amnt)
+	amnt, err := util.ToAsset(amount)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse paid amount: %v error: %v", amount, err))
+	}
+	paid := m.AmountPaidOut.Add(amnt)
 	if paid.Amount > m.GetTotalReturn().Amount {
 		panic(fmt.Sprintf("Total Paid amount: %v is greater than round manager fee: %v, current payment: %v", paid, m.GetTotalReturn(), amount))
 	}
-	m.AmountPaidOut = paid.String()
+	m.AmountPaidOut = paid
 }
 
 type ReturnsNFT struct {

@@ -25,10 +25,10 @@ import (
 	"fmt"
 	"time"
 
-	eos "github.com/eoscanada/eos-go"
-	"github.com/eoscanada/eos-go/ecc"
+	eos "github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/contract"
 	"github.com/sebastianmontero/eos-go-toolbox/service"
+	"github.com/sebastianmontero/eos-go/ecc"
 )
 
 var (
@@ -100,15 +100,16 @@ func (m *BennyfiContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) erro
 }
 
 func (m *BennyfiContract) Pause(pause uint32) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["pause"] = pause
-	return m.ExecAction(eos.AN(m.ContractName), "pause", actionData)
+	// actionData := make(map[string]interface{})
+	// actionData["pause"] = pause
+	return m.ExecAction(eos.AN(m.ContractName), "pause", pause)
 }
 
 func (m *BennyfiContract) Reset(limit uint64, toDelete []string) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["limit"] = limit
-	actionData["to_delete"] = toDelete
-	actionData["call_counter"] = m.NextCallCounter()
+	actionData := struct {
+		Limit       uint64
+		ToDelete    []string
+		CallCounter uint64
+	}{limit, toDelete, m.NextCallCounter()}
 	return m.ExecAction(eos.AN(m.ContractName), "reset", actionData)
 }

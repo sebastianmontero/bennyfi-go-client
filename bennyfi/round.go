@@ -22,6 +22,7 @@
 package bennyfi
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -29,7 +30,8 @@ import (
 	"strings"
 	"time"
 
-	eos "github.com/eoscanada/eos-go"
+	eos "github.com/sebastianmontero/eos-go"
+	"github.com/sebastianmontero/eos-go-toolbox/dto"
 	"github.com/sebastianmontero/eos-go-toolbox/util"
 )
 
@@ -71,56 +73,14 @@ var (
 	RexLockPeriodDays                = 5
 )
 
-var microsecondsPerHr int64 = 60 * 60 * 1000000
-
-type Microseconds struct {
-	Microseconds string `json:"_count"`
+type FundRoundArgs struct {
+	RoundID uint64          `json:"round_id"`
+	Funder  eos.AccountName `json:"funder"`
 }
 
-func NewMicroseconds(hrs int64) *Microseconds {
-	return &Microseconds{
-		Microseconds: strconv.FormatInt(hrs*microsecondsPerHr, 10),
-	}
-}
-
-func (m *Microseconds) Hrs() int64 {
-	ms, _ := strconv.ParseInt(m.Microseconds, 10, 64)
-	return ms / microsecondsPerHr
-}
-
-func (m *Microseconds) UnmarshalJSON(b []byte) error {
-	ms := make(map[string]interface{})
-	if err := json.Unmarshal(b, &ms); err != nil {
-		return err
-	}
-	if countI, ok := ms["_count"]; ok {
-		var microseconds string
-		switch count := countI.(type) {
-		case float64:
-			microseconds = strconv.FormatFloat(count, 'f', 0, 64)
-		case string:
-			microseconds = count
-		default:
-			return fmt.Errorf("Microseconds count of unknown type: %T", count)
-		}
-		*m = Microseconds{
-			Microseconds: microseconds,
-		}
-	} else {
-		return fmt.Errorf("Error unmarshalling microseconds no '_count' property found: %v", ms)
-	}
-	return nil
-}
-func (m *Microseconds) NumMicroseconds() int64 {
-	v, err := strconv.ParseInt(m.Microseconds, 10, 64)
-	if err != nil {
-		panic(fmt.Sprintf("failed parsing microseconds: %v, error: %v", m.Microseconds, err))
-	}
-	return v
-}
-
-func (m *Microseconds) String() string {
-	return m.Microseconds
+type TstLapseTimeArgs struct {
+	RoundID     uint64 `json:"round_id"`
+	CallCounter uint64 `json:"call_counter"`
 }
 
 type Round struct {
@@ -132,16 +92,16 @@ type Round struct {
 	RoundCategory            eos.Name                 `json:"round_category"`
 	RoundType                eos.Name                 `json:"round_type"`
 	RoundAccess              eos.Name                 `json:"round_access"`
-	StakingPeriod            *Microseconds            `json:"staking_period"`
-	EnrollmentTimeOut        *Microseconds            `json:"enrollment_time_out"`
+	StakingPeriod            *dto.Microseconds        `json:"staking_period"`
+	EnrollmentTimeOut        *dto.Microseconds        `json:"enrollment_time_out"`
 	NumParticipants          uint32                   `json:"num_participants"`
-	ParticipantEntryFee      string                   `json:"participant_entry_fee"`
-	RoundManagerEntryFee     string                   `json:"round_manager_entry_fee"`
-	BeneficiaryEntryFee      string                   `json:"beneficiary_entry_fee"`
+	ParticipantEntryFee      eos.Asset                `json:"participant_entry_fee"`
+	RoundManagerEntryFee     eos.Asset                `json:"round_manager_entry_fee"`
+	BeneficiaryEntryFee      eos.Asset                `json:"beneficiary_entry_fee"`
 	BeneficiaryEntryFeeState eos.Name                 `json:"beneficiary_entry_fee_state"`
-	EntryStake               string                   `json:"entry_stake"`
+	EntryStake               eos.Asset                `json:"entry_stake"`
 	Rewards                  Rewards                  `json:"rewards"`
-	RexBalance               string                   `json:"rex_balance"`
+	RexBalance               eos.Asset                `json:"rex_balance"`
 	NumParticipantsEntered   uint32                   `json:"num_participants_entered"`
 	NumClaimedReturns        uint32                   `json:"num_claimed_returns"`
 	NumUnstaked              uint32                   `json:"num_unstaked"`
@@ -152,22 +112,22 @@ type Round struct {
 	RexState                 eos.Name                 `json:"rex_state"`
 	StakeState               eos.Name                 `json:"stake_state"`
 	VestingState             eos.Name                 `json:"vesting_state"`
-	TotalDeposits            string                   `json:"total_deposits"`
+	TotalDeposits            eos.Asset                `json:"total_deposits"`
 	Winners                  Winners                  `json:"winners"`
 	Beneficiary              eos.AccountName          `json:"beneficiary"`
 	Distributions            Distributions            `json:"distributions"`
-	TotalEarlyExitStake      string                   `json:"total_early_exit_stake"`
+	TotalEarlyExitStake      eos.Asset                `json:"total_early_exit_stake"`
 	TotalEarlyExitRewardFees TotalEarlyExitRewardFees `json:"total_early_exit_reward_fees"`
 	RoundManager             eos.AccountName          `json:"round_manager"`
-	StartTime                string                   `json:"start_time"`
-	ClosedTime               string                   `json:"closed_time"`
-	StakedTime               string                   `json:"staked_time"`
-	MovedFromSavingsTime     string                   `json:"moved_from_savings_time"`
-	StakeEndTime             string                   `json:"stake_end_time"`
-	EnrollmentTimeEnd        string                   `json:"enrollment_time_end"`
-	NextVestingTime          string                   `json:"next_vesting_time"`
-	CreatedDate              string                   `json:"created_date"`
-	UpdatedDate              string                   `json:"updated_date"`
+	StartTime                eos.TimePoint            `json:"start_time"`
+	ClosedTime               eos.TimePoint            `json:"closed_time"`
+	StakedTime               eos.TimePoint            `json:"staked_time"`
+	MovedFromSavingsTime     eos.TimePoint            `json:"moved_from_savings_time"`
+	StakeEndTime             eos.TimePoint            `json:"stake_end_time"`
+	EnrollmentTimeEnd        eos.TimePoint            `json:"enrollment_time_end"`
+	NextVestingTime          eos.TimePoint            `json:"next_vesting_time"`
+	CreatedDate              eos.TimePoint            `json:"created_date"`
+	UpdatedDate              eos.TimePoint            `json:"updated_date"`
 }
 
 type RoundCustomJSON struct {
@@ -202,59 +162,10 @@ func (m *Round) RequiresRoundManagerFunding() bool {
 }
 
 func (m *Round) RequiresBeneficiaryFunding() bool {
-	return m.Rewards.Has(DistributionProjectToken) || m.Rewards.Has(DistributionProjectNFT) || m.GetBeneficiaryEntryFee().Amount > 0
+	return m.Rewards.Has(DistributionProjectToken) || m.Rewards.Has(DistributionProjectNFT) || m.BeneficiaryEntryFee.Amount > 0
 }
-
-func (m *Round) GetTotalDeposits() eos.Asset {
-	totalDeposits, err := eos.NewAssetFromString(m.TotalDeposits)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse total deposits: %v to asset", m.TotalDeposits))
-	}
-	return totalDeposits
-}
-
-func (m *Round) GetEntryStake() eos.Asset {
-	entryStake, err := eos.NewAssetFromString(m.EntryStake)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse entry stake: %v to asset", m.EntryStake))
-	}
-	return entryStake
-}
-
-func (m *Round) GetRexBalance() eos.Asset {
-	rexBalance, err := eos.NewAssetFromString(m.RexBalance)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse rex balance: %v to asset", m.RexBalance))
-	}
-	return rexBalance
-}
-
-func (m *Round) GetRoundManagerEntryFee() eos.Asset {
-	roundManagerEntryFee, err := eos.NewAssetFromString(m.RoundManagerEntryFee)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse round manager entry fee: %v to asset", m.RoundManagerEntryFee))
-	}
-	return roundManagerEntryFee
-}
-
-func (m *Round) GetBeneficiaryEntryFee() eos.Asset {
-	beneficiaryEntryFee, err := eos.NewAssetFromString(m.BeneficiaryEntryFee)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse beneficiary entry fee: %v to asset", m.BeneficiaryEntryFee))
-	}
-	return beneficiaryEntryFee
-}
-
-func (m *Round) GetParticipantEntryFee() eos.Asset {
-	participantEntryFee, err := eos.NewAssetFromString(m.ParticipantEntryFee)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse participant entry fee: %v to asset", m.ParticipantEntryFee))
-	}
-	return participantEntryFee
-}
-
 func (m *Round) GetTotalEntryFee() eos.Asset {
-	return m.GetBeneficiaryEntryFee().Add(m.GetRoundManagerEntryFee()).Add(util.MultiplyAsset(m.GetParticipantEntryFee(), int64(m.NumParticipants)))
+	return m.BeneficiaryEntryFee.Add(m.RoundManagerEntryFee).Add(util.MultiplyAsset(m.ParticipantEntryFee, int64(m.NumParticipants)))
 }
 
 func (m *Round) NumEntriesToClose() uint32 {
@@ -295,7 +206,7 @@ func (m *Round) RemoveReward(name eos.Name) {
 	m.Rewards.Remove(name)
 }
 
-func (m *Round) UpsertEarlyExitRewardFee(name eos.Name, earlyExitRewardFee string) {
+func (m *Round) UpsertEarlyExitRewardFee(name eos.Name, earlyExitRewardFee eos.Asset) {
 	if m.TotalEarlyExitRewardFees == nil {
 		m.TotalEarlyExitRewardFees = make(TotalEarlyExitRewardFees, 0, 1)
 	}
@@ -331,10 +242,10 @@ func (m *Round) CalculateEntryFee(settings *EntryFeeSettings) eos.Asset {
 		return util.MultiplyAsset(settings.SelfFundedPerUser, int64(m.NumParticipants))
 	} else {
 
-		totalStake := util.MultiplyAsset(m.GetEntryStake(), int64(m.NumParticipants))
-		yield := util.CalculatePercentage(util.MultiplyAsset(totalStake, int64(m.StakingPeriod.Hrs())), settings.HourlyYield())
+		totalStake := util.MultiplyAsset(m.EntryStake, int64(m.NumParticipants))
+		yield := util.CalculateAssetPercentage(util.MultiplyAsset(totalStake, int64(m.StakingPeriod.Hrs())), settings.HourlyYield())
 		yieldUSD := util.DivideAssets(yield, settings.ValueTLOS)
-		yieldPerc := util.CalculatePercentage(yieldUSD, settings.PercOfYield)
+		yieldPerc := util.CalculateAssetPercentage(yieldUSD, settings.PercOfYield)
 		entryFee := util.DivideAssets(yieldPerc, settings.ValueBENY)
 		adjustedEntryFee := util.AdjustPrecision(big.NewInt(int64(entryFee.Amount)), entryFee.Precision, settings.BENYToken.Precision)
 		// fmt.Printf("Entry fee values, total stake: %v, yield: %v, yieldUSD: %v, yieldPerc: %v, entryFee: %v, adjustedEntryFee: %v \n", totalStake, yield, yieldUSD, yieldPerc, entryFee, adjustedEntryFee)
@@ -344,38 +255,38 @@ func (m *Round) CalculateEntryFee(settings *EntryFeeSettings) eos.Asset {
 
 func (m *Round) CalculateEntryFees(settings *EntryFeeSettings, term *Term) {
 	entryFee := m.CalculateEntryFee(settings)
-	roundManagerEntryFee := util.CalculatePercentage(entryFee, term.RoundManagerEntryFeePerc)
-	beneficiaryEntryFee := util.CalculatePercentage(entryFee, term.BeneficiaryEntryFeePerc)
+	roundManagerEntryFee := util.CalculateAssetPercentage(entryFee, term.RoundManagerEntryFeePerc)
+	beneficiaryEntryFee := util.CalculateAssetPercentage(entryFee, term.BeneficiaryEntryFeePerc)
 	participantEntryFee := entryFee.Sub(roundManagerEntryFee).Sub(beneficiaryEntryFee)
 	// fmt.Printf("Round manager percent fee: %v, beneficiary percent fee: %v\n", term.RoundManagerEntryFeePerc, term.BeneficiaryEntryFeePerc)
 	// fmt.Printf("Entryfee: %v, Beneficiary Entry fee: %v, Round Manager Entry fee: %v, Participant Entry Fee total: %v \n", entryFee, beneficiaryEntryFee, roundManagerEntryFee, participantEntryFee)
 	participantEntryFee = util.DivideAsset(participantEntryFee, uint64(m.NumParticipants))
-	m.RoundManagerEntryFee = roundManagerEntryFee.String()
-	m.BeneficiaryEntryFee = beneficiaryEntryFee.String()
-	m.ParticipantEntryFee = participantEntryFee.String()
+	m.RoundManagerEntryFee = roundManagerEntryFee
+	m.BeneficiaryEntryFee = beneficiaryEntryFee
+	m.ParticipantEntryFee = participantEntryFee
 }
 
 func (m *Round) CalculateReturns(entryOwner eos.AccountName, distName eos.Name, isEarlyExit bool, earlyExitFeePerc uint32) interface{} {
 
 	if IsFTDistribution(distName) {
 		dist := m.Distributions.FindFT(distName)
-		minParticipantReward := dist.GetMinParticipantReward()
+		minParticipantReward := dist.MinParticipantReward
 		winner := m.Winners.FindWinnerFT(distName, entryOwner)
 		winnerPrize := eos.Asset{Amount: 0, Symbol: minParticipantReward.Symbol}
 		if winner != nil {
-			winnerPrize = winner.GetPrize()
+			winnerPrize = winner.Prize
 		}
-		earlyExitRewardFee := util.CalculatePercentage(winnerPrize, earlyExitFeePerc)
+		earlyExitRewardFee := util.CalculateAssetPercentage(winnerPrize, earlyExitFeePerc)
 		if isEarlyExit {
 			winnerPrize = winnerPrize.Sub(earlyExitRewardFee)
 			earlyExitRewardFee = earlyExitRewardFee.Add(minParticipantReward)
 			minParticipantReward = eos.Asset{Amount: 0, Symbol: minParticipantReward.Symbol}
 		}
 		return &ReturnsFT{
-			Prize:              winnerPrize.String(),
-			MinimumPayout:      minParticipantReward.String(),
-			EarlyExitReturnFee: earlyExitRewardFee.String(),
-			AmountPaidOut:      eos.Asset{Amount: 0, Symbol: winnerPrize.Symbol}.String(),
+			Prize:              winnerPrize,
+			MinimumPayout:      minParticipantReward,
+			EarlyExitReturnFee: earlyExitRewardFee,
+			AmountPaidOut:      eos.Asset{Amount: 0, Symbol: winnerPrize.Symbol},
 		}
 	} else {
 		dist := m.Distributions.FindNFT(distName)
@@ -391,28 +302,18 @@ func (m *Round) CalculateReturns(entryOwner eos.AccountName, distName eos.Name, 
 	}
 }
 
-func (m *Round) CalculateRexLockPeriodTime() time.Time {
-	stakedTime, err := util.ToTime(m.StakedTime)
-	if err != nil {
-		panic(fmt.Sprintf("failed to calculate Rex Lock Period Time, could not parse staked time: %v, error: %v", m.StakedTime, err))
-	}
-	return stakedTime.Add(time.Hour * time.Duration(m.StakingPeriod.Hrs()-int64(24*RexLockPeriodDays)))
+func (m *Round) CalculateRexLockPeriodTime() eos.TimePoint {
+
+	return eos.TimePoint(m.StakedTime.Time().Add(time.Hour * time.Duration(m.StakingPeriod.Hrs()-int64(24*RexLockPeriodDays))).UnixMicro())
 }
 
-func (m *Round) CalculateSellRexTime() time.Time {
-	movedFromSavingsTime, err := util.ToTime(m.MovedFromSavingsTime)
-	if err != nil {
-		panic(fmt.Sprintf("failed to calculate Sell Rex Time, could not parse moved from savings time: %v, error: %v", m.MovedFromSavingsTime, err))
-	}
-	return movedFromSavingsTime.Add(time.Hour * time.Duration(24*RexLockPeriodDays))
+func (m *Round) CalculateSellRexTime() eos.TimePoint {
+
+	return eos.TimePoint(m.MovedFromSavingsTime.Time().Add(time.Hour * time.Duration(24*RexLockPeriodDays)).UnixMicro())
 }
 
-func (m *Round) CalculateUnlockTime() time.Time {
-	stakedTime, err := util.ToTime(m.StakedTime)
-	if err != nil {
-		panic(fmt.Sprintf("failed to calculate Unlock Time, could not parse staked time: %v, error: %v", m.StakedTime, err))
-	}
-	return stakedTime.Add(time.Hour * time.Duration(m.StakingPeriod.Hrs()))
+func (m *Round) CalculateUnlockTime() eos.TimePoint {
+	return eos.TimePoint(m.StakedTime.Time().Add(time.Hour * time.Duration(m.StakingPeriod.Hrs())).UnixMicro())
 }
 
 type NewRoundArgs struct {
@@ -422,7 +323,7 @@ type NewRoundArgs struct {
 	RoundName        string          `json:"round_name"`
 	RoundDescription string          `json:"round_description"`
 	RoundCategory    eos.Name        `json:"round_category"`
-	StartTime        string          `json:"start_time"`
+	StartTime        eos.TimePoint   `json:"start_time"`
 }
 
 func RoundToNewRoundArgs(round *Round) *NewRoundArgs {
@@ -491,29 +392,22 @@ func (m *BennyfiContract) NewRound(round *Round) (string, error) {
 }
 
 func (m *BennyfiContract) NewRoundFromRoundArgs(roundArgs *NewRoundArgs) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["round_manager"] = roundArgs.RoundManager
-	actionData["round_name"] = roundArgs.RoundName
-	actionData["round_description"] = roundArgs.RoundDescription
-	actionData["round_category"] = roundArgs.RoundCategory
-	actionData["term_id"] = roundArgs.TermID
-	actionData["project_id"] = roundArgs.ProjectID
-	actionData["start_time"] = roundArgs.StartTime
-	// fmt.Println("New Round: ", actionData)
-	return m.ExecAction(roundArgs.RoundManager, "newround", actionData)
+	return m.ExecAction(roundArgs.RoundManager, "newround", roundArgs)
 }
 
 func (m *BennyfiContract) StartRound(roundID uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["round_id"] = roundID
-
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "startround", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "startround", roundID)
 }
 
 func (m *BennyfiContract) FundRound(roundID uint64, funder interface{}) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["round_id"] = roundID
-	actionData["funder"] = funder
+	f, err := util.ToAccountName(funder)
+	if err != nil {
+		return "", fmt.Errorf("failed parsing funder account: %v, error: %v", funder, err)
+	}
+	actionData := &FundRoundArgs{
+		RoundID: roundID,
+		Funder:  f,
+	}
 
 	return m.ExecAction(funder, "fundround", actionData)
 }
@@ -523,57 +417,39 @@ func (m *BennyfiContract) TimedEvents() (string, error) {
 }
 
 func (m *BennyfiContract) StartRounds(callCounter uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["call_counter"] = callCounter
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "startrounds", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "startrounds", callCounter)
 }
 
 func (m *BennyfiContract) TimeoutRounds(callCounter uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["call_counter"] = callCounter
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "timeoutrnds", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "timeoutrnds", callCounter)
 }
 
 func (m *BennyfiContract) MoveFromSavings(callCounter uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["call_counter"] = callCounter
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "mvfrmsavings", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "mvfrmsavings", callCounter)
 }
 
 func (m *BennyfiContract) SellRex(callCounter uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["call_counter"] = callCounter
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "sellrex", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "sellrex", callCounter)
 }
 
 func (m *BennyfiContract) WithdrawRex(callCounter uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["call_counter"] = callCounter
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "withdrawrex", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "withdrawrex", callCounter)
 }
 
 func (m *BennyfiContract) UnlockRounds(callCounter uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["call_counter"] = callCounter
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unlockrnds", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unlockrnds", callCounter)
 }
 
 func (m *BennyfiContract) UnlockRound(roundId uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["round_id"] = roundId
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unlockrnd", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unlockrnd", roundId)
 }
 
 func (m *BennyfiContract) UnstakeUnlockedRounds(callCounter uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["call_counter"] = callCounter
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "ustkulckrnds", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "ustkulckrnds", callCounter)
 }
 
 func (m *BennyfiContract) UnstakeTimedoutRounds(callCounter uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["call_counter"] = callCounter
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "ustktmdrnds", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "ustktmdrnds", callCounter)
 }
 
 func (m *BennyfiContract) Redraw() (string, error) {
@@ -581,22 +457,26 @@ func (m *BennyfiContract) Redraw() (string, error) {
 }
 
 func (m *BennyfiContract) VestingRounds(callCounter uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["call_counter"] = callCounter
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "vestingrnds", actionData)
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "vestingrnds", callCounter)
 }
 
 func (m *BennyfiContract) TstLapseTime(roundId uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["round_id"] = roundId
-	actionData["call_counter"] = m.NextCallCounter()
+	actionData := &TstLapseTimeArgs{
+		RoundID:     roundId,
+		CallCounter: m.NextCallCounter(),
+	}
 	return m.ExecAction(eos.AN(m.ContractName), "tstlapsetime", actionData)
 }
 
 func (m *BennyfiContract) ReceiveRand(actor eos.AccountName, roundId uint64, randomNumber string) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["assoc_id"] = roundId
-	actionData["random"] = randomNumber
+	rand, err := hex.DecodeString(randomNumber)
+	if err != nil {
+		return "", fmt.Errorf("failed decoding random number: %v, error: %v", randomNumber, err)
+	}
+	actionData := struct {
+		AssocID uint64
+		Random  eos.Checksum256
+	}{roundId, eos.Checksum256(rand)}
 	return m.ExecAction(actor, "receiverand", actionData)
 }
 

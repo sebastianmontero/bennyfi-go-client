@@ -5,7 +5,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/eoscanada/eos-go"
+	"github.com/sebastianmontero/eos-go"
 )
 
 var AtomicAttributeVariant = eos.NewVariantDefinition([]eos.VariantType{

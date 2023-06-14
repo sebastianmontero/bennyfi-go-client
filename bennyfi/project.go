@@ -24,7 +24,7 @@ package bennyfi
 import (
 	"fmt"
 
-	eos "github.com/eoscanada/eos-go"
+	eos "github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/dto"
 )
 
@@ -62,8 +62,8 @@ type Project struct {
 	Authorizer  eos.AccountName `json:"authorizer"`
 	Beneficiary eos.AccountName `json:"beneficiary"`
 	Attributes  Attributes      `json:"attributes"`
-	CreatedDate string          `json:"created_date"`
-	UpdatedDate string          `json:"updated_date"`
+	CreatedDate eos.TimePoint   `json:"created_date"`
+	UpdatedDate eos.TimePoint   `json:"updated_date"`
 }
 
 type NewProjectArgs struct {
@@ -81,12 +81,7 @@ func (m *Project) ToNewProjectArgs() *NewProjectArgs {
 }
 
 func (m *BennyfiContract) NewProject(projectArgs *NewProjectArgs) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["authorizer"] = projectArgs.Authorizer
-	actionData["beneficiary"] = projectArgs.Beneficiary
-	actionData["attributes"] = projectArgs.Attributes
-
-	return m.ExecAction(projectArgs.Authorizer, "newproject", actionData)
+	return m.ExecAction(projectArgs.Authorizer, "newproject", projectArgs)
 }
 
 func (m *BennyfiContract) NewProjectFromProject(project *Project) (string, error) {

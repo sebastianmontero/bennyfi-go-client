@@ -24,7 +24,7 @@ package bennyfi
 import (
 	"fmt"
 
-	eos "github.com/eoscanada/eos-go"
+	eos "github.com/sebastianmontero/eos-go"
 )
 
 type BaseWinner struct {
@@ -45,18 +45,10 @@ func NewBaseWinner(participant eos.AccountName, entryPosition uint64) *BaseWinne
 
 type WinnerFT struct {
 	*BaseWinner
-	Prize string `json:"prize"`
+	Prize eos.Asset `json:"prize"`
 }
 
-func (m *WinnerFT) GetPrize() eos.Asset {
-	prize, err := eos.NewAssetFromString(m.Prize)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse prize: %v to asset", m.Prize))
-	}
-	return prize
-}
-
-func NewWinnerFT(participant eos.AccountName, prize string, entryPosition uint64) *WinnerFT {
+func NewWinnerFT(participant eos.AccountName, prize eos.Asset, entryPosition uint64) *WinnerFT {
 	return &WinnerFT{
 		BaseWinner: NewBaseWinner(participant, entryPosition),
 		Prize:      prize,

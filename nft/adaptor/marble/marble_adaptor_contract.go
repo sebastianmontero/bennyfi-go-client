@@ -24,8 +24,8 @@ package marble
 import (
 	"fmt"
 
-	"github.com/eoscanada/eos-go"
 	"github.com/sebastianmontero/bennyfi-go-client/bennyfi"
+	"github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/contract"
 	"github.com/sebastianmontero/eos-go-toolbox/service"
 )
@@ -50,8 +50,8 @@ type Reward struct {
 	CurrentState eos.Name        `json:"current_state"`
 	Funder       eos.AccountName `json:"funder"`
 	NFTContract  eos.AccountName `json:"nft_contract"`
-	CreatedDate  string          `json:"created_date"`
-	UpdatedDate  string          `json:"updated_date"`
+	CreatedDate  eos.TimePoint   `json:"created_date"`
+	UpdatedDate  eos.TimePoint   `json:"updated_date"`
 }
 
 func (m *Reward) NewRewardArgs() *NewRewardArgs {

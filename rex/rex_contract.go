@@ -24,7 +24,7 @@ package rex
 import (
 	"fmt"
 
-	"github.com/eoscanada/eos-go"
+	"github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/contract"
 	"github.com/sebastianmontero/eos-go-toolbox/service"
 )
@@ -41,47 +41,25 @@ var (
 )
 
 type Config struct {
-	TokenContract     eos.Name `json:"token_contract"`
-	LendableIncrement uint64   `json:"lendable_increment"`
+	TokenContract     eos.AccountName `json:"token_contract"`
+	LendableIncrement uint64          `json:"lendable_increment"`
 }
 
 type Balance struct {
 	Owner           eos.AccountName `json:"owner"`
-	FundInBalance   string          `json:"fund_in_balance"`
-	RexBought       string          `json:"rex_bought"`
-	RexInSavings    string          `json:"rex_in_savings"`
-	RexLiquid       string          `json:"rex_liquid"`
-	RexInSellOrders string          `json:"rex_in_sell_orders"`
-	FundOutBalance  string          `json:"fund_out_balance"`
-}
-
-func (m *Balance) GetFundOutBalance() eos.Asset {
-	fundOutBalance, err := eos.NewAssetFromString(m.FundOutBalance)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse entry stake: %v to asset", m.FundOutBalance))
-	}
-	return fundOutBalance
+	FundInBalance   eos.Asset       `json:"fund_in_balance"`
+	RexBought       eos.Asset       `json:"rex_bought"`
+	RexInSavings    eos.Asset       `json:"rex_in_savings"`
+	RexLiquid       eos.Asset       `json:"rex_liquid"`
+	RexInSellOrders eos.Asset       `json:"rex_in_sell_orders"`
+	FundOutBalance  eos.Asset       `json:"fund_out_balance"`
 }
 
 type RexPool struct {
-	TotalLendable string `json:"total_lendable"`
-	TotalRex      string `json:"total_rex"`
-}
-
-func (m *RexPool) GetTotalLendable() eos.Asset {
-	totalLendable, err := eos.NewAssetFromString(m.TotalLendable)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse total lendable: %v to asset", m.TotalLendable))
-	}
-	return totalLendable
-}
-
-func (m *RexPool) GetTotalRex() eos.Asset {
-	totalRex, err := eos.NewAssetFromString(m.TotalRex)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse total rex: %v to asset", m.TotalRex))
-	}
-	return totalRex
+	TotalLent     eos.Asset `json:"total_lent"`
+	TotalUnlent   eos.Asset `json:"total_unlent"`
+	TotalLendable eos.Asset `json:"total_lendable"`
+	TotalRex      eos.Asset `json:"total_rex"`
 }
 
 func (m *RexPool) ToInitialPool() *InitialPool {
@@ -93,25 +71,31 @@ func (m *RexPool) ToInitialPool() *InitialPool {
 }
 
 type InitialPool struct {
-	TotalLendable string `json:"total_lendable"`
-	TotalRex      string `json:"total_rex"`
-	DepositCount  uint64 `json:"deposit_count"`
+	TotalLendable eos.Asset `json:"total_lendable"`
+	TotalRex      eos.Asset `json:"total_rex"`
+	DepositCount  uint64    `json:"deposit_count"`
 }
 
-func (m *InitialPool) GetTotalLendable() eos.Asset {
-	totalLendable, err := eos.NewAssetFromString(m.TotalLendable)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse total lendable: %v to asset", m.TotalLendable))
-	}
-	return totalLendable
+type SetInitialPoolArgs struct {
+	TotalLendable eos.Asset `json:"total_lendable"`
+	TotalRex      eos.Asset `json:"total_rex"`
 }
 
-func (m *InitialPool) GetTotalRex() eos.Asset {
-	totalRex, err := eos.NewAssetFromString(m.TotalRex)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse total rex: %v to asset", m.TotalRex))
-	}
-	return totalRex
+type InitRexArgs struct {
+	TotalLendable     eos.Asset       `json:"total_lendable"`
+	TotalRex          eos.Asset       `json:"total_rex"`
+	LendableIncrement uint64          `json:"lendable_increment"`
+	TokenContract     eos.AccountName `json:"token_contract"`
+}
+
+type SetLentArgs struct {
+	TotalLent   eos.Asset `json:"total_lent"`
+	TotalUnlent eos.Asset `json:"total_unlent"`
+}
+
+type InitConfArgs struct {
+	LendableIncrement uint64          `json:"lendable_increment"`
+	TokenContract     eos.AccountName `json:"token_contract"`
 }
 
 type RexContract struct {
@@ -135,36 +119,44 @@ func (m *RexContract) ExecAction(permissionLevel interface{}, action string, act
 	return fmt.Sprintf("Tx ID: %v", resp.TransactionID), nil
 }
 
-func (m *RexContract) Init(totalLendable, totalRex eos.Asset, lendableIncrement uint64, tokenContract eos.Name) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["total_lendable"] = totalLendable
-	actionData["total_rex"] = totalRex
-	actionData["lendable_increment"] = lendableIncrement
-	actionData["token_contract"] = tokenContract
+func (m *RexContract) Init(totalLendable, totalRex eos.Asset, lendableIncrement uint64, tokenContract eos.AccountName) (string, error) {
+	actionData := &InitRexArgs{
+		TotalLendable:     totalLendable,
+		TotalRex:          totalRex,
+		LendableIncrement: lendableIncrement,
+		TokenContract:     tokenContract,
+	}
 
 	return m.ExecAction(m.ContractName, "init", actionData)
 }
 
 func (m *RexContract) SetInitialPool(totalLendable, totalRex eos.Asset) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["total_lendable"] = totalLendable
-	actionData["total_rex"] = totalRex
+	actionData := &SetInitialPoolArgs{
+		TotalLendable: totalLendable,
+		TotalRex:      totalRex,
+	}
 	return m.ExecAction(m.ContractName, "setinitpool", actionData)
 }
 
-func (m *RexContract) InitConf(lendableIncrement uint64, tokenContract eos.Name) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["lendable_increment"] = lendableIncrement
-	actionData["token_contract"] = tokenContract
+func (m *RexContract) SetLent(totalLent, totalUnlent eos.Asset) (string, error) {
+	actionData := &SetLentArgs{
+		TotalLent:   totalLent,
+		TotalUnlent: totalUnlent,
+	}
+	return m.ExecAction(m.ContractName, "setlent", actionData)
+}
+
+func (m *RexContract) InitConf(lendableIncrement uint64, tokenContract eos.AccountName) (string, error) {
+	actionData := &InitConfArgs{
+		LendableIncrement: lendableIncrement,
+		TokenContract:     tokenContract,
+	}
 
 	return m.ExecAction(m.ContractName, "initconf", actionData)
 }
 
 func (m *RexContract) SetIncrement(lendableIncrement uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["lendable_increment"] = lendableIncrement
-
-	return m.ExecAction(m.ContractName, "setincrement", actionData)
+	return m.ExecAction(m.ContractName, "setincrement", lendableIncrement)
 }
 
 func (m *RexContract) ResetConf() (string, error) {
@@ -184,49 +176,53 @@ func (m *RexContract) ResetInitialPool() (string, error) {
 }
 
 func (m *RexContract) Deposit(owner eos.AccountName, amount eos.Asset) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["owner"] = owner
-	actionData["amount"] = amount
-
+	actionData := struct {
+		Owner  eos.AccountName
+		Amount eos.Asset
+	}{owner, amount}
 	return m.ExecAction(owner, "deposit", actionData)
 }
 
 func (m *RexContract) BuyRex(from eos.AccountName, amount eos.Asset) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["from"] = from
-	actionData["amount"] = amount
+	actionData := struct {
+		From   eos.AccountName
+		Amount eos.Asset
+	}{from, amount}
 
 	return m.ExecAction(from, "buyrex", actionData)
 }
 
 func (m *RexContract) MoveToSavings(owner eos.AccountName, rex eos.Asset) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["owner"] = owner
-	actionData["rex"] = rex
+	actionData := struct {
+		Owner eos.AccountName
+		Rex   eos.Asset
+	}{owner, rex}
 
 	return m.ExecAction(owner, "mvtosavings", actionData)
 }
 
 func (m *RexContract) MoveFromSavings(owner eos.AccountName, rex eos.Asset) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["owner"] = owner
-	actionData["rex"] = rex
+	actionData := struct {
+		Owner eos.AccountName
+		Rex   eos.Asset
+	}{owner, rex}
 
 	return m.ExecAction(owner, "mvfrsavings", actionData)
 }
 
 func (m *RexContract) SellRex(from eos.AccountName, rex eos.Asset) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["from"] = from
-	actionData["rex"] = rex
-
+	actionData := struct {
+		From eos.AccountName
+		Rex  eos.Asset
+	}{from, rex}
 	return m.ExecAction(from, "sellrex", actionData)
 }
 
 func (m *RexContract) Withdraw(owner eos.AccountName, amount eos.Asset) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["owner"] = owner
-	actionData["amount"] = amount
+	actionData := struct {
+		Owner  eos.AccountName
+		Amount eos.Asset
+	}{owner, amount}
 
 	return m.ExecAction(owner, "withdraw", actionData)
 }
@@ -303,4 +299,8 @@ func (m *RexContract) GetInitialPool() (*InitialPool, error) {
 		return &pool[0], nil
 	}
 	return nil, nil
+}
+
+func (m *RexContract) GetMinUnlent(totalLent, proceedsAmount eos.Asset) eos.Asset {
+	return eos.Asset{Amount: totalLent.Amount/10 + proceedsAmount.Amount, Symbol: totalLent.Symbol}
 }

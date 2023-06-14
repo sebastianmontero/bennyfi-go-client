@@ -25,7 +25,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/eoscanada/eos-go"
+	"github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/contract"
 	"github.com/sebastianmontero/eos-go-toolbox/service"
 )
@@ -48,6 +48,12 @@ func (m *Group) NewGroupArgs() *NewGroupArgs {
 		Manager:     m.Manager,
 		SupplyCap:   m.SupplyCap,
 	}
+}
+
+type SetGroupManagerArgs struct {
+	GroupName  eos.Name        `json:"group_name"`
+	NewManager eos.AccountName `json:"new_manager"`
+	Memo       string          `json:"memo"`
 }
 
 type NewGroupArgs struct {
@@ -189,6 +195,11 @@ func (m *AttributeEntry) String() string {
 type Tags []*TagEntry
 type Attributes []*AttributeEntry
 
+type RemoveFrameArgs struct {
+	FrameName eos.Name `json:"frame_name"`
+	Memo      string   `json:"memo"`
+}
+
 type Frame struct {
 	FrameName         eos.Name   `json:"frame_name"`
 	Group             eos.Name   `json:"group"`
@@ -259,10 +270,10 @@ func (m *MarbleNFTContract) NewGroup(args *NewGroupArgs, admin eos.AccountName) 
 }
 
 func (m *MarbleNFTContract) SetGroupManager(groupName eos.Name, newManager eos.AccountName, memo string, manager eos.AccountName) (string, error) {
-	data := map[string]interface{}{
-		"group_name":  groupName,
-		"new_manager": newManager,
-		"memo":        memo,
+	data := &SetGroupManagerArgs{
+		GroupName:  groupName,
+		NewManager: newManager,
+		Memo:       memo,
 	}
 	return m.ExecAction(manager, "setmanager", data)
 }
@@ -314,15 +325,13 @@ func (m *MarbleNFTContract) NewDefaultNFTReward(groupName eos.Name, frameName eo
 }
 
 func (m *MarbleNFTContract) Reset(limit uint64) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["limit"] = limit
-	return m.ExecAction(eos.AN(m.ContractName), "reset", actionData)
+	return m.ExecAction(eos.AN(m.ContractName), "reset", limit)
 }
 
 func (m *MarbleNFTContract) RemoveFrame(frameName eos.Name, memo string, manager eos.AccountName) (string, error) {
-	data := map[string]interface{}{
-		"frame_name": frameName,
-		"memo":       memo,
+	data := &RemoveFrameArgs{
+		FrameName: frameName,
+		Memo:      memo,
 	}
 	return m.ExecAction(manager, "rmvframe", data)
 }

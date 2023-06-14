@@ -22,22 +22,12 @@
 package bennyfi
 
 import (
-	"fmt"
-
-	eos "github.com/eoscanada/eos-go"
+	eos "github.com/sebastianmontero/eos-go"
 )
 
 type TotalEarlyExitRewardFeeEntry struct {
-	Key   eos.Name `json:"first"`
-	Value string   `json:"second"`
-}
-
-func (m *TotalEarlyExitRewardFeeEntry) GetTotalEarlyExitRewardFee() eos.Asset {
-	fee, err := eos.NewAssetFromString(m.Value)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse early exit reward fee: %v to asset", m.Value))
-	}
-	return fee
+	Key   eos.Name  `json:"first"`
+	Value eos.Asset `json:"second"`
 }
 
 type TotalEarlyExitRewardFees []*TotalEarlyExitRewardFeeEntry
@@ -59,7 +49,7 @@ func (m TotalEarlyExitRewardFees) Find(key eos.Name) *TotalEarlyExitRewardFeeEnt
 	return nil
 }
 
-func (p *TotalEarlyExitRewardFees) Upsert(key eos.Name, fee string) {
+func (p *TotalEarlyExitRewardFees) Upsert(key eos.Name, fee eos.Asset) {
 	m := *p
 	pos := m.FindPos(key)
 	entry := &TotalEarlyExitRewardFeeEntry{

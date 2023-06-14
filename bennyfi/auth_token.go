@@ -25,7 +25,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	eos "github.com/eoscanada/eos-go"
+	eos "github.com/sebastianmontero/eos-go"
 )
 
 var (
@@ -40,8 +40,8 @@ var (
 )
 
 type TokenLimits struct {
-	MinValue string `json:"min_value"`
-	MaxValue string `json:"max_value"`
+	MinValue eos.Asset `json:"min_value"`
+	MaxValue eos.Asset `json:"max_value"`
 }
 
 type TokenRole struct {
@@ -53,19 +53,39 @@ func NewTokenRole(tokenRole string, minValue, maxValue eos.Int64, symbol eos.Sym
 	return &TokenRole{
 		Key: eos.Name(tokenRole),
 		Value: &TokenLimits{
-			MinValue: eos.Asset{Amount: minValue, Symbol: symbol}.String(),
-			MaxValue: eos.Asset{Amount: maxValue, Symbol: symbol}.String(),
+			MinValue: eos.Asset{Amount: minValue, Symbol: symbol},
+			MaxValue: eos.Asset{Amount: maxValue, Symbol: symbol},
 		},
 	}
 }
 
 type TokenRoles []*TokenRole
 
-// type TokenRolesDTO []map[]
-
 type AuthToken struct {
 	Authorizer    eos.AccountName `json:"authorizer"`
 	Symbol        string          `json:"symbol"`
+	TokenContract eos.AccountName `json:"token_contract"`
+	ArtifactCID   string          `json:"artifact_cid"`
+	TokenRoles    TokenRoles      `json:"token_roles"`
+}
+
+func (m *AuthToken) ToSetTokenArgs() *SetTokenArgs {
+	symb, err := eos.StringToSymbol(m.Symbol)
+	if err != nil {
+		panic(fmt.Sprintf("failed parsing symbol: %v, error: %v", m.Symbol, err))
+	}
+	return &SetTokenArgs{
+		Authorizer:    m.Authorizer,
+		Symbol:        symb,
+		TokenContract: m.TokenContract,
+		ArtifactCID:   m.ArtifactCID,
+		TokenRoles:    m.TokenRoles,
+	}
+}
+
+type SetTokenArgs struct {
+	Authorizer    eos.AccountName `json:"authorizer"`
+	Symbol        eos.Symbol      `json:"symbol"`
 	TokenContract eos.AccountName `json:"token_contract"`
 	ArtifactCID   string          `json:"artifact_cid"`
 	TokenRoles    TokenRoles      `json:"token_roles"`
@@ -81,11 +101,16 @@ func (m *AuthToken) String() string {
 }
 
 type SetTokenRoleArgs struct {
-	Authorizer    eos.AccountName
-	TokenContract eos.AccountName
-	TokenRole     eos.Name
-	MinValue      eos.Asset
-	MaxValue      eos.Asset
+	Authorizer    eos.AccountName `json:"authorizer"`
+	Symbol        eos.Symbol      `json:"symbol"`
+	TokenContract eos.AccountName `json:"token_contract"`
+	TokenRole     eos.Name        `json:"token_role"`
+	MinValue      eos.Asset       `json:"min_value"`
+	MaxValue      eos.Asset       `json:"max_value"`
+}
+
+func (m *SetTokenRoleArgs) SetSymbol() {
+	m.Symbol = m.MinValue.Symbol
 }
 
 func (m *SetTokenRoleArgs) GetAuthToken() *AuthToken {
@@ -103,42 +128,40 @@ func (m *SetTokenRoleArgs) GetTokenRole() *TokenRole {
 	return NewTokenRole(string(m.TokenRole), m.MinValue.Amount, m.MaxValue.Amount, m.MinValue.Symbol)
 }
 
-func (m *BennyfiContract) SetToken(authToken *AuthToken) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["authorizer"] = authToken.Authorizer
-	actionData["symbol"] = authToken.Symbol
-	actionData["token_contract"] = authToken.TokenContract
-	actionData["artifact_cid"] = authToken.ArtifactCID
-	actionData["token_roles"] = authToken.TokenRoles
+type EraseTokenArgs struct {
+	Authorizer eos.AccountName `json:"authorizer"`
+	Symbol     eos.Symbol      `json:"symbol"`
+}
 
-	return m.ExecAction(authToken.Authorizer, "settoken", actionData)
+type EraseTokenRoleArgs struct {
+	Authorizer eos.AccountName `json:"authorizer"`
+	Symbol     eos.Symbol      `json:"symbol"`
+	TokenRole  eos.Name        `json:"token_role"`
+}
+
+func (m *BennyfiContract) SetToken(authToken *AuthToken) (string, error) {
+	return m.ExecAction(authToken.Authorizer, "settoken", authToken.ToSetTokenArgs())
 }
 
 func (m *BennyfiContract) SetTokenRole(args *SetTokenRoleArgs) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["authorizer"] = args.Authorizer
-	actionData["symbol"] = args.MinValue.Symbol.String()
-	actionData["token_contract"] = args.TokenContract
-	actionData["token_role"] = args.TokenRole
-	actionData["min_value"] = args.MinValue.String()
-	actionData["max_value"] = args.MaxValue.String()
-
-	return m.ExecAction(args.Authorizer, "settokenrole", actionData)
+	args.SetSymbol()
+	return m.ExecAction(args.Authorizer, "settokenrole", args)
 }
 
 func (m *BennyfiContract) EraseToken(authorizer eos.AccountName, symbol eos.Symbol) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["authorizer"] = authorizer
-	actionData["symbol"] = symbol.String()
-
+	actionData := &EraseTokenArgs{
+		Authorizer: authorizer,
+		Symbol:     symbol,
+	}
 	return m.ExecAction(authorizer, "erasetoken", actionData)
 }
 
 func (m *BennyfiContract) EraseTokenRole(authorizer eos.AccountName, symbol eos.Symbol, tokenRole eos.Name) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["authorizer"] = authorizer
-	actionData["symbol"] = symbol.String()
-	actionData["token_role"] = tokenRole
+	actionData := &EraseTokenRoleArgs{
+		Authorizer: authorizer,
+		Symbol:     symbol,
+		TokenRole:  tokenRole,
+	}
 
 	return m.ExecAction(authorizer, "erasetknrole", actionData)
 }

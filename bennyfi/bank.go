@@ -24,62 +24,86 @@ package bennyfi
 import (
 	"fmt"
 
-	eos "github.com/eoscanada/eos-go"
+	eos "github.com/sebastianmontero/eos-go"
+	"github.com/sebastianmontero/eos-go-toolbox/util"
 )
 
 type Balance struct {
 	ID            uint64          `json:"id"`
 	TokenHolder   eos.AccountName `json:"token_holder"`
-	Symbol        string          `json:"symbol"`
-	LiquidBalance string          `json:"liquid_balance"`
-	StakedBalance string          `json:"staked_balance"`
+	Symbol        eos.Symbol      `json:"symbol"`
+	LiquidBalance eos.Asset       `json:"liquid_balance"`
+	StakedBalance eos.Asset       `json:"staked_balance"`
 	TokenContract eos.AccountName `json:"token_contract"`
 }
 
-func (m *Balance) GetLiquidBalance() eos.Asset {
-	liquidBalance, err := eos.NewAssetFromString(m.LiquidBalance)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse liquid balance: %v to asset", m.LiquidBalance))
-	}
-	return liquidBalance
+type WithdrawArgs struct {
+	From     eos.AccountName `json:"from"`
+	Quantity eos.Asset       `json:"quantity"`
 }
 
-func (m *Balance) GetStakedBalance() eos.Asset {
-	stakedBalance, err := eos.NewAssetFromString(m.StakedBalance)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to parse staked balance: %v to asset", m.StakedBalance))
-	}
-	return stakedBalance
+type WithdrawTotalArgs struct {
+	From   eos.AccountName `json:"from"`
+	Symbol eos.Symbol      `json:"symbol"`
 }
 
 func (m *Balance) GetTotalBalance() eos.Asset {
-	return m.GetLiquidBalance().Add(m.GetStakedBalance())
+	return m.LiquidBalance.Add(m.StakedBalance)
 }
 
 func (m *Balance) HasLiquidBalance() bool {
-	return m.GetLiquidBalance().Amount > 0
+	return m.LiquidBalance.Amount > 0
 }
 
 func (m *Balance) HasStakedBalance() bool {
-	return m.GetStakedBalance().Amount > 0
+	return m.StakedBalance.Amount > 0
 }
 
 func (m *Balance) HasBalance() bool {
 	return m.HasLiquidBalance() || m.HasStakedBalance()
 }
 
+func (m *Balance) AddLiquidBalance(amount interface{}, negative bool) eos.Asset {
+	amnt, err := util.ToAsset(amount)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse amount: %v to asset", amount))
+	}
+	if negative {
+		m.LiquidBalance = m.LiquidBalance.Sub(amnt)
+	} else {
+		m.LiquidBalance = m.LiquidBalance.Add(amnt)
+	}
+	return m.LiquidBalance
+}
+
+func (m *Balance) AddStakedBalance(amount interface{}, negative bool) eos.Asset {
+	amnt, err := util.ToAsset(amount)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse amount: %v to asset", amount))
+	}
+
+	if negative {
+		m.StakedBalance = m.StakedBalance.Sub(amnt)
+	} else {
+		m.StakedBalance = m.StakedBalance.Add(amnt)
+	}
+	return m.StakedBalance
+}
+
 func (m *BennyfiContract) Withdraw(from eos.AccountName, quantity eos.Asset) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["from"] = eos.Name(from)
-	actionData["quantity"] = quantity
+	actionData := &WithdrawArgs{
+		From:     from,
+		Quantity: quantity,
+	}
 
 	return m.ExecAction(from, "withdraw", actionData)
 }
 
 func (m *BennyfiContract) WithdrawTot(from eos.AccountName, symbol eos.Symbol) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["from"] = eos.Name(from)
-	actionData["symbol"] = symbol.String()
+	actionData := &WithdrawTotalArgs{
+		From:   from,
+		Symbol: symbol,
+	}
 
 	return m.ExecAction(from, "withdrawtot", actionData)
 }
@@ -135,7 +159,12 @@ func (m *BennyfiContract) FilterBalancesbyAccount(req *eos.GetTableRowsRequest, 
 	req.UpperBound = fmt.Sprintf("%v", account)
 }
 
-func (m *BennyfiContract) GetBalance(tokenHolder eos.AccountName, symbol string) (*Balance, error) {
+func (m *BennyfiContract) GetBalance(tokenHolder eos.AccountName, symbol interface{}) (*Balance, error) {
+
+	symb, err := util.ToSymbol(symbol)
+	if err != nil {
+		return nil, err
+	}
 
 	var balances []Balance
 	request := eos.GetTableRowsRequest{
@@ -147,15 +176,44 @@ func (m *BennyfiContract) GetBalance(tokenHolder eos.AccountName, symbol string)
 		//Limit:      1,
 	}
 
-	err := m.GetTableRows(request, &balances)
+	err = m.GetTableRows(request, &balances)
 	if err != nil {
 		return nil, fmt.Errorf("get table rows %v", err)
 	}
 	for _, balance := range balances {
-		if balance.Symbol == symbol {
+		if balance.Symbol.Equal(symb) {
 			return &balance, nil
 		}
 	}
 	return nil, nil
+
+}
+
+func (m *BennyfiContract) GetBalanceOrDefault(tokenHolder eos.AccountName, symbol, tokenContract interface{}) (*Balance, error) {
+
+	symb, err := util.ToSymbol(symbol)
+	if err != nil {
+		return nil, err
+	}
+
+	tkc, err := util.ToAccountName(tokenContract)
+	if err != nil {
+		return nil, err
+	}
+
+	balance, err := m.GetBalance(tokenHolder, symb.String())
+	if err != nil {
+		return nil, err
+	}
+	if balance == nil {
+		balance = &Balance{
+			TokenHolder:   tokenHolder,
+			Symbol:        symb,
+			LiquidBalance: eos.Asset{Amount: 0, Symbol: symb},
+			StakedBalance: eos.Asset{Amount: 0, Symbol: symb},
+			TokenContract: tkc,
+		}
+	}
+	return balance, nil
 
 }
