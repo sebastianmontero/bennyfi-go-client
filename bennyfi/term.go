@@ -154,7 +154,6 @@ type NewTermArgs struct {
 	EntryStake               eos.Asset               `json:"entry_stake"`
 	StakingPeriodHrs         uint32                  `json:"staking_period_hrs"`
 	EnrollmentTimeOutHrs     uint32                  `json:"enrollment_time_out_hrs"`
-	Beneficiary              eos.AccountName         `json:"beneficiary"`
 	BeneficiaryEntryFeePerc  uint32                  `json:"beneficiary_entry_fee_perc_x100000"`
 	RoundManagerEntryFeePerc uint32                  `json:"round_manager_entry_fee_perc_x100000"`
 	DistributionDefinitions  DistributionDefinitions `json:"distribution_definitions"`
