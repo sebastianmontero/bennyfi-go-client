@@ -66,26 +66,28 @@ type Project struct {
 	UpdatedDate eos.TimePoint   `json:"updated_date"`
 }
 
-type NewProjectArgs struct {
+type SetProjectArgs struct {
+	ProjectID   uint64          `json:"project_id"`
 	Authorizer  eos.AccountName `json:"authorizer"`
 	Beneficiary eos.AccountName `json:"beneficiary"`
 	Attributes  Attributes      `json:"attributes"`
 }
 
-func (m *Project) ToNewProjectArgs() *NewProjectArgs {
-	return &NewProjectArgs{
+func (m *Project) ToSetProjectArgs() *SetProjectArgs {
+	return &SetProjectArgs{
+		ProjectID:   m.ProjectID,
 		Authorizer:  m.Authorizer,
 		Beneficiary: m.Beneficiary,
 		Attributes:  m.Attributes,
 	}
 }
 
-func (m *BennyfiContract) NewProject(projectArgs *NewProjectArgs) (string, error) {
-	return m.ExecAction(projectArgs.Authorizer, "newproject", projectArgs)
+func (m *BennyfiContract) SetProject(projectArgs *SetProjectArgs) (string, error) {
+	return m.ExecAction(projectArgs.Authorizer, "setproject", projectArgs)
 }
 
-func (m *BennyfiContract) NewProjectFromProject(project *Project) (string, error) {
-	return m.NewProject(project.ToNewProjectArgs())
+func (m *BennyfiContract) SetProjectFromProject(project *Project) (string, error) {
+	return m.SetProject(project.ToSetProjectArgs())
 }
 
 func (m *BennyfiContract) GetProjectsReq(req *eos.GetTableRowsRequest) ([]Project, error) {
