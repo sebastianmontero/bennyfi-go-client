@@ -76,6 +76,13 @@ func (m *BennyfiContract) GetCategoriesReq(req *eos.GetTableRowsRequest) ([]*Cat
 	return categories, nil
 }
 
+func (m *BennyfiContract) GetAllCategoriesAsMap() ([]map[string]interface{}, error) {
+	req := eos.GetTableRowsRequest{
+		Table: "categories",
+	}
+	return m.GetAllTableRowsAsMap(req, "category")
+}
+
 func (m *BennyfiContract) GetCategoryById(category eos.Name) (*Category, error) {
 	request := &eos.GetTableRowsRequest{}
 	m.FilterCategoriesById(request, category)
