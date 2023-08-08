@@ -171,7 +171,8 @@ func (m *MarbleAdaptorContract) GetRewardsReq(req *eos.GetTableRowsRequest) ([]*
 }
 
 func (m *MarbleAdaptorContract) Reset(all bool) (string, error) {
-	actionData := make(map[string]interface{})
-	actionData["all"] = all
+	actionData := struct {
+		All bool
+	}{all}
 	return m.ExecAction(eos.AN(m.ContractName), "reset", actionData)
 }

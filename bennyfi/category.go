@@ -22,6 +22,7 @@
 package bennyfi
 
 import (
+	"encoding/json"
 	"fmt"
 
 	eos "github.com/sebastianmontero/eos-go"
@@ -34,9 +35,25 @@ type Category struct {
 	CategoryImage       string   `json:"category_image"`
 }
 
+func (m *Category) String() string {
+	result, err := json.Marshal(m)
+	if err != nil {
+		panic(fmt.Sprintf("Failed marshalling round: %v", err))
+	}
+	return string(result)
+}
+
 type SetCategoryArgs struct {
 	*Category
 	Authorizer eos.AccountName `json:"authorizer"`
+}
+
+func (m *SetCategoryArgs) String() string {
+	result, err := json.Marshal(m)
+	if err != nil {
+		panic(fmt.Sprintf("Failed marshalling round: %v", err))
+	}
+	return string(result)
 }
 
 type EraseCategoryArgs struct {
@@ -44,6 +61,13 @@ type EraseCategoryArgs struct {
 	Authorizer eos.AccountName `json:"authorizer"`
 }
 
+func (m *EraseCategoryArgs) String() string {
+	result, err := json.Marshal(m)
+	if err != nil {
+		panic(fmt.Sprintf("Failed marshalling round: %v", err))
+	}
+	return string(result)
+}
 func (m *BennyfiContract) SetCategory(categoryArgs *SetCategoryArgs) (string, error) {
 	// actionData := make(map[string]interface{})
 	// actionData["authorizer"] = categoryArgs.Authorizer
@@ -72,6 +96,13 @@ func (m *BennyfiContract) GetCategoriesReq(req *eos.GetTableRowsRequest) ([]*Cat
 		return nil, fmt.Errorf("get table rows %v", err)
 	}
 	return categories, nil
+}
+
+func (m *BennyfiContract) GetAllCategoriesAsMap() ([]map[string]interface{}, error) {
+	req := eos.GetTableRowsRequest{
+		Table: "categories",
+	}
+	return m.GetAllTableRowsAsMap(req, "category")
 }
 
 func (m *BennyfiContract) GetCategoryById(category eos.Name) (*Category, error) {
