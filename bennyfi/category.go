@@ -22,6 +22,7 @@
 package bennyfi
 
 import (
+	"encoding/json"
 	"fmt"
 
 	eos "github.com/sebastianmontero/eos-go"
@@ -36,14 +37,38 @@ type Category struct {
 	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
 }
 
+func (m *Category) String() string {
+	result, err := json.Marshal(m)
+	if err != nil {
+		panic(fmt.Sprintf("Failed marshalling round: %v", err))
+	}
+	return string(result)
+}
+
 type SetCategoryArgs struct {
 	*Category
 	Authorizer eos.AccountName `json:"authorizer"`
 }
 
+func (m *SetCategoryArgs) String() string {
+	result, err := json.Marshal(m)
+	if err != nil {
+		panic(fmt.Sprintf("Failed marshalling round: %v", err))
+	}
+	return string(result)
+}
+
 type EraseCategoryArgs struct {
 	Category   eos.Name        `json:"category"`
 	Authorizer eos.AccountName `json:"authorizer"`
+}
+
+func (m *EraseCategoryArgs) String() string {
+	result, err := json.Marshal(m)
+	if err != nil {
+		panic(fmt.Sprintf("Failed marshalling round: %v", err))
+	}
+	return string(result)
 }
 
 func (m *BennyfiContract) SetCategory(categoryArgs *SetCategoryArgs) (string, error) {
