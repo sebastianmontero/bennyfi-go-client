@@ -74,8 +74,8 @@ github.com/schollz/progressbar/v3 v3.7.4 h1:G2HfclnGJR2HtTOmFkERQcRqo9J20asOFiuD
 github.com/schollz/progressbar/v3 v3.7.4/go.mod h1:1H8m5kMPW6q5fyjpDqtBHW1JT22mu2NwHQ1ApuCPh/8=
 github.com/sebastianmontero/eos-go v0.10.4 h1:c4GDXAEyy9Cph6f0f5TH2hRMi887qQQJSfIFoKSFv20=
 github.com/sebastianmontero/eos-go v0.10.4/go.mod h1:mvhjYWimguIc1NFm5miCRwtHS10/3pGFkxiXcXnH1wI=
-github.com/sebastianmontero/eos-go-toolbox v0.0.0-20230415153949-424f1e24d887 h1:VfhuOjqk4nbqkaArGVkZfgr5MlZ/QBQ9JLTf0ESyvEg=
-github.com/sebastianmontero/eos-go-toolbox v0.0.0-20230415153949-424f1e24d887/go.mod h1:xkpOZPH2UTixeXlJONdt68GMv3PgyYz7Xz9t/UR/iQg=
+github.com/sebastianmontero/eos-go-toolbox v0.0.0-20230816144416-b1d5e23865e5 h1:bcX6PWudMpogUOH/IbPp9Iog3FWob2ZjXZo5xzlZQOQ=
+github.com/sebastianmontero/eos-go-toolbox v0.0.0-20230816144416-b1d5e23865e5/go.mod h1:xkpOZPH2UTixeXlJONdt68GMv3PgyYz7Xz9t/UR/iQg=
 github.com/streamingfast/logging v0.0.0-20210811175431-f3b44b61606a h1:Hy7ST3+wGmk4nyBanXKzhRXE63E77UEF93oG51dfq6c=
 github.com/streamingfast/logging v0.0.0-20210811175431-f3b44b61606a/go.mod h1:4GdqELhZOXj4xwc4IaBmzofzdErGynnaSzuzxy0ZIBo=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=

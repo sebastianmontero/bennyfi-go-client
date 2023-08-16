@@ -480,7 +480,7 @@ func (m *BennyfiContract) GetAllRoundsFromAsMap(roundID uint64) ([]map[string]in
 	req := eos.GetTableRowsRequest{
 		Table: "pools",
 	}
-	return m.GetAllTableRowsFromAsMap(req, "pool_id", strconv.FormatUint(roundID, 10))
+	return m.GetAllTableRowsFromAsMap(req, "pool_id", strconv.FormatUint(roundID, 10), nil)
 }
 
 func (m *BennyfiContract) GetAllRoundsFrom(roundID uint64) ([]Round, error) {

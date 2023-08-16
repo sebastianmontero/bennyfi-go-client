@@ -63,7 +63,7 @@ type TokenRoles []*TokenRole
 
 type AuthToken struct {
 	Authorizer    eos.AccountName `json:"authorizer"`
-	Symbol        string          `json:"symbol"`
+	Symbol        eos.Symbol      `json:"symbol"`
 	TokenContract eos.AccountName `json:"token_contract"`
 	ArtifactCID   string          `json:"artifact_cid"`
 	TokenRoles    TokenRoles      `json:"token_roles"`
@@ -72,13 +72,13 @@ type AuthToken struct {
 }
 
 func (m *AuthToken) ToSetTokenArgs() *SetTokenArgs {
-	symb, err := eos.StringToSymbol(m.Symbol)
-	if err != nil {
-		panic(fmt.Sprintf("failed parsing symbol: %v, error: %v", m.Symbol, err))
-	}
+	// symb, err := eos.StringToSymbol(m.Symbol)
+	// if err != nil {
+	// 	panic(fmt.Sprintf("failed parsing symbol: %v, error: %v", m.Symbol, err))
+	// }
 	return &SetTokenArgs{
 		Authorizer:    m.Authorizer,
-		Symbol:        symb,
+		Symbol:        m.Symbol,
 		TokenContract: m.TokenContract,
 		ArtifactCID:   m.ArtifactCID,
 		TokenRoles:    m.TokenRoles,
@@ -118,7 +118,7 @@ func (m *SetTokenRoleArgs) SetSymbol() {
 func (m *SetTokenRoleArgs) GetAuthToken() *AuthToken {
 	return &AuthToken{
 		Authorizer:    m.Authorizer,
-		Symbol:        m.MaxValue.Symbol.String(),
+		Symbol:        m.MaxValue.Symbol,
 		TokenContract: m.TokenContract,
 		TokenRoles: TokenRoles{
 			m.GetTokenRole(),
@@ -170,6 +170,24 @@ func (m *BennyfiContract) EraseTokenRole(authorizer eos.AccountName, symbol eos.
 
 func (m *BennyfiContract) GetTokens() ([]AuthToken, error) {
 	return m.GetTokensReq(nil)
+}
+
+func getAuthTokenSymbolIndexValue(keyValue string) (string, error) {
+	if keyValue == "" {
+		return "", nil
+	}
+	symbol, err := eos.StringToSymbol(keyValue)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%v", symbol.MustSymbolCode().String()), nil
+}
+
+func (m *BennyfiContract) GetAllAuthTokensAsMap() ([]map[string]interface{}, error) {
+	req := eos.GetTableRowsRequest{
+		Table: "authtokens",
+	}
+	return m.GetAllTableRowsFromAsMap(req, "symbol", "", getAuthTokenSymbolIndexValue)
 }
 
 func (m *BennyfiContract) GetToken(symbol eos.Symbol) (*AuthToken, error) {

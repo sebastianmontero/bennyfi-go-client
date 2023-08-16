@@ -86,6 +86,13 @@ func (m *BennyfiContract) GetYieldSourcesReq(req *eos.GetTableRowsRequest) ([]*Y
 	return yieldSources, nil
 }
 
+func (m *BennyfiContract) GetAllYieldSourcesAsMap() ([]map[string]interface{}, error) {
+	req := eos.GetTableRowsRequest{
+		Table: "yieldsources",
+	}
+	return m.GetAllTableRowsAsMap(req, "yield_source")
+}
+
 func (m *BennyfiContract) GetYieldSourceById(yieldSource eos.Name) (*YieldSource, error) {
 	request := &eos.GetTableRowsRequest{}
 	m.FilterYieldSourcesById(request, yieldSource)
