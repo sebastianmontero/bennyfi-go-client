@@ -20,6 +20,7 @@ const (
 	SettingCreationFee                   = "CREATION_FEE"
 	SettingPoolManagerUnstakingPeriodHrs = "POOL_MANAGER_UNSTAKING_PERIOD_HRS"
 	SettingBeneficiaryUnstakingPeriodHrs = "BENEFICIARY_UNSTAKING_PERIOD_HRS"
+	SettingIsPaused                      = "IS_PAUSED"
 )
 
 type EntryFeeSettings struct {
