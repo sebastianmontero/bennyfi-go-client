@@ -175,6 +175,14 @@ func (m *RexContract) ResetInitialPool() (string, error) {
 	return m.ExecAction(m.ContractName, "rsetinitpool", nil)
 }
 
+func (m *RexContract) SetCount(depositCount uint64) (string, error) {
+	return m.ExecAction(m.ContractName, "setcount", depositCount)
+}
+
+func (m *RexContract) SetBalance(balance *Balance) (string, error) {
+	return m.ExecAction(m.ContractName, "setbalance", balance)
+}
+
 func (m *RexContract) Deposit(owner eos.AccountName, amount eos.Asset) (string, error) {
 	actionData := struct {
 		Owner  eos.AccountName
