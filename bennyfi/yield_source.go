@@ -46,9 +46,10 @@ type YieldSource struct {
 	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
 }
 
-type EraseYieldSourceArgs struct {
-	YieldSource eos.Name        `json:"yield_source"`
-	Authorizer  eos.AccountName `json:"authorizer"`
+func (m *YieldSource) Update(args *UpdateYieldSourceArgs) {
+	m.DailyYieldx100000 = args.DailyYieldx100000
+	m.TokenValue = args.TokenValue
+	m.BenyValue = args.BenyValue
 }
 
 func (m *YieldSource) String() string {
@@ -59,9 +60,43 @@ func (m *YieldSource) String() string {
 	return string(result)
 }
 
+type UpdateYieldSourceArgs struct {
+	YieldSource       eos.Name        `json:"yield_source"`
+	DailyYieldx100000 uint32          `json:"daily_yield_x100000"`
+	TokenValue        eos.Asset       `json:"token_value"`
+	BenyValue         eos.Asset       `json:"beny_value"`
+	Authorizer        eos.AccountName `json:"authorizer"`
+}
+
+func (m *UpdateYieldSourceArgs) String() string {
+	result, err := json.Marshal(m)
+	if err != nil {
+		panic(fmt.Sprintf("Failed marshalling round: %v", err))
+	}
+	return string(result)
+}
+
+type EraseYieldSourceArgs struct {
+	YieldSource eos.Name        `json:"yield_source"`
+	Authorizer  eos.AccountName `json:"authorizer"`
+}
+
+func (m *EraseYieldSourceArgs) String() string {
+	result, err := json.Marshal(m)
+	if err != nil {
+		panic(fmt.Sprintf("Failed marshalling round: %v", err))
+	}
+	return string(result)
+}
+
 func (m *BennyfiContract) SetYieldSource(yieldSource *YieldSource) (string, error) {
 
 	return m.ExecAction(yieldSource.Authorizer, "setyieldsrc", yieldSource)
+}
+
+func (m *BennyfiContract) UpdateYieldSource(args *UpdateYieldSourceArgs) (string, error) {
+
+	return m.ExecAction(args.Authorizer, "updyieldsrc", args)
 }
 
 func (m *BennyfiContract) EraseYieldSource(yieldSource eos.Name, authorizer eos.AccountName) (string, error) {

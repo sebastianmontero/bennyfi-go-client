@@ -32,8 +32,7 @@ import (
 var (
 	Sudo         uint64 = 0
 	Admin        uint64 = 10
-	Enroller     uint64 = 20
-	TermManager  uint64 = 30
+	Oracle       uint64 = 20
 	RoundManager uint64 = 40
 	Player       uint64 = 50
 	Beneficiary  uint64 = 60
