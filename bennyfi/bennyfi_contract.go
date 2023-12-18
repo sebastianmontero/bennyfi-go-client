@@ -36,6 +36,8 @@ var (
 	UNPAUSED uint32 = 0
 )
 
+var USDSymbol = eos.Symbol{Precision: 4, Symbol: "USD"}
+
 type BennyfiContract struct {
 	*contract.SettingsContract
 	callCounter uint64
