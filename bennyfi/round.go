@@ -244,7 +244,7 @@ func (m *Round) CalculateEntryFee(settings *EntryFeeSettings) eos.Asset {
 
 		totalStake := util.MultiplyAsset(m.EntryStake, int64(m.NumParticipants))
 		yield := util.CalculateAssetPercentage(util.MultiplyAsset(totalStake, int64(m.StakingPeriod.Hrs())), settings.HourlyYield())
-		yieldUSD := util.DivideAssets(yield, settings.ValueTLOS)
+		yieldUSD := util.MultiplyAssets(yield, settings.ValueTLOS)
 		yieldPerc := util.CalculateAssetPercentage(yieldUSD, settings.PercOfYield)
 		entryFee := util.DivideAssets(yieldPerc, settings.ValueBENY)
 		adjustedEntryFee := util.AdjustPrecision(big.NewInt(int64(entryFee.Amount)), entryFee.Precision, settings.BENYToken.Precision)
