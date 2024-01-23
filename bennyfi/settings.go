@@ -16,6 +16,7 @@ const (
 	SettingEntryFeeBurnYes               = "ENTRY_FEE_BURN_YES"
 	SettingBenyToken                     = "BENY_TOKEN"
 	SettingRoundManagerStakeAmount       = "POOL_MANAGER_STAKE_AMOUNT"
+	SettingRoundManagerStakeRate         = "POOL_MANAGER_STAKE_RATE"
 	SettingBeneficiaryStakeAmount        = "BENEFICIARY_STAKE_AMOUNT"
 	SettingCreationFee                   = "CREATION_FEE"
 	SettingPoolManagerUnstakingPeriodHrs = "POOL_MANAGER_UNSTAKING_PERIOD_HRS"

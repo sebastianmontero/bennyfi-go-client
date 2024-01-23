@@ -8,6 +8,6 @@ require (
 	gotest.tools v2.2.0+incompatible
 )
 
-// replace github.com/sebastianmontero/eos-go-toolbox => ../eos-go-toolbox
+replace github.com/sebastianmontero/eos-go-toolbox => ../eos-go-toolbox
 
 // replace github.com/sebastianmontero/eos-go => ../eos-go
