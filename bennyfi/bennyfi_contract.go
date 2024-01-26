@@ -28,6 +28,7 @@ import (
 	eos "github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/contract"
 	"github.com/sebastianmontero/eos-go-toolbox/service"
+	"github.com/sebastianmontero/eos-go-toolbox/util"
 	"github.com/sebastianmontero/eos-go/ecc"
 )
 
@@ -112,4 +113,17 @@ func (m *BennyfiContract) Reset(limit uint64, toDelete []string) (string, error)
 		CallCounter uint64
 	}{limit, toDelete, m.NextCallCounter()}
 	return m.ExecAction(eos.AN(m.ContractName), "reset", actionData)
+}
+
+func (m *BennyfiContract) Exchange(authorizer eos.AccountName, exchangeType eos.Name, id uint64, accountName interface{}) (string, error) {
+	account, err := util.ToAccountName(accountName)
+	if err != nil {
+		return "", fmt.Errorf("failed parsing exchange account: %v, error: %v", account, err)
+	}
+	actionData := struct {
+		ExchangeType eos.Name
+		Id           uint64
+		Account      eos.AccountName
+	}{exchangeType, id, account}
+	return m.ExecAction(authorizer, "exchange", actionData)
 }

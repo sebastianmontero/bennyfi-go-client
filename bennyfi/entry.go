@@ -25,10 +25,15 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/sebastianmontero/bennyfi-go-client/common/types"
 	eos "github.com/sebastianmontero/eos-go"
+	"github.com/sebastianmontero/eos-go-toolbox/dto"
+	"github.com/sebastianmontero/eos-go-toolbox/util"
 )
 
 var (
+	EntryOwner = "entry_owner"
+
 	EntryStaked     = eos.Name("entrystaked")
 	EntryReturnPaid = eos.Name("returnpaid")
 	EntryUnstaked   = eos.Name("unstaked")
@@ -41,17 +46,16 @@ type EnterRoundArgs struct {
 }
 
 type Entry struct {
-	EntryID      uint64          `json:"entry_id"`
-	RoundID      uint64          `json:"pool_id"`
-	Position     uint64          `json:"position"`
-	Participant  eos.AccountName `json:"participant"`
-	EntryStake   eos.Asset       `json:"entry_stake"`
-	Returns      ReturnEntries   `json:"returns"`
-	EntryStatus  eos.Name        `json:"entry_status"`
-	VestingState eos.Name        `json:"vesting_state"`
-	EnteredDate  eos.TimePoint   `json:"entered_date"`
-	// NOT USED AT THE MOMENT
-	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
+	EntryID          uint64                 `json:"entry_id"`
+	RoundID          uint64                 `json:"pool_id"`
+	Position         uint64                 `json:"position"`
+	Participant      eos.AccountName        `json:"participant"`
+	EntryStake       eos.Asset              `json:"entry_stake"`
+	Returns          ReturnEntries          `json:"returns"`
+	EntryStatus      eos.Name               `json:"entry_status"`
+	VestingState     eos.Name               `json:"vesting_state"`
+	EnteredDate      eos.TimePoint          `json:"entered_date"`
+	AdditionalFields types.AdditionalFields `json:"additional_fields"`
 }
 
 type EntryCustomJSON struct {
@@ -75,6 +79,21 @@ func (m *Entry) UpsertReturn(name eos.Name, ret interface{}) {
 
 func (m *Entry) RemoveReturn(name eos.Name) {
 	m.Returns.Remove(name)
+}
+
+func (m *Entry) GetEntryOwner() eos.AccountName {
+	if m.AdditionalFields.Has(EntryOwner) {
+		return eos.AccountName(m.AdditionalFields.GetValue(EntryOwner).Name().String())
+	}
+	return m.Participant
+}
+
+func (m *Entry) SetEntryOwner(accountName interface{}) {
+	account, err := util.ToName(accountName)
+	if err != nil {
+		panic(fmt.Sprintf("could not convert %v to eos.Name, error: %v", account, err))
+	}
+	m.AdditionalFields.Set(EntryOwner, dto.FlexValueFromName(account))
 }
 
 func (m *BennyfiContract) EnterRound(roundId uint64, participant eos.AccountName) (string, error) {

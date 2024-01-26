@@ -30,16 +30,19 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sebastianmontero/bennyfi-go-client/common/types"
 	eos "github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/dto"
 	"github.com/sebastianmontero/eos-go-toolbox/util"
 )
 
 var (
-	RoundNotStarted       = eos.Name("notstarted")
-	RoundPending          = eos.Name("pending")
-	RoundAcceptingEntries = eos.Name("open")
-	RoundDrawing          = eos.Name("drawing")
+	PoolManagerFeeOwner    = "pool_manager_fee_owner"
+	BeneficiaryRewardOwner = "beneficiary_reward_owner"
+	RoundNotStarted        = eos.Name("notstarted")
+	RoundPending           = eos.Name("pending")
+	RoundAcceptingEntries  = eos.Name("open")
+	RoundDrawing           = eos.Name("drawing")
 	// RoundOpen                        = eos.Name("roundopen")
 	RoundClosed                            = eos.Name("closed")
 	RoundClosedYieldWithdrawnTestSetupOnly = eos.Name("closedyield")
@@ -119,8 +122,7 @@ type Round struct {
 	NextVestingTime          eos.TimePoint            `json:"next_vesting_time"`
 	CreatedDate              eos.TimePoint            `json:"created_date"`
 	UpdatedDate              eos.TimePoint            `json:"updated_date"`
-	// NOT USED AT THE MOMENT
-	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
+	AdditionalFields         types.AdditionalFields   `json:"additional_fields"`
 }
 
 type RoundCustomJSON struct {
@@ -170,6 +172,36 @@ func (m *Round) GetTotalEntryFee() eos.Asset {
 
 func (m *Round) NumEntriesToClose() uint32 {
 	return m.NumParticipants - m.NumParticipantsEntered
+}
+
+func (m *Round) GetPoolManagerFeeOwner() eos.AccountName {
+	if m.AdditionalFields.Has(PoolManagerFeeOwner) {
+		return eos.AN(m.AdditionalFields.GetValue(PoolManagerFeeOwner).Name().String())
+	}
+	return m.RoundManager
+}
+
+func (m *Round) SetPoolManagerFeeOwner(accountName interface{}) {
+	account, err := util.ToName(accountName)
+	if err != nil {
+		panic(fmt.Sprintf("could not convert %v to eos.Name, error: %v", account, err))
+	}
+	m.AdditionalFields.Set(PoolManagerFeeOwner, dto.FlexValueFromName(account))
+}
+
+func (m *Round) GetBeneficiaryRewardOwner() eos.AccountName {
+	if m.AdditionalFields.Has(BeneficiaryRewardOwner) {
+		return eos.AN(m.AdditionalFields.GetValue(BeneficiaryRewardOwner).Name().String())
+	}
+	return m.Beneficiary
+}
+
+func (m *Round) SetBeneficiaryRewardOwner(accountName interface{}) {
+	account, err := util.ToName(accountName)
+	if err != nil {
+		panic(fmt.Sprintf("could not convert %v to eos.Name, error: %v", account, err))
+	}
+	m.AdditionalFields.Set(BeneficiaryRewardOwner, dto.FlexValueFromName(account))
 }
 
 func (m *Round) UpsertDistribution(name eos.Name, distribution interface{}) {

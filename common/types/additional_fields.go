@@ -22,6 +22,8 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/sebastianmontero/eos-go-toolbox/dto"
 )
 
@@ -41,10 +43,42 @@ func (m AdditionalFields) FindPos(key string) int {
 	return -1
 }
 
+func (m AdditionalFields) Has(key string) bool {
+	return m.FindPos(key) >= 0
+}
+
 func (m AdditionalFields) Find(key string) *AdditionalField {
 	pos := m.FindPos(key)
 	if pos >= 0 {
 		return m[pos]
 	}
 	return nil
+}
+
+func (m AdditionalFields) Get(key string) *AdditionalField {
+	field := m.Find(key)
+	if field == nil {
+		panic(fmt.Sprintf("%v not found in additional fields", key))
+	}
+	return field
+}
+
+func (m AdditionalFields) GetValue(key string) *dto.FlexValue {
+	field := m.Find(key)
+	if field == nil {
+		panic(fmt.Sprintf("%v not found in additional fields", key))
+	}
+	return field.Value
+}
+
+func (p *AdditionalFields) Set(key string, value *dto.FlexValue) {
+	m := *p
+	pos := m.FindPos(key)
+	field := &AdditionalField{Key: key, Value: value}
+	if pos >= 0 {
+		m[pos] = field
+	} else {
+		m = append(m, field)
+	}
+	*p = m
 }
