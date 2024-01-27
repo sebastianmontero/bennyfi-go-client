@@ -92,6 +92,26 @@ func (m *Balance) AddStakedBalance(amount interface{}, negative bool) eos.Asset 
 	return m.StakedBalance
 }
 
+func (m *BennyfiContract) Pay(authorizer eos.AccountName, from interface{}, to interface{}, amount eos.Asset, fromStakedBalance bool) (string, error) {
+	f, err := util.ToAccountName(from)
+	if err != nil {
+		return "", fmt.Errorf("failed parsing pay from account: %v, error: %v", from, err)
+	}
+
+	t, err := util.ToAccountName(to)
+	if err != nil {
+		return "", fmt.Errorf("failed parsing pay to account: %v, error: %v", to, err)
+	}
+	actionData := struct {
+		From              eos.AccountName
+		To                eos.AccountName
+		Amount            eos.Asset
+		FromStakedBalance bool
+	}{f, t, amount, fromStakedBalance}
+
+	return m.ExecAction(authorizer, "pay", actionData)
+}
+
 func (m *BennyfiContract) Withdraw(from eos.AccountName, quantity eos.Asset) (string, error) {
 	actionData := &WithdrawArgs{
 		From:     from,
