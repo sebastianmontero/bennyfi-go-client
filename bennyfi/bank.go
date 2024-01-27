@@ -92,7 +92,7 @@ func (m *Balance) AddStakedBalance(amount interface{}, negative bool) eos.Asset 
 	return m.StakedBalance
 }
 
-func (m *BennyfiContract) Pay(authorizer eos.AccountName, from interface{}, to interface{}, amount eos.Asset, fromStakedBalance bool) (string, error) {
+func (m *BennyfiContract) Pay(authorizer eos.AccountName, from interface{}, to interface{}, amount eos.Asset, fromEscrow bool) (string, error) {
 	f, err := util.ToAccountName(from)
 	if err != nil {
 		return "", fmt.Errorf("failed parsing pay from account: %v, error: %v", from, err)
@@ -103,13 +103,39 @@ func (m *BennyfiContract) Pay(authorizer eos.AccountName, from interface{}, to i
 		return "", fmt.Errorf("failed parsing pay to account: %v, error: %v", to, err)
 	}
 	actionData := struct {
-		From              eos.AccountName
-		To                eos.AccountName
-		Amount            eos.Asset
-		FromStakedBalance bool
-	}{f, t, amount, fromStakedBalance}
+		From       eos.AccountName
+		To         eos.AccountName
+		Amount     eos.Asset
+		FromEscrow bool
+	}{f, t, amount, fromEscrow}
 
 	return m.ExecAction(authorizer, "pay", actionData)
+}
+
+func (m *BennyfiContract) Escrow(authorizer eos.AccountName, account interface{}, amount eos.Asset) (string, error) {
+	a, err := util.ToAccountName(account)
+	if err != nil {
+		return "", fmt.Errorf("failed parsing escrow account: %v, error: %v", account, err)
+	}
+	actionData := struct {
+		Account eos.AccountName
+		Amount  eos.Asset
+	}{a, amount}
+
+	return m.ExecAction(authorizer, "escrow", actionData)
+}
+
+func (m *BennyfiContract) Unescrow(authorizer eos.AccountName, account interface{}, amount eos.Asset) (string, error) {
+	a, err := util.ToAccountName(account)
+	if err != nil {
+		return "", fmt.Errorf("failed parsing unescrow account: %v, error: %v", account, err)
+	}
+	actionData := struct {
+		Account eos.AccountName
+		Amount  eos.Asset
+	}{a, amount}
+
+	return m.ExecAction(authorizer, "unescrow", actionData)
 }
 
 func (m *BennyfiContract) Withdraw(from eos.AccountName, quantity eos.Asset) (string, error) {
