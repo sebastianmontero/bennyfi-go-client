@@ -92,6 +92,34 @@ func (m *Balance) AddStakedBalance(amount interface{}, negative bool) eos.Asset 
 	return m.StakedBalance
 }
 
+func (m *Balance) Stake(amount interface{}) {
+	amnt, err := util.ToAsset(amount)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse amount: %v to asset", amount))
+	}
+
+	if m.LiquidBalance.Amount < amnt.Amount {
+		panic(fmt.Sprintf("Stake amount: %v can not be greater than liquid balance: %v", amnt, m.LiquidBalance))
+	}
+	m.AddLiquidBalance(amount, true)
+	m.AddStakedBalance(amount, false)
+
+}
+
+func (m *Balance) Unstake(amount interface{}) {
+	amnt, err := util.ToAsset(amount)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to parse amount: %v to asset", amount))
+	}
+
+	if m.StakedBalance.Amount < amnt.Amount {
+		panic(fmt.Sprintf("Unstake amount: %v can not be greater than staked balance: %v", amnt, m.StakedBalance))
+	}
+	m.AddLiquidBalance(amount, false)
+	m.AddStakedBalance(amount, true)
+
+}
+
 func (m *BennyfiContract) Pay(authorizer eos.AccountName, from interface{}, to interface{}, amount eos.Asset, fromEscrow bool) (string, error) {
 	f, err := util.ToAccountName(from)
 	if err != nil {

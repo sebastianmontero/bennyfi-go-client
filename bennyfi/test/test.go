@@ -1,10 +1,12 @@
 package test
 
 import (
+	"math"
 	"testing"
 
 	"github.com/sebastianmontero/bennyfi-go-client/bennyfi"
 	"github.com/sebastianmontero/bennyfi-go-client/util/utype"
+	"github.com/sebastianmontero/eos-go"
 	"gotest.tools/assert"
 )
 
@@ -161,4 +163,8 @@ func AssertRewards(t *testing.T, actual, expected bennyfi.Rewards) {
 func AssertReward(t *testing.T, actual, expected *bennyfi.Reward) {
 	assert.Check(t, actual != nil)
 	assert.DeepEqual(t, actual, expected)
+}
+
+func AssertTime(t *testing.T, actual, expected eos.TimePoint) {
+	assert.Assert(t, math.Abs(float64(actual)-float64(expected)) < float64(1000))
 }
