@@ -61,6 +61,15 @@ func NewTokenRole(tokenRole string, minValue, maxValue eos.Int64, symbol eos.Sym
 
 type TokenRoles []*TokenRole
 
+func (m TokenRoles) HasTokenRole(tokenRole eos.Name) bool {
+	for _, tr := range m {
+		if tr.Key == tokenRole {
+			return true
+		}
+	}
+	return false
+}
+
 type AuthToken struct {
 	Authorizer    eos.AccountName `json:"authorizer"`
 	Symbol        eos.Symbol      `json:"symbol"`
@@ -69,6 +78,10 @@ type AuthToken struct {
 	TokenRoles    TokenRoles      `json:"token_roles"`
 	// NOT USED AT THE MOMENT
 	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
+}
+
+func (m *AuthToken) HasTokenRole(tokenRole eos.Name) bool {
+	return m.TokenRoles.HasTokenRole(tokenRole)
 }
 
 func (m *AuthToken) ToSetTokenArgs() *SetTokenArgs {

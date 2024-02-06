@@ -30,6 +30,14 @@ type BaseOffer struct {
 	PoolStakeEndTime eos.TimePoint   `json:"pool_stake_end_time"`
 }
 
+func (m *BaseOffer) IsBuyOffer() bool {
+	return m.OfferType == OfferTypeBuy
+}
+
+func (m *BaseOffer) IsSellOffer() bool {
+	return m.OfferType == OfferTypeSell
+}
+
 type Offer struct {
 	OfferID uint64 `json:"offer_id"`
 	*BaseOffer
@@ -121,11 +129,19 @@ func (m *BennyXchangeContract) MakeOffer(offer *Offer, exchangeType eos.Name) (s
 	return m.MakeOfferFromArgs(offer.ToMakeOfferArgs(exchangeType))
 }
 
+func (m *BennyXchangeContract) MakeOfferWithAuthorizer(offer *Offer, exchangeType eos.Name, authorizer eos.AccountName) (string, error) {
+	return m.MakeOfferFromArgsWithAuthorizer(offer.ToMakeOfferArgs(exchangeType), authorizer)
+}
+
 func (m *BennyXchangeContract) MakeOfferFromArgs(args *MakeOfferArgs) (string, error) {
 	return m.ExecAction(args.Who, "makeoffer", args)
 }
 
-func (m *BennyXchangeContract) AcceptedOffer(who eos.AccountName, exchangeType eos.Name, offerId uint64) (string, error) {
+func (m *BennyXchangeContract) MakeOfferFromArgsWithAuthorizer(args *MakeOfferArgs, authorizer eos.AccountName) (string, error) {
+	return m.ExecAction(authorizer, "makeoffer", args)
+}
+
+func (m *BennyXchangeContract) AcceptOffer(who eos.AccountName, exchangeType eos.Name, offerId uint64) (string, error) {
 	actionData := struct {
 		Who          eos.AccountName
 		ExchangeType eos.Name
