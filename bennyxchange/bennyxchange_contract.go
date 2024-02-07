@@ -150,6 +150,15 @@ func (m *BennyXchangeContract) AcceptOffer(who eos.AccountName, exchangeType eos
 	return m.ExecAction(who, "acceptoffer", actionData)
 }
 
+func (m *BennyXchangeContract) AcceptOfferWithAuthorizer(authorizer, who eos.AccountName, exchangeType eos.Name, offerId uint64) (string, error) {
+	actionData := struct {
+		Who          eos.AccountName
+		ExchangeType eos.Name
+		OfferId      uint64
+	}{who, exchangeType, offerId}
+	return m.ExecAction(authorizer, "acceptoffer", actionData)
+}
+
 func (m *BennyXchangeContract) DeleteOffer(who eos.AccountName, exchangeType eos.Name, offerId uint64) (string, error) {
 	actionData := struct {
 		Who          eos.AccountName
@@ -157,6 +166,15 @@ func (m *BennyXchangeContract) DeleteOffer(who eos.AccountName, exchangeType eos
 		OfferId      uint64
 	}{who, exchangeType, offerId}
 	return m.ExecAction(who, "deleteoffer", actionData)
+}
+
+func (m *BennyXchangeContract) DeleteOfferWithAuthorizer(authorizer, who eos.AccountName, exchangeType eos.Name, offerId uint64) (string, error) {
+	actionData := struct {
+		Who          eos.AccountName
+		ExchangeType eos.Name
+		OfferId      uint64
+	}{who, exchangeType, offerId}
+	return m.ExecAction(authorizer, "deleteoffer", actionData)
 }
 
 func (m *BennyXchangeContract) DeleteExpiredOffers(callCounter uint64) (string, error) {
