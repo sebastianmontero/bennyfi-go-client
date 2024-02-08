@@ -17,6 +17,8 @@ var (
 
 	OfferTypeBuy  = eos.Name("buy")
 	OfferTypeSell = eos.Name("sell")
+
+	SettingBatchSize = "BATCH_SIZE"
 )
 
 type BaseOffer struct {
@@ -213,6 +215,14 @@ func (m *BennyXchangeContract) GetOffer(exchangeType eos.Name, offerId uint64) (
 		return &offers[0], nil
 	}
 	return nil, nil
+}
+
+func (m *BennyXchangeContract) GetAllOffersAsMap() ([]map[string]interface{}, error) {
+	return m.GetAllTableRowsWithScopesAsMap("offers", "offer_id", "0", nil)
+}
+
+func (m *BennyXchangeContract) GetAllAcceptedOffersAsMap() ([]map[string]interface{}, error) {
+	return m.GetAllTableRowsWithScopesAsMap("acceptdoffrs", "accepted_offer_id", "0", nil)
 }
 
 func (m *BennyXchangeContract) GetAcceptedOffer(exchangeType eos.Name, acceptedOfferId uint64) (*AcceptedOffer, error) {
