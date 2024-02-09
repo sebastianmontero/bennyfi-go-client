@@ -1,12 +1,15 @@
 package bennyxchange
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
 	eos "github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/contract"
 	"github.com/sebastianmontero/eos-go-toolbox/service"
+	"github.com/sebastianmontero/eos-go-toolbox/util"
 	"github.com/sebastianmontero/eos-go/ecc"
 )
 
@@ -70,10 +73,30 @@ func (m *Offer) ToAcceptedOffer() *AcceptedOffer {
 	}
 }
 
+func (m *Offer) Lapse() {
+	m.ExpirationTime = util.ShiftedTimePoint(-1 * time.Millisecond)
+}
+
+func (m *Offer) String() string {
+	result, err := json.Marshal(m)
+	if err != nil {
+		panic(fmt.Sprintf("Failed marshalling offer: %v", err))
+	}
+	return string(result)
+}
+
 type AcceptedOffer struct {
 	AcceptedOfferID uint64 `json:"accepted_offer_id"`
 	*BaseOffer
 	CreatedDate eos.TimePoint `json:"accepted_date"`
+}
+
+func (m *AcceptedOffer) String() string {
+	result, err := json.Marshal(m)
+	if err != nil {
+		panic(fmt.Sprintf("Failed marshalling accepted offer: %v", err))
+	}
+	return string(result)
 }
 
 type MakeOfferArgs struct {

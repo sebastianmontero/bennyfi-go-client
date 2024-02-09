@@ -1,7 +1,6 @@
 package test
 
 import (
-	"math"
 	"testing"
 
 	"github.com/sebastianmontero/bennyfi-go-client/bennyfi"
@@ -166,5 +165,5 @@ func AssertReward(t *testing.T, actual, expected *bennyfi.Reward) {
 }
 
 func AssertTime(t *testing.T, actual, expected eos.TimePoint) {
-	assert.Assert(t, math.Abs(float64(actual)-float64(expected)) < float64(1000))
+	assert.Assert(t, actual.Time().Sub(expected.Time()).Abs().Milliseconds() < 500)
 }

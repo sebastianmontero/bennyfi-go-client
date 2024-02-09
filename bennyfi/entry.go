@@ -22,6 +22,7 @@
 package bennyfi
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -56,6 +57,14 @@ type Entry struct {
 	VestingState     eos.Name               `json:"vesting_state"`
 	EnteredDate      eos.TimePoint          `json:"entered_date"`
 	AdditionalFields types.AdditionalFields `json:"additional_fields"`
+}
+
+func (m *Entry) String() string {
+	result, err := json.Marshal(m)
+	if err != nil {
+		panic(fmt.Sprintf("Failed marshalling entry: %v", err))
+	}
+	return string(result)
 }
 
 type EntryCustomJSON struct {
