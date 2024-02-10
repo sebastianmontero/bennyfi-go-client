@@ -22,6 +22,7 @@
 package bennyfi
 
 import (
+	"encoding/json"
 	"fmt"
 
 	eos "github.com/sebastianmontero/eos-go"
@@ -118,6 +119,14 @@ func (m *Balance) Unstake(amount interface{}) {
 	m.AddLiquidBalance(amount, false)
 	m.AddStakedBalance(amount, true)
 
+}
+
+func (m *Balance) String() string {
+	result, err := json.Marshal(m)
+	if err != nil {
+		panic(fmt.Sprintf("Failed marshalling balance: %v", err))
+	}
+	return string(result)
 }
 
 func (m *BennyfiContract) Pay(authorizer eos.AccountName, from interface{}, to interface{}, amount eos.Asset, fromEscrow bool) (string, error) {
