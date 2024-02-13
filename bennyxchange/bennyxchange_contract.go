@@ -88,7 +88,7 @@ func (m *Offer) String() string {
 type AcceptedOffer struct {
 	AcceptedOfferID uint64 `json:"accepted_offer_id"`
 	*BaseOffer
-	CreatedDate eos.TimePoint `json:"accepted_date"`
+	AcceptedDate eos.TimePoint `json:"accepted_date"`
 }
 
 func (m *AcceptedOffer) String() string {
@@ -320,4 +320,228 @@ func (m *BennyXchangeContract) GetAcceptedOffersReq(req *eos.GetTableRowsRequest
 		return nil, fmt.Errorf("get table rows %v", err)
 	}
 	return acceptedOffers, nil
+}
+
+func (m *BennyXchangeContract) GetOffersBySellerAndId(seller eos.AccountName) ([]Offer, error) {
+	request := &eos.GetTableRowsRequest{}
+	err := m.FilterOffersBySellerAndId(request, seller)
+	if err != nil {
+		return nil, err
+	}
+	return m.GetOffersReq(request)
+}
+
+func (m *BennyXchangeContract) FilterOffersBySellerAndId(req *eos.GetTableRowsRequest, seller eos.AccountName) error {
+
+	req.Index = "3"
+	req.KeyType = "i128"
+	req.Reverse = true
+	lb, err := m.EOS.GetComposedIndexValue(seller, 0)
+	if err != nil {
+		return fmt.Errorf("failed to generate lower bound composed index, err: %v", err)
+	}
+	ub, err := m.EOS.GetComposedIndexValue(seller, uint64(18446744073709551615))
+	if err != nil {
+		return fmt.Errorf("failed to generate upper bound composed index, err: %v", err)
+	}
+	// fmt.Println("LB: ", lb, "UB: ", ub)
+	req.LowerBound = lb
+	req.UpperBound = ub
+	return err
+}
+
+func (m *BennyXchangeContract) GetOffersByBuyerAndId(buyer eos.AccountName) ([]Offer, error) {
+	request := &eos.GetTableRowsRequest{}
+	err := m.FilterOffersByBuyerAndId(request, buyer)
+	if err != nil {
+		return nil, err
+	}
+	return m.GetOffersReq(request)
+}
+
+func (m *BennyXchangeContract) FilterOffersByBuyerAndId(req *eos.GetTableRowsRequest, buyer eos.AccountName) error {
+
+	req.Index = "4"
+	req.KeyType = "i128"
+	req.Reverse = true
+	lb, err := m.EOS.GetComposedIndexValue(buyer, 0)
+	if err != nil {
+		return fmt.Errorf("failed to generate lower bound composed index, err: %v", err)
+	}
+	ub, err := m.EOS.GetComposedIndexValue(buyer, uint64(18446744073709551615))
+	if err != nil {
+		return fmt.Errorf("failed to generate upper bound composed index, err: %v", err)
+	}
+	// fmt.Println("LB: ", lb, "UB: ", ub)
+	req.LowerBound = lb
+	req.UpperBound = ub
+	return err
+}
+
+func (m *BennyXchangeContract) GetOffersByOfferTypeAndId(offerType eos.Name) ([]Offer, error) {
+	request := &eos.GetTableRowsRequest{}
+	err := m.FilterOffersByOfferTypeAndId(request, offerType)
+	if err != nil {
+		return nil, err
+	}
+	return m.GetOffersReq(request)
+}
+
+func (m *BennyXchangeContract) FilterOffersByOfferTypeAndId(req *eos.GetTableRowsRequest, offerType eos.Name) error {
+
+	req.Index = "5"
+	req.KeyType = "i128"
+	req.Reverse = true
+	lb, err := m.EOS.GetComposedIndexValue(offerType, 0)
+	if err != nil {
+		return fmt.Errorf("failed to generate lower bound composed index, err: %v", err)
+	}
+	ub, err := m.EOS.GetComposedIndexValue(offerType, uint64(18446744073709551615))
+	if err != nil {
+		return fmt.Errorf("failed to generate upper bound composed index, err: %v", err)
+	}
+	// fmt.Println("LB: ", lb, "UB: ", ub)
+	req.LowerBound = lb
+	req.UpperBound = ub
+	return err
+}
+
+func (m *BennyXchangeContract) GetOffersByItemIdAndSymbol(itemID uint64) ([]Offer, error) {
+	request := &eos.GetTableRowsRequest{}
+	err := m.FilterOffersByItemIdAndSymbol(request, itemID)
+	if err != nil {
+		return nil, err
+	}
+	return m.GetOffersReq(request)
+}
+
+func (m *BennyXchangeContract) FilterOffersByItemIdAndSymbol(req *eos.GetTableRowsRequest, itemID uint64) error {
+
+	req.Index = "6"
+	req.KeyType = "i128"
+	req.Reverse = true
+	lb, err := m.EOS.GetComposedIndexValue(itemID, 0)
+	if err != nil {
+		return fmt.Errorf("failed to generate lower bound composed index, err: %v", err)
+	}
+	ub, err := m.EOS.GetComposedIndexValue(itemID, uint64(18446744073709551615))
+	if err != nil {
+		return fmt.Errorf("failed to generate upper bound composed index, err: %v", err)
+	}
+	// fmt.Println("LB: ", lb, "UB: ", ub)
+	req.LowerBound = lb
+	req.UpperBound = ub
+	return err
+}
+
+func (m *BennyXchangeContract) GetAcceptedOffersBySellerAndId(seller eos.AccountName) ([]AcceptedOffer, error) {
+	request := &eos.GetTableRowsRequest{}
+	err := m.FilterAcceptedOffersBySellerAndId(request, seller)
+	if err != nil {
+		return nil, err
+	}
+	return m.GetAcceptedOffersReq(request)
+}
+
+func (m *BennyXchangeContract) FilterAcceptedOffersBySellerAndId(req *eos.GetTableRowsRequest, seller eos.AccountName) error {
+
+	req.Index = "3"
+	req.KeyType = "i128"
+	req.Reverse = true
+	lb, err := m.EOS.GetComposedIndexValue(seller, 0)
+	if err != nil {
+		return fmt.Errorf("failed to generate lower bound composed index, err: %v", err)
+	}
+	ub, err := m.EOS.GetComposedIndexValue(seller, uint64(18446744073709551615))
+	if err != nil {
+		return fmt.Errorf("failed to generate upper bound composed index, err: %v", err)
+	}
+	// fmt.Println("LB: ", lb, "UB: ", ub)
+	req.LowerBound = lb
+	req.UpperBound = ub
+	return err
+}
+
+func (m *BennyXchangeContract) GetAcceptedOffersByBuyerAndId(buyer eos.AccountName) ([]AcceptedOffer, error) {
+	request := &eos.GetTableRowsRequest{}
+	err := m.FilterAcceptedOffersByBuyerAndId(request, buyer)
+	if err != nil {
+		return nil, err
+	}
+	return m.GetAcceptedOffersReq(request)
+}
+
+func (m *BennyXchangeContract) FilterAcceptedOffersByBuyerAndId(req *eos.GetTableRowsRequest, buyer eos.AccountName) error {
+
+	req.Index = "4"
+	req.KeyType = "i128"
+	req.Reverse = true
+	lb, err := m.EOS.GetComposedIndexValue(buyer, 0)
+	if err != nil {
+		return fmt.Errorf("failed to generate lower bound composed index, err: %v", err)
+	}
+	ub, err := m.EOS.GetComposedIndexValue(buyer, uint64(18446744073709551615))
+	if err != nil {
+		return fmt.Errorf("failed to generate upper bound composed index, err: %v", err)
+	}
+	// fmt.Println("LB: ", lb, "UB: ", ub)
+	req.LowerBound = lb
+	req.UpperBound = ub
+	return err
+}
+
+func (m *BennyXchangeContract) GetAcceptedOffersByOfferTypeAndId(offerType eos.Name) ([]AcceptedOffer, error) {
+	request := &eos.GetTableRowsRequest{}
+	err := m.FilterAcceptedOffersByOfferTypeAndId(request, offerType)
+	if err != nil {
+		return nil, err
+	}
+	return m.GetAcceptedOffersReq(request)
+}
+
+func (m *BennyXchangeContract) FilterAcceptedOffersByOfferTypeAndId(req *eos.GetTableRowsRequest, offerType eos.Name) error {
+
+	req.Index = "5"
+	req.KeyType = "i128"
+	req.Reverse = true
+	lb, err := m.EOS.GetComposedIndexValue(offerType, 0)
+	if err != nil {
+		return fmt.Errorf("failed to generate lower bound composed index, err: %v", err)
+	}
+	ub, err := m.EOS.GetComposedIndexValue(offerType, uint64(18446744073709551615))
+	if err != nil {
+		return fmt.Errorf("failed to generate upper bound composed index, err: %v", err)
+	}
+	// fmt.Println("LB: ", lb, "UB: ", ub)
+	req.LowerBound = lb
+	req.UpperBound = ub
+	return err
+}
+
+func (m *BennyXchangeContract) GetAcceptedOffersByItemIdAndId(itemID uint64) ([]AcceptedOffer, error) {
+	request := &eos.GetTableRowsRequest{}
+	err := m.FilterAcceptedOffersByItemIdAndSymbol(request, itemID)
+	if err != nil {
+		return nil, err
+	}
+	return m.GetAcceptedOffersReq(request)
+}
+
+func (m *BennyXchangeContract) FilterAcceptedOffersByItemIdAndSymbol(req *eos.GetTableRowsRequest, itemID uint64) error {
+
+	req.Index = "6"
+	req.KeyType = "i128"
+	req.Reverse = true
+	lb, err := m.EOS.GetComposedIndexValue(itemID, 0)
+	if err != nil {
+		return fmt.Errorf("failed to generate lower bound composed index, err: %v", err)
+	}
+	ub, err := m.EOS.GetComposedIndexValue(itemID, uint64(18446744073709551615))
+	if err != nil {
+		return fmt.Errorf("failed to generate upper bound composed index, err: %v", err)
+	}
+	// fmt.Println("LB: ", lb, "UB: ", ub)
+	req.LowerBound = lb
+	req.UpperBound = ub
+	return err
 }
