@@ -61,11 +61,10 @@ func (m *YieldSource) String() string {
 }
 
 type UpdateYieldSourceArgs struct {
-	YieldSource       eos.Name        `json:"yield_source"`
-	DailyYieldx100000 uint32          `json:"daily_yield_x100000"`
-	TokenValue        eos.Asset       `json:"token_value"`
-	BenyValue         eos.Asset       `json:"beny_value"`
-	Authorizer        eos.AccountName `json:"authorizer"`
+	YieldSource       eos.Name  `json:"yield_source"`
+	DailyYieldx100000 uint32    `json:"daily_yield_x100000"`
+	TokenValue        eos.Asset `json:"token_value"`
+	BenyValue         eos.Asset `json:"beny_value"`
 }
 
 func (m *UpdateYieldSourceArgs) String() string {
@@ -94,9 +93,9 @@ func (m *BennyfiContract) SetYieldSource(yieldSource *YieldSource) (string, erro
 	return m.ExecAction(yieldSource.Authorizer, "setyieldsrc", yieldSource)
 }
 
-func (m *BennyfiContract) UpdateYieldSource(args *UpdateYieldSourceArgs) (string, error) {
+func (m *BennyfiContract) UpdateYieldSource(authorizer eos.AccountName, args *UpdateYieldSourceArgs) (string, error) {
 
-	return m.ExecAction(args.Authorizer, "updyieldsrc", args)
+	return m.ExecAction(authorizer, "updyieldsrc", args)
 }
 
 func (m *BennyfiContract) EraseYieldSource(yieldSource eos.Name, authorizer eos.AccountName) (string, error) {
