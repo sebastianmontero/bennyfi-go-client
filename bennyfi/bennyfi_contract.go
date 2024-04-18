@@ -64,6 +64,14 @@ func (m *BennyfiContract) ExecAction(permissionLevel interface{}, action string,
 	return fmt.Sprintf("Tx ID: %v", resp.TransactionID), nil
 }
 
+func (m *BennyfiContract) ExecActions(actions ...*eos.Action) (string, error) {
+	resp, err := m.Contract.ExecActions(actions...)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("Tx ID: %v", resp.TransactionID), nil
+}
+
 func (m *BennyfiContract) ProposeAction(proposerName interface{}, requested []eos.PermissionLevel, expireIn time.Duration, permissionLevel, actionName, data interface{}) (string, error) {
 	resp, err := m.Contract.ProposeAction(proposerName, requested, expireIn, permissionLevel, actionName, data)
 	if err != nil {
