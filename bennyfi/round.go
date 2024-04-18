@@ -443,10 +443,6 @@ func (m *BennyfiContract) FundRound(roundID uint64, funder interface{}) (string,
 	return m.ExecAction(funder, "fundpool", actionData)
 }
 
-func (m *BennyfiContract) TimedEvents() (string, error) {
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "timedevents", nil)
-}
-
 func (m *BennyfiContract) StartRounds(callCounter uint64) (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "startpools", callCounter)
 }
