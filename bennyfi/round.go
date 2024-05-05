@@ -76,8 +76,9 @@ type FundRoundArgs struct {
 }
 
 type TstLapseTimeArgs struct {
-	RoundID     uint64 `json:"pool_id"`
-	CallCounter uint64 `json:"call_counter"`
+	RoundID                uint64 `json:"pool_id"`
+	LapseEnrollmentTimeEnd bool   `json:"lapse_enrollment_time_end"`
+	CallCounter            uint64 `json:"call_counter"`
 }
 
 type Round struct {
@@ -467,6 +468,10 @@ func (m *BennyfiContract) UnstakeTimedoutRounds(callCounter uint64) (string, err
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "ustktmdpools", callCounter)
 }
 
+func (m *BennyfiContract) DeleteTimedoutRounds(callCounter uint64) (string, error) {
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "deltmdpools", callCounter)
+}
+
 func (m *BennyfiContract) Redraw() (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "redraw", nil)
 }
@@ -476,9 +481,14 @@ func (m *BennyfiContract) VestingRounds(callCounter uint64) (string, error) {
 }
 
 func (m *BennyfiContract) TstLapseTime(roundId uint64) (string, error) {
+	return m.TstLapseTimeDetailed(roundId, false)
+}
+
+func (m *BennyfiContract) TstLapseTimeDetailed(roundId uint64, lapseEnrollmentTimeEnd bool) (string, error) {
 	actionData := &TstLapseTimeArgs{
-		RoundID:     roundId,
-		CallCounter: m.NextCallCounter(),
+		RoundID:                roundId,
+		LapseEnrollmentTimeEnd: lapseEnrollmentTimeEnd,
+		CallCounter:            m.NextCallCounter(),
 	}
 	return m.ExecAction(eos.AN(m.ContractName), "tstlapsetime", actionData)
 }

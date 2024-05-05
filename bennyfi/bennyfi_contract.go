@@ -91,6 +91,7 @@ func (m *BennyfiContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) erro
 		"unstakeopen",
 		"ustkulkpools",
 		"ustktmdpools",
+		"deltmdpools",
 		"vestingpools",
 		"claimathstks",
 	}
