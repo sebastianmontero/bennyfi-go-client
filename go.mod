@@ -4,10 +4,10 @@ go 1.16
 
 require (
 	github.com/sebastianmontero/eos-go v0.10.4
-	github.com/sebastianmontero/eos-go-toolbox v0.0.0-20240212002132-3fdbb525a4aa
+	github.com/sebastianmontero/eos-go-toolbox v0.0.0-20240418154331-89d3b7027bcb
 	gotest.tools v2.2.0+incompatible
 )
 
-replace github.com/sebastianmontero/eos-go-toolbox => ../eos-go-toolbox
+// replace github.com/sebastianmontero/eos-go-toolbox => ../eos-go-toolbox
 
 // replace github.com/sebastianmontero/eos-go => ../eos-go
