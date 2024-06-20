@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/sebastianmontero/eos-go v0.10.4
-	github.com/sebastianmontero/eos-go-toolbox v0.0.0-20240418154331-89d3b7027bcb
+	github.com/sebastianmontero/eos-go-toolbox v0.0.0-20240620215143-500627b855d3
 	gotest.tools v2.2.0+incompatible
 )
 
