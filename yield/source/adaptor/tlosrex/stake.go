@@ -50,12 +50,13 @@ func (m *Stake) CalculateStakeEndTime() eos.TimePoint {
 	return eos.TimePoint(m.StakedTime.Time().Add(time.Hour * time.Duration(m.StakingPeriod.Hrs())).UnixMicro())
 }
 
-func (m *TlosRexContract) CheckStakeParameters(authorizer, tokenContract eos.AccountName, stakeAmount eos.Asset, stakingPeriodHrs uint32) (string, error) {
+func (m *TlosRexContract) CheckStakeParameters(authorizer, tokenContract eos.AccountName, stakeAmount eos.Asset, stakingPeriodHrs uint32, yieldSourceName eos.Name) (string, error) {
 	actionData := struct {
 		TokenContract    eos.AccountName
 		StakeAmount      eos.Asset
 		StakingPeriodHrs uint32
-	}{tokenContract, stakeAmount, stakingPeriodHrs}
+		YieldSourceName  eos.Name
+	}{tokenContract, stakeAmount, stakingPeriodHrs, yieldSourceName}
 	return m.ExecAction(authorizer, "chckstkparam", actionData)
 }
 

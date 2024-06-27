@@ -39,12 +39,13 @@ func (m *Stake) GetTotalReturn() eos.Asset {
 	return totalReturn
 }
 
-func (m *DummyYieldContract) CheckStakeParameters(authorizer, tokenContract eos.AccountName, stakeAmount eos.Asset, stakingPeriodHrs uint32) (string, error) {
+func (m *DummyYieldContract) CheckStakeParameters(authorizer, tokenContract eos.AccountName, stakeAmount eos.Asset, stakingPeriodHrs uint32, yieldSourceName eos.Name) (string, error) {
 	actionData := struct {
 		TokenContract    eos.AccountName
 		StakeAmount      eos.Asset
 		StakingPeriodHrs uint32
-	}{tokenContract, stakeAmount, stakingPeriodHrs}
+		YieldSourceName  eos.Name
+	}{tokenContract, stakeAmount, stakingPeriodHrs, yieldSourceName}
 	return m.ExecAction(authorizer, "chckstkparam", actionData)
 }
 
