@@ -1,11 +1,13 @@
 package test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/sebastianmontero/bennyfi-go-client/yield/source/adaptor/stakelocal"
 	"github.com/sebastianmontero/eos-go"
+	"github.com/sebastianmontero/eos-go-toolbox/dto"
 	"github.com/sebastianmontero/eos-go-toolbox/test"
 	"github.com/sebastianmontero/eos-go-toolbox/util"
 	"gotest.tools/assert"
@@ -71,4 +73,24 @@ func (m *TestUtil) AssertYieldSource(actual, expected *stakelocal.YieldSource) {
 	assert.Equal(m.t, actual.MaxStakingPeriodHrs, expected.MaxStakingPeriodHrs)
 	assert.DeepEqual(m.t, actual.MinStakeAmount, expected.MinStakeAmount)
 	assert.DeepEqual(m.t, actual.MaxStakeAmount, expected.MaxStakeAmount)
+}
+
+func (m *TestUtil) AssertStakeAction(tokenContract eos.AccountName, roundId uint64, yieldSource eos.Name, quantity eos.Asset, stakingPeriod *dto.Microseconds) map[string]interface{} {
+	actionData := map[string]interface{}{
+		"pool_id":        float64(roundId),
+		"yield_source":   yieldSource.String(),
+		"quantity":       quantity.String(),
+		"staking_period": stakingPeriod.ToMap(),
+	}
+	return m.eosTestUtil.AssertAction(tokenContract, "stake", actionData, 0)
+}
+
+func (m *TestUtil) AssertYieldReturnTransfer(tokenContract eos.AccountName, roundId uint64, quantity eos.Asset) map[string]interface{} {
+	actionData := map[string]interface{}{
+		"from":     m.stakeLocalClient.ContractName,
+		"to":       m.bennyfiContract.String(),
+		"quantity": quantity.String(),
+		"memo":     fmt.Sprintf("pool id: %v", roundId),
+	}
+	return m.eosTestUtil.AssertAction(tokenContract, "transfer", actionData, 0)
 }

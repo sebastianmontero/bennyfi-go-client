@@ -8,12 +8,12 @@ import (
 )
 
 type YieldSource struct {
-	YieldSource         eos.Name  `json:"yield_source"`
-	TokenContract       eos.Name  `json:"token_contract"`
-	MinStakingPeriodHrs uint32    `json:"min_staking_period_hrs"`
-	MaxStakingPeriodHrs uint32    `json:"max_staking_period_hrs"`
-	MinStakeAmount      eos.Asset `json:"min_stake_amount"`
-	MaxStakeAmount      eos.Asset `json:"max_stake_amount"`
+	YieldSource         eos.Name        `json:"yield_source"`
+	TokenContract       eos.AccountName `json:"token_contract"`
+	MinStakingPeriodHrs uint32          `json:"min_staking_period_hrs"`
+	MaxStakingPeriodHrs uint32          `json:"max_staking_period_hrs"`
+	MinStakeAmount      eos.Asset       `json:"min_stake_amount"`
+	MaxStakeAmount      eos.Asset       `json:"max_stake_amount"`
 	// NOT USED AT THE MOMENT
 	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
 }
