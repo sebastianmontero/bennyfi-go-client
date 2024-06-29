@@ -75,6 +75,12 @@ func (m *TestUtil) AssertYieldSource(actual, expected *stakelocal.YieldSource) {
 	assert.DeepEqual(m.t, actual.MaxStakeAmount, expected.MaxStakeAmount)
 }
 
+func (m *TestUtil) AssertYieldNotExists(yieldSource eos.Name) {
+	actual, err := m.stakeLocalClient.GetYieldSource(yieldSource)
+	assert.NilError(m.t, err)
+	assert.Assert(m.t, actual == nil)
+}
+
 func (m *TestUtil) AssertStakeAction(tokenContract eos.AccountName, roundId uint64, yieldSource eos.Name, quantity eos.Asset, stakingPeriod *dto.Microseconds) map[string]interface{} {
 	actionData := map[string]interface{}{
 		"pool_id":        float64(roundId),

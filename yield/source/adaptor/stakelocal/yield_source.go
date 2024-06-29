@@ -37,15 +37,21 @@ func (m *YieldSource) Clone() *YieldSource {
 	}
 }
 
-func (m *StakeLocalContract) SetYieldSource(yieldSource *YieldSource) (string, error) {
-	return m.ExecAction(m.ContractName, "setyieldsrc", yieldSource)
+func (m *StakeLocalContract) SetYieldSource(yieldSource *YieldSource, authorizer interface{}) (string, error) {
+	if authorizer == nil {
+		authorizer = m.ContractName
+	}
+	return m.ExecAction(authorizer, "setyieldsrc", yieldSource)
 }
 
-func (m *StakeLocalContract) EraseYieldSource(yieldSource eos.Name) (string, error) {
+func (m *StakeLocalContract) EraseYieldSource(yieldSource eos.Name, authorizer interface{}) (string, error) {
 	actionData := struct {
 		YieldSource eos.Name
 	}{yieldSource}
-	return m.ExecAction(m.ContractName, "setyieldsrc", actionData)
+	if authorizer == nil {
+		authorizer = m.ContractName
+	}
+	return m.ExecAction(authorizer, "eraseyldsrc", actionData)
 }
 
 func (m *StakeLocalContract) GetYieldSource(yieldSource eos.Name) (*YieldSource, error) {
