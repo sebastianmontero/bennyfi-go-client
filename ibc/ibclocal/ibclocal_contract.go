@@ -50,12 +50,12 @@ func (m *InitParams) Clone() *InitParams {
 	}
 }
 func (m *InitParams) ToGlobal() *Global {
-	return &Global{m.Clone(), false}
+	return &Global{m.Clone(), 0}
 }
 
 type Global struct {
 	*InitParams
-	Enabled bool `json:"enabled"`
+	Enabled uint8 `json:"enabled"`
 }
 
 type IBCLocalContract struct {
