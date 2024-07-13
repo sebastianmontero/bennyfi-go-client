@@ -7,7 +7,6 @@ import (
 
 	"github.com/sebastianmontero/bennyfi-go-client/yield/source/adaptor/stakelocal"
 	"github.com/sebastianmontero/eos-go"
-	"github.com/sebastianmontero/eos-go-toolbox/dto"
 	"github.com/sebastianmontero/eos-go-toolbox/test"
 	"github.com/sebastianmontero/eos-go-toolbox/util"
 	"gotest.tools/assert"
@@ -81,12 +80,12 @@ func (m *TestUtil) AssertYieldNotExists(yieldSource eos.Name) {
 	assert.Assert(m.t, actual == nil)
 }
 
-func (m *TestUtil) AssertStakeAction(tokenContract eos.AccountName, roundId uint64, yieldSource eos.Name, quantity eos.Asset, stakingPeriod *dto.Microseconds) map[string]interface{} {
+func (m *TestUtil) AssertStakeAction(tokenContract eos.AccountName, roundId uint64, yieldSource eos.Name, quantity eos.Asset, stakingPeriodHrs int64) map[string]interface{} {
 	actionData := map[string]interface{}{
-		"pool_id":        float64(roundId),
-		"yield_source":   yieldSource.String(),
-		"quantity":       quantity.String(),
-		"staking_period": stakingPeriod.ToMap(),
+		"pool_id":            float64(roundId),
+		"yield_source":       yieldSource.String(),
+		"quantity":           quantity.String(),
+		"staking_period_hrs": float64(stakingPeriodHrs),
 	}
 	return m.eosTestUtil.AssertAction(tokenContract, "stake", actionData, 0)
 }

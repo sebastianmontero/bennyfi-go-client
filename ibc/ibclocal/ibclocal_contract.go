@@ -58,6 +58,13 @@ type Global struct {
 	Enabled uint8 `json:"enabled"`
 }
 
+type StakeParams struct {
+	PoolId           uint64    `json:"pool_id"`
+	YieldSource      eos.Name  `json:"yield_source"`
+	Quantity         eos.Asset `json:"quantity"`
+	StakingPeriodHrs uint32    `json:"staking_period_hrs"`
+}
+
 type IBCLocalContract struct {
 	*contract.TokenContract
 	callCounter uint64
@@ -101,6 +108,10 @@ func (m *IBCLocalContract) ProposeAction(proposerName interface{}, requested []e
 
 func (m *IBCLocalContract) Init(initParams *InitParams, authorizer interface{}) (string, error) {
 	return m.ExecAction(m.getAuthorizer(authorizer), "init", initParams)
+}
+
+func (m *IBCLocalContract) Stake(stakeParams *StakeParams, authorizer interface{}) (string, error) {
+	return m.ExecAction(m.getAuthorizer(authorizer), "stake", stakeParams)
 }
 
 func (m *IBCLocalContract) Enable(authorizer interface{}) (string, error) {
