@@ -23,7 +23,6 @@ package ibclocal
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/sebastianmontero/bennyfi-go-client/ibc"
 	"github.com/sebastianmontero/bennyfi-go-client/ibc/bridge"
@@ -62,74 +61,45 @@ type Global struct {
 
 type IBCLocalContract struct {
 	*contract.TokenContract
-	callCounter uint64
+	*ibc.IBCContract
 }
 
 func NewIBCLocalContract(eos *service.EOS, contractName string) *IBCLocalContract {
 	return &IBCLocalContract{
 		contract.NewTokenContractWithDefaultContract(eos, contractName),
-		0,
+		ibc.NewIBCContract(eos, contractName),
 	}
-}
-
-func (m *IBCLocalContract) NextCallCounter() uint64 {
-	m.callCounter++
-	return m.callCounter
-}
-
-func (m *IBCLocalContract) ExecAction(permissionLevel interface{}, action string, actionData interface{}) (string, error) {
-	resp, err := m.Contract.ExecAction(permissionLevel, action, actionData)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("Tx ID: %v", resp.TransactionID), nil
-}
-
-func (m *IBCLocalContract) ExecActions(actions ...*eos.Action) (string, error) {
-	resp, err := m.Contract.ExecActions(actions...)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("Tx ID: %v", resp.TransactionID), nil
-}
-
-func (m *IBCLocalContract) ProposeAction(proposerName interface{}, requested []eos.PermissionLevel, expireIn time.Duration, permissionLevel, actionName, data interface{}) (string, error) {
-	resp, err := m.Contract.ProposeAction(proposerName, requested, expireIn, permissionLevel, actionName, data)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("Proposal Name: %v, Tx ID: %v", resp.ProposalName, resp.PushTransactionFullResp.TransactionID), nil
 }
 
 func (m *IBCLocalContract) Init(initParams *InitParams, authorizer interface{}) (string, error) {
-	return m.ExecAction(m.getAuthorizer(authorizer), "init", initParams)
+	return m.IBCContract.ExecActionStr(m.getAuthorizer(authorizer), "init", initParams)
 }
 
 func (m *IBCLocalContract) IssueA(prover eos.AccountName, heavyProof *bridge.HeavyProof, actionProof *bridge.ActionProof, authorizer interface{}) (string, error) {
-	return m.proofA(prover, "issuea", heavyProof, actionProof, authorizer)
+	return m.ProofA(prover, "issuea", heavyProof, actionProof, authorizer)
 }
 
 func (m *IBCLocalContract) IssueB(prover eos.AccountName, lightProof *bridge.LightProof, actionProof *bridge.ActionProof, authorizer interface{}) (string, error) {
-	return m.proofB(prover, "issueb", lightProof, actionProof, authorizer)
+	return m.ProofB(prover, "issueb", lightProof, actionProof, authorizer)
 }
 
 func (m *IBCLocalContract) UnstakeA(prover eos.AccountName, heavyProof *bridge.HeavyProof, actionProof *bridge.ActionProof, authorizer interface{}) (string, error) {
-	return m.proofA(prover, "unstakea", heavyProof, actionProof, authorizer)
+	return m.ProofA(prover, "unstakea", heavyProof, actionProof, authorizer)
 }
 
 func (m *IBCLocalContract) UnstakeB(prover eos.AccountName, lightProof *bridge.LightProof, actionProof *bridge.ActionProof, authorizer interface{}) (string, error) {
-	return m.proofB(prover, "unstakeb", lightProof, actionProof, authorizer)
+	return m.ProofB(prover, "unstakeb", lightProof, actionProof, authorizer)
 }
 
 func (m *IBCLocalContract) Stake(stakeParams *ibc.StakeParams, authorizer interface{}) (string, error) {
-	return m.ExecAction(m.getAuthorizer(authorizer), "stake", stakeParams)
+	return m.IBCContract.ExecActionStr(m.getAuthorizer(authorizer), "stake", stakeParams)
 }
 
 func (m *IBCLocalContract) Enable(authorizer interface{}, enable bool) (string, error) {
 	actionData := struct {
 		Enable bool
 	}{enable}
-	return m.ExecAction(m.getAuthorizer(authorizer), "enable", actionData)
+	return m.IBCContract.ExecActionStr(m.getAuthorizer(authorizer), "enable", actionData)
 }
 
 func (m *IBCLocalContract) GetGlobal() (*Global, error) {
@@ -139,7 +109,7 @@ func (m *IBCLocalContract) GetGlobal() (*Global, error) {
 		Table: "global",
 		Limit: 1,
 	}
-	err := m.GetTableRows(*req, &global)
+	err := m.IBCContract.GetTableRows(*req, &global)
 	if err != nil {
 		return nil, fmt.Errorf("get table rows %v", err)
 	}
@@ -151,31 +121,7 @@ func (m *IBCLocalContract) GetGlobal() (*Global, error) {
 
 func (m *IBCLocalContract) getAuthorizer(authorizer interface{}) interface{} {
 	if authorizer == nil {
-		authorizer = m.ContractName
+		authorizer = m.IBCContract.ContractName
 	}
 	return authorizer
-}
-
-func (m *IBCLocalContract) proofA(prover eos.AccountName, action string, heavyProof *bridge.HeavyProof, actionProof *bridge.ActionProof, authorizer interface{}) (string, error) {
-	actionData := struct {
-		Prover      eos.AccountName
-		HeavyProof  *bridge.HeavyProof
-		ActionProof *bridge.ActionProof
-	}{prover, heavyProof, actionProof}
-	if authorizer == nil {
-		authorizer = prover
-	}
-	return m.ExecAction(authorizer, action, actionData)
-}
-
-func (m *IBCLocalContract) proofB(prover eos.AccountName, action string, lightProof *bridge.LightProof, actionProof *bridge.ActionProof, authorizer interface{}) (string, error) {
-	actionData := struct {
-		Prover      eos.AccountName
-		LightProof  *bridge.LightProof
-		ActionProof *bridge.ActionProof
-	}{prover, lightProof, actionProof}
-	if authorizer == nil {
-		authorizer = prover
-	}
-	return m.ExecAction(authorizer, action, actionData)
 }

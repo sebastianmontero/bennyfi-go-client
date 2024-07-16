@@ -5,42 +5,40 @@ import (
 
 	"github.com/sebastianmontero/bennyfi-go-client/ibc"
 	"github.com/sebastianmontero/bennyfi-go-client/ibc/ibclocal"
+	"github.com/sebastianmontero/bennyfi-go-client/ibc/test"
 	"github.com/sebastianmontero/eos-go"
-	"github.com/sebastianmontero/eos-go-toolbox/test"
 	"gotest.tools/assert"
 )
 
 type TestUtil struct {
-	t              *testing.T
 	ibcLocalClient *ibclocal.IBCLocalContract
-	eosTestUtil    *test.TestUtil
+	*test.TestUtil
 }
 
 func NewTestUtil(t *testing.T, ibcLocalClient *ibclocal.IBCLocalContract) *TestUtil {
 	return &TestUtil{
-		t:              t,
 		ibcLocalClient: ibcLocalClient,
-		eosTestUtil:    test.NewTestUtil(t, ibcLocalClient.EOS),
+		TestUtil:       test.NewTestUtil(t, ibcLocalClient.IBCContract),
 	}
 }
 
 func (m *TestUtil) AssertGlobal(expected *ibclocal.Global) {
 	actual, err := m.ibcLocalClient.GetGlobal()
-	assert.NilError(m.t, err)
-	assert.Check(m.t, actual != nil)
-	assert.Equal(m.t, actual.ChainId.String(), expected.ChainId.String())
-	assert.Equal(m.t, actual.BridgeContract, expected.BridgeContract)
-	assert.Equal(m.t, actual.PairedChainId.String(), expected.PairedChainId.String())
-	assert.Equal(m.t, actual.PairedWraplockContract, expected.PairedWraplockContract)
-	assert.Equal(m.t, actual.PairedTokenContract, expected.PairedTokenContract)
-	assert.Equal(m.t, actual.StakeLocalContract, expected.StakeLocalContract)
-	assert.Equal(m.t, actual.Enabled, expected.Enabled)
+	assert.NilError(m.T, err)
+	assert.Check(m.T, actual != nil)
+	assert.Equal(m.T, actual.ChainId.String(), expected.ChainId.String())
+	assert.Equal(m.T, actual.BridgeContract, expected.BridgeContract)
+	assert.Equal(m.T, actual.PairedChainId.String(), expected.PairedChainId.String())
+	assert.Equal(m.T, actual.PairedWraplockContract, expected.PairedWraplockContract)
+	assert.Equal(m.T, actual.PairedTokenContract, expected.PairedTokenContract)
+	assert.Equal(m.T, actual.StakeLocalContract, expected.StakeLocalContract)
+	assert.Equal(m.T, actual.Enabled, expected.Enabled)
 }
 
 func (m *TestUtil) AssertGlobalNotExists() {
 	actual, err := m.ibcLocalClient.GetGlobal()
-	assert.NilError(m.t, err)
-	assert.Assert(m.t, actual == nil)
+	assert.NilError(m.T, err)
+	assert.Assert(m.T, actual == nil)
 }
 
 func (m *TestUtil) AssertEmitStakeAction(tokenContract eos.AccountName, emitStakeParams *ibc.EmitStakeParams) map[string]interface{} {
@@ -53,5 +51,5 @@ func (m *TestUtil) AssertEmitStakeAction(tokenContract eos.AccountName, emitStak
 			"staking_period_hrs": emitStakeParams.StakingPeriodHrs,
 		},
 	}
-	return m.eosTestUtil.AssertAction(tokenContract, "emitstake", actionData, 0)
+	return m.AssertAction(tokenContract, "emitstake", actionData, 0)
 }
