@@ -44,6 +44,11 @@ type EmitUnstakeParams struct {
 	TotalReturn eos.ExtendedAsset `json:"total_return"`
 }
 
+type LightProofRecord struct {
+	ID         uint64             `json:"id"`
+	LightProof *bridge.LightProof `json:"lp"`
+}
+
 type HeavyProofRecord struct {
 	ID         uint64             `json:"id"`
 	HeavyProof *bridge.HeavyProof `json:"hp"`
@@ -80,6 +85,23 @@ func (m *IBCContract) ProofB(prover eos.AccountName, action string, lightProof *
 		authorizer = prover
 	}
 	return m.ExecActionStr(authorizer, action, actionData)
+}
+
+func (m *IBCContract) GetLightProof() (*LightProofRecord, error) {
+	var lpr []*LightProofRecord
+
+	req := &eos.GetTableRowsRequest{
+		Table: "lightproof",
+		Limit: 1,
+	}
+	err := m.GetTableRows(*req, &lpr)
+	if err != nil {
+		return nil, fmt.Errorf("get table rows %v", err)
+	}
+	if len(lpr) > 0 {
+		return lpr[0], nil
+	}
+	return nil, nil
 }
 
 func (m *IBCContract) GetHeavyProof() (*HeavyProofRecord, error) {

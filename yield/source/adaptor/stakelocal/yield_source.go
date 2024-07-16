@@ -41,7 +41,7 @@ func (m *StakeLocalContract) SetYieldSource(yieldSource *YieldSource, authorizer
 	if authorizer == nil {
 		authorizer = m.ContractName
 	}
-	return m.ExecAction(authorizer, "setyieldsrc", yieldSource)
+	return m.ExecActionStr(authorizer, "setyieldsrc", yieldSource)
 }
 
 func (m *StakeLocalContract) EraseYieldSource(yieldSource eos.Name, authorizer interface{}) (string, error) {
@@ -51,7 +51,7 @@ func (m *StakeLocalContract) EraseYieldSource(yieldSource eos.Name, authorizer i
 	if authorizer == nil {
 		authorizer = m.ContractName
 	}
-	return m.ExecAction(authorizer, "eraseyldsrc", actionData)
+	return m.ExecActionStr(authorizer, "eraseyldsrc", actionData)
 }
 
 func (m *StakeLocalContract) GetYieldSource(yieldSource eos.Name) (*YieldSource, error) {

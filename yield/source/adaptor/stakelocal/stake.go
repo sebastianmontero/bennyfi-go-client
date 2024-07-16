@@ -36,7 +36,7 @@ func (m *StakeLocalContract) CheckStakeParameters(authorizer, tokenContract eos.
 		StakingPeriodHrs uint32
 		YieldSourceName  eos.Name
 	}{tokenContract, stakeAmount, stakingPeriodHrs, yieldSourceName}
-	return m.ExecAction(authorizer, "chckstkparam", actionData)
+	return m.ExecActionStr(authorizer, "chckstkparam", actionData)
 }
 
 func (m *Stake) Clone() *Stake {

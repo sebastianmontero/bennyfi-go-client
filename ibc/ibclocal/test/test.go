@@ -1,6 +1,7 @@
 package test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/sebastianmontero/bennyfi-go-client/ibc"
@@ -52,4 +53,14 @@ func (m *TestUtil) AssertEmitStakeAction(tokenContract eos.AccountName, emitStak
 		},
 	}
 	return m.AssertAction(tokenContract, "emitstake", actionData, 0)
+}
+
+func (m *TestUtil) AssertYieldReturnTransfer(tokenContract, stakeLocalContract eos.AccountName, roundId uint64, quantity eos.Asset) map[string]interface{} {
+	actionData := map[string]interface{}{
+		"from":     tokenContract,
+		"to":       stakeLocalContract,
+		"quantity": quantity,
+		"memo":     fmt.Sprintf("pool id: %v", roundId),
+	}
+	return m.AssertAction(tokenContract, "transfer", actionData, 0)
 }

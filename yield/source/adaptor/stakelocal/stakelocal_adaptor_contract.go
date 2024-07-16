@@ -22,8 +22,6 @@
 package stakelocal
 
 import (
-	"fmt"
-
 	"github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/contract"
 	"github.com/sebastianmontero/eos-go-toolbox/service"
@@ -38,27 +36,12 @@ var (
 
 type StakeLocalContract struct {
 	*contract.SettingsContract
-	callCounter uint64
 }
 
 func NewStakeLocalContract(eos *service.EOS, contractName string) *StakeLocalContract {
 	return &StakeLocalContract{
 		contract.NewSettingsContract(eos, contractName),
-		0,
 	}
-}
-
-func (m *StakeLocalContract) NextCallCounter() uint64 {
-	m.callCounter++
-	return m.callCounter
-}
-
-func (m *StakeLocalContract) ExecAction(permissionLevel interface{}, action string, actionData interface{}) (string, error) {
-	resp, err := m.Contract.ExecAction(permissionLevel, action, actionData)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("Tx ID: %v", resp.TransactionID), nil
 }
 
 func (m *StakeLocalContract) Reset(limit uint64, toDelete []string) (string, error) {
@@ -67,5 +50,5 @@ func (m *StakeLocalContract) Reset(limit uint64, toDelete []string) (string, err
 		ToDelete    []string
 		CallCounter uint64
 	}{limit, toDelete, m.NextCallCounter()}
-	return m.ExecAction(eos.AN(m.ContractName), "reset", actionData)
+	return m.ExecActionStr(eos.AN(m.ContractName), "reset", actionData)
 }
