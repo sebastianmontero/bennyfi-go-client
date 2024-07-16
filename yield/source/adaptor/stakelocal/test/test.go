@@ -82,10 +82,10 @@ func (m *TestUtil) AssertYieldNotExists(yieldSource eos.Name) {
 
 func (m *TestUtil) AssertStakeAction(tokenContract eos.AccountName, roundId uint64, yieldSource eos.Name, quantity eos.Asset, stakingPeriodHrs int64) map[string]interface{} {
 	actionData := map[string]interface{}{
-		"pool_id":            float64(roundId),
-		"yield_source":       yieldSource.String(),
-		"quantity":           quantity.String(),
-		"staking_period_hrs": float64(stakingPeriodHrs),
+		"pool_id":            roundId,
+		"yield_source":       yieldSource,
+		"quantity":           quantity,
+		"staking_period_hrs": stakingPeriodHrs,
 	}
 	return m.eosTestUtil.AssertAction(tokenContract, "stake", actionData, 0)
 }
@@ -93,8 +93,8 @@ func (m *TestUtil) AssertStakeAction(tokenContract eos.AccountName, roundId uint
 func (m *TestUtil) AssertYieldReturnTransfer(tokenContract eos.AccountName, roundId uint64, quantity eos.Asset) map[string]interface{} {
 	actionData := map[string]interface{}{
 		"from":     m.stakeLocalClient.ContractName,
-		"to":       m.bennyfiContract.String(),
-		"quantity": quantity.String(),
+		"to":       m.bennyfiContract,
+		"quantity": quantity,
 		"memo":     fmt.Sprintf("pool id: %v", roundId),
 	}
 	return m.eosTestUtil.AssertAction(tokenContract, "transfer", actionData, 0)

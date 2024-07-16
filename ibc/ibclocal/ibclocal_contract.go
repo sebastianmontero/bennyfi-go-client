@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sebastianmontero/bennyfi-go-client/ibc"
 	"github.com/sebastianmontero/bennyfi-go-client/ibc/bridge"
 	eos "github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/contract"
@@ -57,35 +58,6 @@ func (m *InitParams) ToGlobal() *Global {
 type Global struct {
 	*InitParams
 	Enabled uint8 `json:"enabled"`
-}
-
-type StakeParams struct {
-	PoolId           uint64    `json:"pool_id"`
-	YieldSource      eos.Name  `json:"yield_source"`
-	Quantity         eos.Asset `json:"quantity"`
-	StakingPeriodHrs uint32    `json:"staking_period_hrs"`
-}
-
-func (m *StakeParams) ToEmitStakeParams(tokenContract eos.AccountName) *EmitStakeParams {
-	return &EmitStakeParams{
-		PoolId:           m.PoolId,
-		YieldSource:      m.YieldSource,
-		Quantity:         eos.ExtendedAsset{Asset: m.Quantity, Contract: tokenContract},
-		StakingPeriodHrs: m.StakingPeriodHrs,
-	}
-}
-
-type EmitXferParams struct {
-	Owner       eos.AccountName   `json:"owner"`
-	Quantity    eos.ExtendedAsset `json:"quantity"`
-	Beneficiary eos.AccountName   `json:"beneficiary"`
-}
-
-type EmitStakeParams struct {
-	PoolId           uint64            `json:"pool_id"`
-	YieldSource      eos.Name          `json:"yield_source"`
-	Quantity         eos.ExtendedAsset `json:"quantity"`
-	StakingPeriodHrs uint32            `json:"staking_period_hrs"`
 }
 
 type IBCLocalContract struct {
@@ -133,34 +105,31 @@ func (m *IBCLocalContract) Init(initParams *InitParams, authorizer interface{}) 
 	return m.ExecAction(m.getAuthorizer(authorizer), "init", initParams)
 }
 
-func (m *IBCLocalContract) IssueA(prover eos.AccountName, heavyProof *bridge.HeavyProof, actionProof *bridge.ActionProof) (string, error) {
-	actionData := struct {
-		Prover      eos.AccountName
-		HeavyProof  *bridge.HeavyProof
-		ActionProof *bridge.ActionProof
-	}{prover, heavyProof, actionProof}
-	return m.ExecAction(m.getAuthorizer(prover), "issuea", actionData)
+func (m *IBCLocalContract) IssueA(prover eos.AccountName, heavyProof *bridge.HeavyProof, actionProof *bridge.ActionProof, authorizer interface{}) (string, error) {
+	return m.proofA(prover, "issuea", heavyProof, actionProof, authorizer)
 }
 
-func (m *IBCLocalContract) IssueB(prover eos.AccountName, lightProof *bridge.LightProof, actionProof *bridge.ActionProof) (string, error) {
-	actionData := struct {
-		Prover      eos.AccountName
-		LightProof  *bridge.LightProof
-		ActionProof *bridge.ActionProof
-	}{prover, lightProof, actionProof}
-	return m.ExecAction(m.getAuthorizer(prover), "issueb", actionData)
+func (m *IBCLocalContract) IssueB(prover eos.AccountName, lightProof *bridge.LightProof, actionProof *bridge.ActionProof, authorizer interface{}) (string, error) {
+	return m.proofB(prover, "issueb", lightProof, actionProof, authorizer)
 }
 
-func (m *IBCLocalContract) Stake(stakeParams *StakeParams, authorizer interface{}) (string, error) {
+func (m *IBCLocalContract) UnstakeA(prover eos.AccountName, heavyProof *bridge.HeavyProof, actionProof *bridge.ActionProof, authorizer interface{}) (string, error) {
+	return m.proofA(prover, "unstakea", heavyProof, actionProof, authorizer)
+}
+
+func (m *IBCLocalContract) UnstakeB(prover eos.AccountName, lightProof *bridge.LightProof, actionProof *bridge.ActionProof, authorizer interface{}) (string, error) {
+	return m.proofB(prover, "unstakeb", lightProof, actionProof, authorizer)
+}
+
+func (m *IBCLocalContract) Stake(stakeParams *ibc.StakeParams, authorizer interface{}) (string, error) {
 	return m.ExecAction(m.getAuthorizer(authorizer), "stake", stakeParams)
 }
 
-func (m *IBCLocalContract) Enable(authorizer interface{}) (string, error) {
-	return m.ExecAction(m.getAuthorizer(authorizer), "enable", nil)
-}
-
-func (m *IBCLocalContract) Disable(authorizer interface{}) (string, error) {
-	return m.ExecAction(m.getAuthorizer(authorizer), "disable", nil)
+func (m *IBCLocalContract) Enable(authorizer interface{}, enable bool) (string, error) {
+	actionData := struct {
+		Enable bool
+	}{enable}
+	return m.ExecAction(m.getAuthorizer(authorizer), "enable", actionData)
 }
 
 func (m *IBCLocalContract) GetGlobal() (*Global, error) {
@@ -185,4 +154,28 @@ func (m *IBCLocalContract) getAuthorizer(authorizer interface{}) interface{} {
 		authorizer = m.ContractName
 	}
 	return authorizer
+}
+
+func (m *IBCLocalContract) proofA(prover eos.AccountName, action string, heavyProof *bridge.HeavyProof, actionProof *bridge.ActionProof, authorizer interface{}) (string, error) {
+	actionData := struct {
+		Prover      eos.AccountName
+		HeavyProof  *bridge.HeavyProof
+		ActionProof *bridge.ActionProof
+	}{prover, heavyProof, actionProof}
+	if authorizer == nil {
+		authorizer = prover
+	}
+	return m.ExecAction(authorizer, action, actionData)
+}
+
+func (m *IBCLocalContract) proofB(prover eos.AccountName, action string, lightProof *bridge.LightProof, actionProof *bridge.ActionProof, authorizer interface{}) (string, error) {
+	actionData := struct {
+		Prover      eos.AccountName
+		LightProof  *bridge.LightProof
+		ActionProof *bridge.ActionProof
+	}{prover, lightProof, actionProof}
+	if authorizer == nil {
+		authorizer = prover
+	}
+	return m.ExecAction(authorizer, action, actionData)
 }

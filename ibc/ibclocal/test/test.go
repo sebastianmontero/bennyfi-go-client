@@ -3,6 +3,7 @@ package test
 import (
 	"testing"
 
+	"github.com/sebastianmontero/bennyfi-go-client/ibc"
 	"github.com/sebastianmontero/bennyfi-go-client/ibc/ibclocal"
 	"github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/test"
@@ -42,12 +43,15 @@ func (m *TestUtil) AssertGlobalNotExists() {
 	assert.Assert(m.t, actual == nil)
 }
 
-func (m *TestUtil) AssertEmitStakeAction(tokenContract eos.AccountName, emitStakeParams *ibclocal.EmitStakeParams) map[string]interface{} {
+func (m *TestUtil) AssertEmitStakeAction(tokenContract eos.AccountName, emitStakeParams *ibc.EmitStakeParams) map[string]interface{} {
+
 	actionData := map[string]interface{}{
-		"pool_id":            float64(emitStakeParams.PoolId),
-		"yield_source":       emitStakeParams.YieldSource.String(),
-		"quantity":           emitStakeParams.Quantity,
-		"staking_period_hrs": float64(emitStakeParams.StakingPeriodHrs),
+		"stake": map[string]interface{}{
+			"pool_id":            emitStakeParams.PoolId,
+			"yield_source":       emitStakeParams.YieldSource,
+			"quantity":           emitStakeParams.Quantity,
+			"staking_period_hrs": emitStakeParams.StakingPeriodHrs,
+		},
 	}
 	return m.eosTestUtil.AssertAction(tokenContract, "emitstake", actionData, 0)
 }
