@@ -63,6 +63,13 @@ func NewIBCContract(eos *service.EOS, contractName string) *IBCContract {
 	}
 }
 
+func (m *IBCContract) Enable(authorizer interface{}, enable bool) (string, error) {
+	actionData := struct {
+		Enable bool
+	}{enable}
+	return m.ExecActionStr(m.GetValueOrContract(authorizer), "enable", actionData)
+}
+
 func (m *IBCContract) ProofA(prover eos.AccountName, action string, heavyProof *bridge.HeavyProof, actionProof *bridge.ActionProof, authorizer interface{}) (string, error) {
 	actionData := struct {
 		Prover      eos.AccountName

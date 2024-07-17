@@ -42,7 +42,7 @@ func (m *TestUtil) AssertGlobalNotExists() {
 	assert.Assert(m.T, actual == nil)
 }
 
-func (m *TestUtil) AssertEmitStakeAction(tokenContract eos.AccountName, emitStakeParams *ibc.EmitStakeParams) map[string]interface{} {
+func (m *TestUtil) AssertEmitStakeAction(emitStakeParams *ibc.EmitStakeParams) map[string]interface{} {
 
 	actionData := map[string]interface{}{
 		"stake": map[string]interface{}{
@@ -52,15 +52,15 @@ func (m *TestUtil) AssertEmitStakeAction(tokenContract eos.AccountName, emitStak
 			"staking_period_hrs": emitStakeParams.StakingPeriodHrs,
 		},
 	}
-	return m.AssertAction(tokenContract, "emitstake", actionData, 0)
+	return m.AssertAction(eos.AccountName(m.ibcLocalClient.IBCContract.ContractName), "emitstake", actionData, 0)
 }
 
-func (m *TestUtil) AssertYieldReturnTransfer(tokenContract, stakeLocalContract eos.AccountName, roundId uint64, quantity eos.Asset) map[string]interface{} {
+func (m *TestUtil) AssertYieldReturnTransfer(stakeLocalContract eos.AccountName, roundId uint64, quantity eos.Asset) map[string]interface{} {
 	actionData := map[string]interface{}{
-		"from":     tokenContract,
+		"from":     m.ibcLocalClient.IBCContract.ContractName,
 		"to":       stakeLocalContract,
 		"quantity": quantity,
 		"memo":     fmt.Sprintf("pool id: %v", roundId),
 	}
-	return m.AssertAction(tokenContract, "transfer", actionData, 0)
+	return m.AssertAction(eos.AccountName(m.ibcLocalClient.IBCContract.ContractName), "transfer", actionData, 0)
 }

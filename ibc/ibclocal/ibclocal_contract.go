@@ -95,13 +95,6 @@ func (m *IBCLocalContract) Stake(stakeParams *ibc.StakeParams, authorizer interf
 	return m.IBCContract.ExecActionStr(m.getAuthorizer(authorizer), "stake", stakeParams)
 }
 
-func (m *IBCLocalContract) Enable(authorizer interface{}, enable bool) (string, error) {
-	actionData := struct {
-		Enable bool
-	}{enable}
-	return m.IBCContract.ExecActionStr(m.getAuthorizer(authorizer), "enable", actionData)
-}
-
 func (m *IBCLocalContract) GetGlobal() (*Global, error) {
 	var global []*Global
 
@@ -120,8 +113,5 @@ func (m *IBCLocalContract) GetGlobal() (*Global, error) {
 }
 
 func (m *IBCLocalContract) getAuthorizer(authorizer interface{}) interface{} {
-	if authorizer == nil {
-		authorizer = m.IBCContract.ContractName
-	}
-	return authorizer
+	return m.IBCContract.GetValueOrContract(authorizer)
 }
