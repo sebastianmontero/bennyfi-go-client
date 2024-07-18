@@ -40,3 +40,15 @@ func (m *TestUtil) AssertLightProofValidations(bridgeContract eos.AccountName, n
 func (m *TestUtil) AssertHeavyProofValidations(bridgeContract eos.AccountName, numValidations int) {
 	m.AssertNumActions(bridgeContract, "checkproofb", numValidations)
 }
+
+func (m *TestUtil) AssertEmitXferAction(emitXferParams *ibc.EmitXferParams) map[string]interface{} {
+
+	actionData := map[string]interface{}{
+		"xfer": map[string]interface{}{
+			"owner":       emitXferParams.Owner,
+			"quantity":    emitXferParams.Quantity,
+			"beneficiary": emitXferParams.Beneficiary,
+		},
+	}
+	return m.AssertAction(eos.AccountName(m.ibcClient.ContractName), "emitxfer", actionData, 0)
+}

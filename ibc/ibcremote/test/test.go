@@ -46,11 +46,23 @@ func (m *TestUtil) AssertYieldSource(expected *ibcremote.YieldSource) {
 	assert.Equal(m.T, actual.AdaptorContract, expected.AdaptorContract)
 }
 
+func (m *TestUtil) AssertYieldSourceNotExists(yieldSource eos.Name) {
+	actual, err := m.ibcRemoteClient.GetYieldSource(yieldSource)
+	assert.NilError(m.T, err)
+	assert.Assert(m.T, actual == nil)
+}
+
 func (m *TestUtil) AssertContractMapping(expected *ibcremote.ContractMapping) {
 	actual, err := m.ibcRemoteClient.GetContractMapping(expected.NativeTokenContract)
 	assert.NilError(m.T, err)
 	assert.Assert(m.T, actual != nil)
 	assert.Equal(m.T, actual.PairedWraptokenContract, expected.PairedWraptokenContract)
+}
+
+func (m *TestUtil) AssertContractMappingNotExists(nativeTokenContract eos.AccountName) {
+	actual, err := m.ibcRemoteClient.GetContractMapping(nativeTokenContract)
+	assert.NilError(m.T, err)
+	assert.Assert(m.T, actual == nil)
 }
 
 func (m *TestUtil) AssertReserve(tokenContract eos.AccountName, expected eos.Asset) {
@@ -64,7 +76,7 @@ func (m *TestUtil) AssertReserve(tokenContract eos.AccountName, expected eos.Ass
 func (m *TestUtil) AssertEmitUnstakeAction(emitUnstakeParams *ibc.EmitUnstakeParams) map[string]interface{} {
 
 	actionData := map[string]interface{}{
-		"stake": map[string]interface{}{
+		"unstake": map[string]interface{}{
 			"pool_id":      emitUnstakeParams.PoolId,
 			"yield_source": emitUnstakeParams.YieldSource,
 			"total_return": emitUnstakeParams.TotalReturn,
