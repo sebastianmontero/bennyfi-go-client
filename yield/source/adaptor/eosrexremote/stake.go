@@ -10,7 +10,7 @@ import (
 	"github.com/sebastianmontero/eos-go-toolbox/dto"
 )
 
-var RexLockPeriodDays = 5
+var RexLockPeriodDays = 22
 
 type Stake struct {
 	RoundID              uint64            `json:"pool_id"`
