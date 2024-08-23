@@ -10,7 +10,7 @@ import (
 	"github.com/sebastianmontero/eos-go-toolbox/dto"
 )
 
-var RexLockPeriodDays = 22
+var RexLockPeriodDays = 21
 
 type Stake struct {
 	RoundID              uint64            `json:"pool_id"`
@@ -21,8 +21,8 @@ type Stake struct {
 	StakingPeriod        *dto.Microseconds `json:"staking_period"`
 	StakedTime           eos.TimePoint     `json:"staked_time"`
 	MovedFromSavingsTime eos.TimePoint     `json:"moved_from_savings_time"`
+	MaturityTime         eos.TimePoint     `json:"maturity_time"`
 	StakeEndTime         eos.TimePoint     `json:"stake_end_time"`
-	LastNotifiedTime     eos.TimePoint     `json:"last_notified_time"`
 	UpdatedDate          eos.TimePoint     `json:"updated_date"`
 	// NOT USED AT THE MOMENT
 	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
@@ -63,8 +63,8 @@ func (m *EosRexContract) MoveRoundFromSavings(roundId uint64) (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "mvfrmsvngsrn", roundId)
 }
 
-func (m *EosRexContract) SellRoundRex(roundId uint64) (string, error) {
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "sellrexrn", roundId)
+func (m *EosRexContract) CalculateProceedsRoundRex(roundId uint64) (string, error) {
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "clcproceedrn", roundId)
 }
 
 func (m *EosRexContract) WithdrawRoundRex(roundId uint64) (string, error) {
@@ -75,6 +75,14 @@ func (m *EosRexContract) MoveFromSavings(callCounter uint64) (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "mvfrmsavings", callCounter)
 }
 
+func (m *EosRexContract) UpdateRex(callCounter uint64) (string, error) {
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "updaterex", callCounter)
+}
+
+func (m *EosRexContract) CalculateProceeds(callCounter uint64) (string, error) {
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "calcproceeds", callCounter)
+}
+
 func (m *EosRexContract) SellRex(callCounter uint64) (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "sellrex", callCounter)
 }
@@ -83,20 +91,20 @@ func (m *EosRexContract) WithdrawRex(callCounter uint64) (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "withdrawrex", callCounter)
 }
 
+func (m *EosRexContract) SetRexBalance(roundId uint64, rexBalance eos.Asset) (string, error) {
+	actionData := struct {
+		RoundId    uint64
+		rexBalance eos.Asset
+	}{roundId, rexBalance}
+	return m.ExecAction(eos.AN(m.ContractName), "setrexbal", actionData)
+}
+
 func (m *EosRexContract) TstLapseTime(roundId uint64) (string, error) {
 	actionData := struct {
 		RoundId     uint64
 		CallCounter uint64
 	}{roundId, m.NextCallCounter()}
 	return m.ExecAction(eos.AN(m.ContractName), "tstlapsetime", actionData)
-}
-
-func (m *EosRexContract) TstSetLastNotifiedTime(roundId uint64, lastNotifiedTime eos.TimePoint) (string, error) {
-	actionData := struct {
-		RoundId          uint64
-		LastNotifiedTime eos.TimePoint
-	}{roundId, lastNotifiedTime}
-	return m.ExecAction(eos.AN(m.ContractName), "setlastnotif", actionData)
 }
 
 func (m *Stake) Clone() *Stake {
@@ -109,8 +117,8 @@ func (m *Stake) Clone() *Stake {
 		StakingPeriod:        m.StakingPeriod,
 		StakedTime:           m.StakedTime,
 		MovedFromSavingsTime: m.MovedFromSavingsTime,
+		MaturityTime:         m.MaturityTime,
 		StakeEndTime:         m.StakeEndTime,
-		LastNotifiedTime:     m.LastNotifiedTime,
 		UpdatedDate:          m.UpdatedDate,
 	}
 }

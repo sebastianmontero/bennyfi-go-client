@@ -43,7 +43,7 @@ var (
 	RexStatePreRex              = eos.Name("prerex")
 	RexStateInSavings           = eos.Name("insavings")
 	RexStateInLockPeriod        = eos.Name("lockperiod")
-	RexStateSold                = eos.Name("sold")
+	RexStateProceedsCalculated  = eos.Name("proceedscalc")
 	RexStateWithdrawn           = eos.Name("withdrawn")
 )
 
