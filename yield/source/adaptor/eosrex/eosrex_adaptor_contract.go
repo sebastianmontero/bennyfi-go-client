@@ -31,20 +31,21 @@ import (
 )
 
 var (
-	SettingBennyfiContract      = "BENNYFI_CONTRACT"
-	SettingTokenContract        = "TOKEN_CONTRACT"
-	SettingRexContract          = "REX_CONTRACT"
-	SettingRexDeposit_account   = "REX_DEPOSIT_ACCOUNT"
-	SettingBatchSize            = "BATCH_SIZE"
-	SettingMinStakingPeriod_hrs = "MIN_STAKING_PERIOD_HRS"
-	SettingMaxStakingPeriod_hrs = "MAX_STAKING_PERIOD_HRS"
-	SettingMinStakeAmount       = "MIN_STAKE_AMOUNT"
-	SettingMaxStakeAmount       = "MAX_STAKE_AMOUNT"
-	RexStatePreRex              = eos.Name("prerex")
-	RexStateInSavings           = eos.Name("insavings")
-	RexStateInLockPeriod        = eos.Name("lockperiod")
-	RexStateProceedsCalculated  = eos.Name("proceedscalc")
-	RexStateWithdrawn           = eos.Name("withdrawn")
+	SettingBennyfiContract                     = "BENNYFI_CONTRACT"
+	SettingTokenContract                       = "TOKEN_CONTRACT"
+	SettingRexContract                         = "REX_CONTRACT"
+	SettingRexDeposit_account                  = "REX_DEPOSIT_ACCOUNT"
+	SettingBatchSize                           = "BATCH_SIZE"
+	SettingMinStakingPeriod_hrs                = "MIN_STAKING_PERIOD_HRS"
+	SettingMaxStakingPeriod_hrs                = "MAX_STAKING_PERIOD_HRS"
+	SettingMinStakeAmount                      = "MIN_STAKE_AMOUNT"
+	SettingMaxStakeAmount                      = "MAX_STAKE_AMOUNT"
+	SettingProceedsCalculationBufferPeriodMins = "PROCEEDS_CALCULATION_BUFFER_PERIOD_MINS"
+	RexStatePreRex                             = eos.Name("prerex")
+	RexStateInSavings                          = eos.Name("insavings")
+	RexStateInLockPeriod                       = eos.Name("lockperiod")
+	RexStateProceedsCalculated                 = eos.Name("proceedscalc")
+	RexStateWithdrawn                          = eos.Name("withdrawn")
 )
 
 type EosRexContract struct {
@@ -75,9 +76,11 @@ func (m *EosRexContract) ExecAction(permissionLevel interface{}, action string, 
 func (m *EosRexContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) error {
 	openActions := []string{
 		"mvfrmsvngsrn",
-		"sellrexrn",
+		"clcproceedrn",
 		"withdrwrexrn",
 		"mvfrmsavings",
+		"updaterex",
+		"calcproceeds",
 		"sellrex",
 		"withdrawrex",
 	}
