@@ -7,6 +7,7 @@ import (
 
 	"github.com/sebastianmontero/bennyfi-go-client/yield/source/adaptor/eosrex"
 	"github.com/sebastianmontero/eos-go"
+	"github.com/sebastianmontero/eos-go-toolbox/dto"
 	"github.com/sebastianmontero/eos-go-toolbox/test"
 	"github.com/sebastianmontero/eos-go-toolbox/util"
 	"gotest.tools/assert"
@@ -113,9 +114,25 @@ func (m *TestUtil) AssertRexSold(rexBalance eos.Asset) {
 	}, 0)
 }
 
+func (m *TestUtil) AssertRexSellCalledNTimes(times int) {
+	m.AssertNumActions(m.rexContract, "sellrex", times)
+}
+
 func (m *TestUtil) AssertRexWithdrawn(amount eos.Asset) {
 	m.AssertAction(m.rexContract, "withdraw", map[string]interface{}{
 		"owner":  m.eosRexClient.ContractName,
 		"amount": amount.String(),
 	}, 0)
+}
+
+func (m *TestUtil) AssertRexWithdrawCalledNTimes(times int) {
+	m.AssertNumActions(m.rexContract, "withdraw", times)
+}
+
+func (m *TestUtil) LapseLastNotifiedTime(lastNotifiedSetting string, shift time.Duration) {
+	notificationPeriodMins, err := m.eosRexClient.SettingAsUint32(eosrex.SettingNotificationPeriodMins)
+	assert.NilError(m.T, err)
+	lastNotified := time.Now().Add(time.Duration(notificationPeriodMins)*time.Minute*-1 + shift)
+	_, err = m.eosRexClient.SetSetting(eos.AccountName(m.eosRexClient.ContractName), lastNotifiedSetting, dto.FlexValueFromTime(lastNotified))
+	assert.NilError(m.T, err)
 }

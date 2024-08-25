@@ -41,6 +41,9 @@ var (
 	SettingMinStakeAmount                      = "MIN_STAKE_AMOUNT"
 	SettingMaxStakeAmount                      = "MAX_STAKE_AMOUNT"
 	SettingProceedsCalculationBufferPeriodMins = "PROCEEDS_CALCULATION_BUFFER_PERIOD_MINS"
+	SettingNotificationPeriodMins              = "NOTIFICATION_PERIOD_MINS"
+	SettingFailedSellLastNotifiedTime          = "FAILED_SELL_LAST_NOTIFIED_TIME"
+	SettingFailedWithdrawLastNotifiedTime      = "FAILED_WITHDRAW_LAST_NOTIFIED_TIME"
 	RexStatePreRex                             = eos.Name("prerex")
 	RexStateInSavings                          = eos.Name("insavings")
 	RexStateInLockPeriod                       = eos.Name("lockperiod")

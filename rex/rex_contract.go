@@ -86,7 +86,7 @@ type PairTimePointSecInt64 struct {
 
 type RexBalance struct {
 	Version       uint8                   `json:"version"`
-	Owner         eos.Name                `json:"owner"`
+	Owner         eos.AccountName         `json:"owner"`
 	VoteStake     eos.Asset               `json:"vote_stake"`
 	RexBalance    eos.Asset               `json:"rex_balance"`
 	MaturedRex    int64                   `json:"matured_rex"`
@@ -94,19 +94,19 @@ type RexBalance struct {
 }
 
 type RexOrder struct {
-	Version      uint8         `json:"version"`
-	Owner        eos.Name      `json:"owner"`
-	RexRequested eos.Asset     `json:"rex_requested"`
-	Proceeds     eos.Asset     `json:"proceeds"`
-	StakeChange  eos.Asset     `json:"stake_change"`
-	OrderTime    eos.TimePoint `json:"order_time"`
-	IsOpen       bool          `json:"is_open"`
+	Version      uint8           `json:"version"`
+	Owner        eos.AccountName `json:"owner"`
+	RexRequested eos.Asset       `json:"rex_requested"`
+	Proceeds     eos.Asset       `json:"proceeds"`
+	StakeChange  eos.Asset       `json:"stake_change"`
+	OrderTime    eos.TimePoint   `json:"order_time"`
+	IsOpen       uint8           `json:"is_open"`
 }
 
 type RexFund struct {
-	Version uint8     `json:"version"`
-	Owner   eos.Name  `json:"owner"`
-	Balance eos.Asset `json:"balance"`
+	Version uint8           `json:"version"`
+	Owner   eos.AccountName `json:"owner"`
+	Balance eos.Asset       `json:"balance"`
 }
 
 type SetInitialPoolArgs struct {
@@ -234,12 +234,12 @@ func (m *RexContract) EraseRexBalance(owner eos.AccountName) (string, error) {
 	return m.ExecAction(m.ContractName, "eraserexbal", actionData)
 }
 
-func (m *RexContract) SetOrder(owner eos.AccountName, rexRequested eos.Asset, proceeds eos.Asset, isOpen bool) (string, error) {
+func (m *RexContract) SetOrder(owner eos.AccountName, rexRequested eos.Asset, proceeds eos.Asset, isOpen uint8) (string, error) {
 	actionData := struct {
 		Owner      eos.AccountName
 		RexRequest eos.Asset
 		Proceeds   eos.Asset
-		IsOpen     bool
+		IsOpen     uint8
 	}{owner, rexRequested, proceeds, isOpen}
 	return m.ExecAction(m.ContractName, "setorder", actionData)
 }
@@ -400,7 +400,7 @@ func (m *RexContract) GetInitialPool() (*InitialPool, error) {
 	return nil, nil
 }
 
-func (m *RexContract) GetRexBalance(owner eos.Name) (*RexBalance, error) {
+func (m *RexContract) GetRexBalance(owner eos.AccountName) (*RexBalance, error) {
 	entries, err := m.GetRexBalancesReq(&eos.GetTableRowsRequest{
 		LowerBound: string(owner),
 		UpperBound: string(owner),
@@ -429,7 +429,7 @@ func (m *RexContract) GetRexBalancesReq(req *eos.GetTableRowsRequest) ([]RexBala
 	return balances, nil
 }
 
-func (m *RexContract) GetOrder(owner eos.Name) (*RexOrder, error) {
+func (m *RexContract) GetOrder(owner eos.AccountName) (*RexOrder, error) {
 	entries, err := m.GetOrdersReq(&eos.GetTableRowsRequest{
 		LowerBound: string(owner),
 		UpperBound: string(owner),
@@ -458,7 +458,7 @@ func (m *RexContract) GetOrdersReq(req *eos.GetTableRowsRequest) ([]RexOrder, er
 	return orders, nil
 }
 
-func (m *RexContract) GetFund(owner eos.Name) (*RexFund, error) {
+func (m *RexContract) GetFund(owner eos.AccountName) (*RexFund, error) {
 	entries, err := m.GetFundsReq(&eos.GetTableRowsRequest{
 		LowerBound: string(owner),
 		UpperBound: string(owner),
