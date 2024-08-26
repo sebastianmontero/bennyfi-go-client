@@ -91,12 +91,13 @@ func (m *EosRexContract) WithdrawRex(callCounter uint64) (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "withdrawrex", callCounter)
 }
 
-func (m *EosRexContract) SetRexBalance(roundId uint64, rexBalance eos.Asset) (string, error) {
+func (m *EosRexContract) SetStake(roundId uint64, rexBalance eos.Asset, totalReturn eos.Asset, authorizer interface{}) (string, error) {
 	actionData := struct {
-		RoundId    uint64
-		rexBalance eos.Asset
-	}{roundId, rexBalance}
-	return m.ExecAction(eos.AN(m.ContractName), "setrexbal", actionData)
+		RoundId     uint64
+		RexBalance  eos.Asset
+		TotalReturn eos.Asset
+	}{roundId, rexBalance, totalReturn}
+	return m.ExecAction(m.GetValueOrContract(authorizer), "setstake", actionData)
 }
 
 func (m *EosRexContract) TstLapseTime(roundId uint64) (string, error) {

@@ -107,6 +107,16 @@ func (m *TestUtil) AssertRexMovedFromSavings(rexBalance eos.Asset) {
 	}, 0)
 }
 
+func (m *TestUtil) AssertUpdateRexCalled() {
+	m.AssertAction(m.rexContract, "updaterex", map[string]interface{}{
+		"owner": m.eosRexClient.ContractName,
+	}, 0)
+}
+
+func (m *TestUtil) AssertUpdateRexCalledNTimes(times int) {
+	m.AssertNumActions(m.rexContract, "updaterex", times)
+}
+
 func (m *TestUtil) AssertRexSold(rexBalance eos.Asset) {
 	m.AssertAction(m.rexContract, "sellrex", map[string]interface{}{
 		"from": m.eosRexClient.ContractName,
