@@ -43,9 +43,10 @@ var (
 )
 
 type Config struct {
-	TokenContract     eos.AccountName `json:"token_contract"`
-	LendableIncrement uint64          `json:"lendable_increment"`
-	Version           eos.Name        `json:"version"`
+	TokenContract        eos.AccountName `json:"token_contract"`
+	LendableIncrement    uint64          `json:"lendable_increment"`
+	Version              eos.Name        `json:"version"`
+	YieldAdaptorContract eos.AccountName `json:"yield_adaptor_contract"`
 }
 
 type Balance struct {
@@ -115,11 +116,12 @@ type SetInitialPoolArgs struct {
 }
 
 type InitRexArgs struct {
-	TotalLendable     eos.Asset       `json:"total_lendable"`
-	TotalRex          eos.Asset       `json:"total_rex"`
-	LendableIncrement uint64          `json:"lendable_increment"`
-	TokenContract     eos.AccountName `json:"token_contract"`
-	Version           eos.Name        `json:"version"`
+	TotalLendable        eos.Asset       `json:"total_lendable"`
+	TotalRex             eos.Asset       `json:"total_rex"`
+	LendableIncrement    uint64          `json:"lendable_increment"`
+	TokenContract        eos.AccountName `json:"token_contract"`
+	Version              eos.Name        `json:"version"`
+	YieldAdaptorContract eos.AccountName `json:"yield_adaptor_contract"`
 }
 
 type SetLentArgs struct {
@@ -128,9 +130,10 @@ type SetLentArgs struct {
 }
 
 type InitConfArgs struct {
-	LendableIncrement uint64          `json:"lendable_increment"`
-	TokenContract     eos.AccountName `json:"token_contract"`
-	Version           eos.Name        `json:"version"`
+	LendableIncrement    uint64          `json:"lendable_increment"`
+	TokenContract        eos.AccountName `json:"token_contract"`
+	Version              eos.Name        `json:"version"`
+	YieldAdaptorContract eos.AccountName `json:"yield_adaptor_contract"`
 }
 
 type RexContract struct {
@@ -154,13 +157,14 @@ func (m *RexContract) ExecAction(permissionLevel interface{}, action string, act
 	return fmt.Sprintf("Tx ID: %v", resp.TransactionID), nil
 }
 
-func (m *RexContract) Init(totalLendable, totalRex eos.Asset, lendableIncrement uint64, tokenContract eos.AccountName, version eos.Name) (string, error) {
+func (m *RexContract) Init(totalLendable, totalRex eos.Asset, lendableIncrement uint64, tokenContract eos.AccountName, version eos.Name, yieldAdaptorContract eos.AccountName) (string, error) {
 	actionData := &InitRexArgs{
-		TotalLendable:     totalLendable,
-		TotalRex:          totalRex,
-		LendableIncrement: lendableIncrement,
-		TokenContract:     tokenContract,
-		Version:           version,
+		TotalLendable:        totalLendable,
+		TotalRex:             totalRex,
+		LendableIncrement:    lendableIncrement,
+		TokenContract:        tokenContract,
+		Version:              version,
+		YieldAdaptorContract: yieldAdaptorContract,
 	}
 
 	return m.ExecAction(m.ContractName, "init", actionData)
@@ -182,11 +186,12 @@ func (m *RexContract) SetLent(totalLent, totalUnlent eos.Asset) (string, error) 
 	return m.ExecAction(m.ContractName, "setlent", actionData)
 }
 
-func (m *RexContract) InitConf(lendableIncrement uint64, tokenContract eos.AccountName, version eos.Name) (string, error) {
+func (m *RexContract) InitConf(lendableIncrement uint64, tokenContract eos.AccountName, version eos.Name, yieldAdaptorContract eos.AccountName) (string, error) {
 	actionData := &InitConfArgs{
-		LendableIncrement: lendableIncrement,
-		TokenContract:     tokenContract,
-		Version:           version,
+		LendableIncrement:    lendableIncrement,
+		TokenContract:        tokenContract,
+		Version:              version,
+		YieldAdaptorContract: yieldAdaptorContract,
 	}
 
 	return m.ExecAction(m.ContractName, "initconf", actionData)
@@ -266,6 +271,24 @@ func (m *RexContract) LapseMaturities(owner eos.AccountName, numDays uint32, pro
 		CallCnt           uint64
 	}{owner, numDays, processMaturities, callCounter}
 	return m.ExecAction(m.ContractName, "lapsematrts", actionData)
+}
+
+func (m *RexContract) LapseMaturityAmount(owner eos.AccountName, amount int64, maturity eos.TimePointSec, timeBufferMins uint32) (string, error) {
+	actionData := struct {
+		Owner             eos.AccountName
+		Amount            int64
+		Maturity          eos.TimePointSec
+		TimeBufferMinutes uint32
+	}{owner, amount, maturity, timeBufferMins}
+	return m.ExecAction(m.ContractName, "lapsematamnt", actionData)
+}
+
+func (m *RexContract) MatureAmount(owner eos.AccountName, amount int64) (string, error) {
+	actionData := struct {
+		Owner  eos.AccountName
+		Amount int64
+	}{owner, amount}
+	return m.ExecAction(m.ContractName, "matureamount", actionData)
 }
 
 func (m *RexContract) ResetConf() (string, error) {
