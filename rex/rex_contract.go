@@ -85,12 +85,12 @@ type PairTimePointSecInt64 struct {
 }
 
 type RexBalance struct {
-	Version       uint8                   `json:"version"`
-	Owner         eos.AccountName         `json:"owner"`
-	VoteStake     eos.Asset               `json:"vote_stake"`
-	RexBalance    eos.Asset               `json:"rex_balance"`
-	MaturedRex    int64                   `json:"matured_rex"`
-	RexMaturities []PairTimePointSecInt64 `json:"rex_maturities"`
+	Version       uint8                    `json:"version"`
+	Owner         eos.AccountName          `json:"owner"`
+	VoteStake     eos.Asset                `json:"vote_stake"`
+	RexBalance    eos.Asset                `json:"rex_balance"`
+	MaturedRex    int64                    `json:"matured_rex"`
+	RexMaturities []*PairTimePointSecInt64 `json:"rex_maturities"`
 }
 
 type RexOrder struct {
@@ -258,6 +258,16 @@ func (m *RexContract) UpdateRex(owner eos.AccountName) (string, error) {
 	return m.ExecAction(m.ContractName, "updaterex", actionData)
 }
 
+func (m *RexContract) LapseMaturities(owner eos.AccountName, numDays uint32, processMaturities bool, callCounter uint64) (string, error) {
+	actionData := struct {
+		Owner             eos.AccountName
+		NumDays           uint32
+		ProcessMaturities bool
+		CallCnt           uint64
+	}{owner, numDays, processMaturities, callCounter}
+	return m.ExecAction(m.ContractName, "lapsematrts", actionData)
+}
+
 func (m *RexContract) ResetConf() (string, error) {
 	return m.ExecAction(m.ContractName, "resetconf", nil)
 }
@@ -341,7 +351,7 @@ func (m *RexContract) GetConfig() (*Config, error) {
 	return nil, nil
 }
 
-func (m *RexContract) GetBalance(owner eos.Name) (*Balance, error) {
+func (m *RexContract) GetBalance(owner eos.AccountName) (*Balance, error) {
 	entries, err := m.GetBalancesReq(&eos.GetTableRowsRequest{
 		LowerBound: string(owner),
 		UpperBound: string(owner),
