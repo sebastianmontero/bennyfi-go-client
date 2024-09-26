@@ -36,11 +36,12 @@ var (
 	DistributionMainNFT      = eos.Name("mainnft")
 	DistributionProjectToken = eos.Name("projecttoken")
 	DistributionProjectNFT   = eos.Name("projectnft")
-	OrderedDistributionNames = []eos.Name{DistributionMainNFT, DistributionMainToken, DistributionProjectNFT, DistributionProjectToken}
+	DistributionBonusToken   = eos.Name("bonustoken")
+	OrderedDistributionNames = []eos.Name{DistributionBonusToken, DistributionMainNFT, DistributionMainToken, DistributionProjectNFT, DistributionProjectToken}
 )
 
 func IsFTDistribution(distName eos.Name) bool {
-	return distName == DistributionMainToken || distName == DistributionProjectToken
+	return distName == DistributionMainToken || distName == DistributionProjectToken || distName == DistributionBonusToken
 }
 
 func IsNFTDistribution(distName eos.Name) bool {
