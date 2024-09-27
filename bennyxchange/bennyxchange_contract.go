@@ -21,7 +21,10 @@ var (
 	OfferTypeBuy  = eos.Name("buy")
 	OfferTypeSell = eos.Name("sell")
 
-	SettingBatchSize = "BATCH_SIZE"
+	SettingBatchSize            = "BATCH_SIZE"
+	SettingBuyerFeePercX100000  = "BUYER_FEE_PERC_X100000"
+	SettingSellerFeePercX100000 = "SELLER_FEE_PERC_X100000"
+	SettingFeesAccount          = "FEES_ACCOUNT"
 )
 
 type BaseOffer struct {
@@ -30,6 +33,8 @@ type BaseOffer struct {
 	OfferType        eos.Name        `json:"offer_type"`
 	ItemID           uint64          `json:"item_id"`
 	Price            eos.Asset       `json:"price"`
+	BuyerFee         eos.Asset       `json:"buyer_fee"`
+	SellerFee        eos.Asset       `json:"seller_fee"`
 	PoolName         string          `json:"pool_name"`
 	PoolType         eos.Name        `json:"pool_type"`
 	PoolStakeEndTime eos.TimePoint   `json:"pool_stake_end_time"`
@@ -41,6 +46,31 @@ func (m *BaseOffer) IsBuyOffer() bool {
 
 func (m *BaseOffer) IsSellOffer() bool {
 	return m.OfferType == OfferTypeSell
+}
+
+func (m *BaseOffer) Cost() eos.Asset {
+	return m.Price.Add(m.BuyerFee)
+}
+func (m *BaseOffer) Proceeds() eos.Asset {
+	return m.Price.Sub(m.SellerFee)
+}
+
+func (m *BaseOffer) TotalFees() eos.Asset {
+	return m.SellerFee.Add(m.BuyerFee)
+}
+
+func (m *BaseOffer) Complete(settingsClient *contract.SettingsContract) error {
+	buyerFeePerc, err := settingsClient.SettingAsUint32(SettingBuyerFeePercX100000)
+	if err != nil {
+		return err
+	}
+	sellerFeePerc, err := settingsClient.SettingAsUint32(SettingSellerFeePercX100000)
+	if err != nil {
+		return err
+	}
+	m.BuyerFee = util.CalculateAssetPercentage(m.Price, buyerFeePerc)
+	m.SellerFee = util.CalculateAssetPercentage(m.Price, sellerFeePerc)
+	return nil
 }
 
 type Offer struct {
