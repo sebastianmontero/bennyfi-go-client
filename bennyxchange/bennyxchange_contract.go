@@ -60,17 +60,33 @@ func (m *BaseOffer) TotalFees() eos.Asset {
 }
 
 func (m *BaseOffer) Complete(settingsClient *contract.SettingsContract) error {
+	buyerFee, err := CalculateBuyerFee(settingsClient, m.Price)
+	if err != nil {
+		return err
+	}
+	sellerFee, err := CalculateSellerFee(settingsClient, m.Price)
+	if err != nil {
+		return err
+	}
+	m.BuyerFee = buyerFee
+	m.SellerFee = sellerFee
+	return nil
+}
+
+func CalculateBuyerFee(settingsClient *contract.SettingsContract, price eos.Asset) (eos.Asset, error) {
 	buyerFeePerc, err := settingsClient.SettingAsUint32(SettingBuyerFeePercX100000)
 	if err != nil {
-		return err
+		return eos.Asset{}, err
 	}
+	return util.CalculateAssetPercentage(price, buyerFeePerc), nil
+}
+
+func CalculateSellerFee(settingsClient *contract.SettingsContract, price eos.Asset) (eos.Asset, error) {
 	sellerFeePerc, err := settingsClient.SettingAsUint32(SettingSellerFeePercX100000)
 	if err != nil {
-		return err
+		return eos.Asset{}, err
 	}
-	m.BuyerFee = util.CalculateAssetPercentage(m.Price, buyerFeePerc)
-	m.SellerFee = util.CalculateAssetPercentage(m.Price, sellerFeePerc)
-	return nil
+	return util.CalculateAssetPercentage(price, sellerFeePerc), nil
 }
 
 type Offer struct {
@@ -136,6 +152,26 @@ type MakeOfferArgs struct {
 	ItemID         uint64          `json:"item_id"`
 	Price          eos.Asset       `json:"price"`
 	ExpirationTime eos.TimePoint   `json:"expiration_time"`
+}
+
+func (m *MakeOfferArgs) ToOffer() *Offer {
+	var buyer eos.AccountName
+	var seller eos.AccountName
+	if m.OfferType == OfferTypeBuy {
+		buyer = m.Who
+	} else {
+		seller = m.Who
+	}
+	return &Offer{
+		BaseOffer: &BaseOffer{
+			Buyer:     buyer,
+			Seller:    seller,
+			OfferType: m.OfferType,
+			ItemID:    m.ItemID,
+			Price:     m.Price,
+		},
+		ExpirationTime: m.ExpirationTime,
+	}
 }
 
 type BennyXchangeContract struct {
