@@ -145,6 +145,11 @@ func (m *AcceptedOffer) String() string {
 	return string(result)
 }
 
+type FullOffer struct {
+	*Offer
+	ExchangeType eos.Name `json:"exchange_type"`
+}
+
 type MakeOfferArgs struct {
 	Who            eos.AccountName `json:"who"`
 	OfferType      eos.Name        `json:"offer_type"`
