@@ -167,10 +167,6 @@ func (m *Round) CalculateMaxTotalDeposits() eos.Asset {
 	return totalStake
 }
 
-func (m *Round) GetTotalEntryFee() eos.Asset {
-	return m.BeneficiaryEntryFee.Add(m.RoundManagerEntryFee).Add(util.MultiplyAsset(m.ParticipantEntryFee, int64(m.NumParticipants)))
-}
-
 func (m *Round) NumEntriesToClose() uint32 {
 	return m.NumParticipants - m.NumParticipantsEntered
 }
@@ -297,6 +293,10 @@ func (m *Round) CalculateEntryFees(settings *EntryFeeSettings, term *Term) {
 	m.RoundManagerEntryFee = roundManagerEntryFee
 	m.BeneficiaryEntryFee = beneficiaryEntryFee
 	m.ParticipantEntryFee = participantEntryFee
+}
+
+func (m *Round) GetTotalEntryFee() eos.Asset {
+	return m.BeneficiaryEntryFee.Add(m.RoundManagerEntryFee).Add(util.MultiplyAsset(m.ParticipantEntryFee, int64(m.NumParticipantsEntered)))
 }
 
 func (m *Round) CalculateReturns(entryOwner eos.AccountName, distName eos.Name, isEarlyExit bool, earlyExitFeePerc uint32) interface{} {
@@ -448,8 +448,8 @@ func (m *BennyfiContract) StartRounds(callCounter uint64) (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "startpools", callCounter)
 }
 
-func (m *BennyfiContract) TimeoutRounds(callCounter uint64) (string, error) {
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "timeoutpools", callCounter)
+func (m *BennyfiContract) EndEnrollment(callCounter uint64) (string, error) {
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "endenrollmnt", callCounter)
 }
 
 func (m *BennyfiContract) UnlockRounds(callCounter uint64) (string, error) {

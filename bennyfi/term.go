@@ -24,8 +24,14 @@ package bennyfi
 import (
 	"fmt"
 
+	"github.com/sebastianmontero/bennyfi-go-client/common/types"
 	eos "github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/dto"
+	"github.com/sebastianmontero/eos-go-toolbox/util"
+)
+
+var (
+	MaxParticipants = "max_participants"
 )
 
 type DefaultValue struct {
@@ -80,9 +86,8 @@ type Term struct {
 	DefaultValues            DefaultValues           `json:"default_values"`
 	CreatedDate              eos.TimePoint           `json:"created_date"`
 	UpdatedDate              eos.TimePoint           `json:"updated_date"`
+	AdditionalFields         types.AdditionalFields  `json:"additional_fields"`
 	*Deletable
-	// NOT USED AT THE MOMENT
-	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
 }
 
 type TermCustomJSON struct {
@@ -148,12 +153,48 @@ func (m *Term) RequiresBeneficiary() bool {
 	return m.DistributionDefinitions.Has(DistributionProjectToken) || m.DistributionDefinitions.Has(DistributionProjectNFT)
 }
 
+func (m *Term) GetMaxParticipants() uint32 {
+	if m.AdditionalFields.Has(MaxParticipants) {
+		return m.AdditionalFields.GetValue(MaxParticipants).Uint32()
+	}
+	return m.NumParticipants
+}
+
+func (m *Term) SetMaxParticipants(maxParticipants uint32) {
+	m.AdditionalFields.Set(MaxParticipants, dto.FlexValueFromUint32(maxParticipants))
+}
+
+func (m *Term) RemoveMaxParticipants(maxParticipants uint32) {
+	m.AdditionalFields.Set(MaxParticipants, dto.FlexValueFromUint32(maxParticipants))
+}
+
+func (m *Term) GetMaxParticipantsArg() int32 {
+	maxParticipants := int32(-1)
+	if m.GetMaxParticipants() > m.NumParticipants {
+		maxParticipants = int32(m.GetMaxParticipants())
+	}
+	return maxParticipants
+}
+
+func (m *Term) GetMinStakeAmount() eos.Asset {
+	return util.MultiplyAsset(m.EntryStake, int64(m.NumParticipants))
+}
+
+func (m *Term) GetMaxStakeAmount() eos.Asset {
+	return util.MultiplyAsset(m.EntryStake, int64(m.GetMaxParticipants()))
+}
+
+func (m *Term) ToNewTermArgs() *NewTermArgs {
+	return TermToNewTermArgs(m)
+}
+
 type NewTermArgs struct {
 	Authorizer               eos.AccountName         `json:"authorizer"`
 	TermName                 string                  `json:"term_name"`
 	RoundType                eos.Name                `json:"pool_type"`
 	RoundAccess              eos.Name                `json:"pool_access"`
 	NumParticipants          uint32                  `json:"num_participants"`
+	MaxNumParticipants       int32                   `json:"max_num_participants"`
 	EntryStake               eos.Asset               `json:"entry_stake"`
 	StakingPeriodHrs         uint32                  `json:"staking_period_hrs"`
 	EnrollmentTimeOutHrs     uint32                  `json:"enrollment_time_out_hrs"`
@@ -170,6 +211,7 @@ func TermToNewTermArgs(terms *Term) *NewTermArgs {
 		RoundType:                terms.RoundType,
 		RoundAccess:              terms.RoundAccess,
 		NumParticipants:          terms.NumParticipants,
+		MaxNumParticipants:       terms.GetMaxParticipantsArg(),
 		EntryStake:               terms.EntryStake,
 		StakingPeriodHrs:         uint32(terms.StakingPeriod.Hrs()),
 		EnrollmentTimeOutHrs:     uint32(terms.EnrollmentTimeOut.Hrs()),

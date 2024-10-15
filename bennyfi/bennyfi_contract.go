@@ -84,7 +84,7 @@ func (m *BennyfiContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) erro
 	openActions := []string{
 		"startpool",
 		"startpools",
-		"timeoutpools",
+		"endenrollmnt",
 		"unlockpool",
 		"unlockpools",
 		"redraw",
