@@ -43,6 +43,13 @@ func (m *DefaultValue) String() string {
 	return fmt.Sprintf("Key: %v, Value: %v", m.Key, m.Value)
 }
 
+func (m *DefaultValue) Clone() *DefaultValue {
+	return &DefaultValue{
+		Key:   m.Key,
+		Value: m.Value.Clone(),
+	}
+}
+
 type DefaultValues []*DefaultValue
 
 func (m DefaultValues) ToMap() map[string]interface{} {
@@ -51,6 +58,14 @@ func (m DefaultValues) ToMap() map[string]interface{} {
 		defaultValueMap[defaultValueEntry.Key] = defaultValueEntry.Value.Impl
 	}
 	return defaultValueMap
+}
+
+func (m DefaultValues) Clone() DefaultValues {
+	clone := make(DefaultValues, len(m))
+	for i, v := range m {
+		clone[i] = v.Clone()
+	}
+	return clone
 }
 
 func (m DefaultValues) FindPos(key string) int {
@@ -186,6 +201,29 @@ func (m *Term) GetMaxStakeAmount() eos.Asset {
 
 func (m *Term) ToNewTermArgs() *NewTermArgs {
 	return TermToNewTermArgs(m)
+}
+
+func (m *Term) Clone() *Term {
+
+	return &Term{
+		TermID:                   m.TermID,
+		TermName:                 m.TermName,
+		Authorizer:               m.Authorizer,
+		RoundType:                m.RoundType,
+		RoundAccess:              m.RoundAccess,
+		NumParticipants:          m.NumParticipants,
+		EntryStake:               m.EntryStake,
+		StakingPeriod:            m.StakingPeriod.Clone(),
+		EnrollmentTimeOut:        m.EnrollmentTimeOut.Clone(),
+		BeneficiaryEntryFeePerc:  m.BeneficiaryEntryFeePerc,
+		RoundManagerEntryFeePerc: m.RoundManagerEntryFeePerc,
+		DistributionDefinitions:  m.DistributionDefinitions.Clone(),
+		DefaultValues:            m.DefaultValues.Clone(),
+		CreatedDate:              m.CreatedDate,
+		UpdatedDate:              m.UpdatedDate,
+		AdditionalFields:         m.AdditionalFields.Clone(),
+		Deletable:                m.Deletable.Clone(),
+	}
 }
 
 type NewTermArgs struct {

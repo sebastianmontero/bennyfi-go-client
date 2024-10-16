@@ -106,3 +106,21 @@ func (p *Config) Remove(key string) *ConfigEntry {
 	}
 	return nil
 }
+
+func (m Config) Clone() Config {
+	clone := make(Config, len(m))
+	for i, v := range m {
+		clone[i] = v.Clone()
+	}
+	return clone
+}
+
+func (m *ConfigEntry) Clone() *ConfigEntry {
+	if m == nil {
+		return nil
+	}
+	return &ConfigEntry{
+		Key:   m.Key,
+		Value: m.Value.Clone(),
+	}
+}

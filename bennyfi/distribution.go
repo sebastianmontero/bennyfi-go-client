@@ -22,6 +22,7 @@
 package bennyfi
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/sebastianmontero/bennyfi-go-client/util/utype"
@@ -38,6 +39,7 @@ type IDistribution interface {
 	Paid()
 	HasBeneficiaryReward() bool
 	HasRoundManagerFee() bool
+	String() string
 }
 
 type DistributionFT struct {
@@ -105,6 +107,14 @@ func (m *DistributionFT) GetWinnerPrize(pos uint32) eos.Asset {
 	return m.WinnerPrizes[pos]
 }
 
+func (m *DistributionFT) String() string {
+	result, err := json.Marshal(m)
+	if err != nil {
+		panic(fmt.Sprintf("Failed marshalling round: %v", err))
+	}
+	return string(result)
+}
+
 type DistributionNFT struct {
 	BeneficiaryReward     uint16   `json:"beneficiary_reward"`
 	BeneficiaryRewardPaid uint16   `json:"beneficiary_reward_paid"`
@@ -151,6 +161,14 @@ func (m *DistributionNFT) PaidRoundManagerFee(amount interface{}) {
 func (m *DistributionNFT) Paid() {
 	m.PaidTotalBeneficiaryReward()
 	m.PaidTotalRoundManagerFee()
+}
+
+func (m *DistributionNFT) String() string {
+	result, err := json.Marshal(m)
+	if err != nil {
+		panic(fmt.Sprintf("Failed marshalling round: %v", err))
+	}
+	return string(result)
 }
 
 var DistributionVariant = eos.NewVariantDefinition([]eos.VariantType{
@@ -200,6 +218,10 @@ func (m *Distribution) HasBeneficiaryReward() bool {
 
 func (m *Distribution) HasRoundManagerFee() bool {
 	return m.Impl.(IDistribution).HasRoundManagerFee()
+}
+
+func (m *Distribution) String() string {
+	return m.Impl.(IDistribution).String()
 }
 
 func (m *Distribution) DistributionNFT() *DistributionNFT {

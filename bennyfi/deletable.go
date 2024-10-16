@@ -23,3 +23,12 @@ func (m *Deletable) IsDeleted() bool {
 	deletedDate := m.GetDeletedDate()
 	return deletedDate.Unix() > 0
 }
+
+func (m *Deletable) Clone() *Deletable {
+	if m == nil {
+		return nil
+	}
+	return &Deletable{
+		DeletedDate: m.DeletedDate,
+	}
+}

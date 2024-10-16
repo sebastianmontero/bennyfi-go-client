@@ -40,6 +40,12 @@ type VestingConfig struct {
 	Config `json:"config"`
 }
 
+func (m *VestingConfig) Clone() *VestingConfig {
+	return &VestingConfig{
+		Config: m.Config.Clone(),
+	}
+}
+
 func NewNoVestingConfig() *VestingConfig {
 	return &VestingConfig{
 		Config: make(Config, 0),

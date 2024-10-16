@@ -32,6 +32,13 @@ type AdditionalField struct {
 	Value *dto.FlexValue `json:"second"`
 }
 
+func (m AdditionalField) Clone() *AdditionalField {
+	return &AdditionalField{
+		Key:   m.Key,
+		Value: m.Value,
+	}
+}
+
 type AdditionalFields []*AdditionalField
 
 func (m AdditionalFields) FindPos(key string) int {
@@ -69,6 +76,14 @@ func (m AdditionalFields) GetValue(key string) *dto.FlexValue {
 		panic(fmt.Sprintf("%v not found in additional fields", key))
 	}
 	return field.Value
+}
+
+func (m AdditionalFields) Clone() AdditionalFields {
+	clone := make(AdditionalFields, len(m))
+	for i, attr := range m {
+		clone[i] = attr.Clone()
+	}
+	return clone
 }
 
 func (p *AdditionalFields) Set(key string, value *dto.FlexValue) {

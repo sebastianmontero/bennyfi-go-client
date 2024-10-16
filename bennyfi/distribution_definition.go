@@ -49,6 +49,7 @@ func IsNFTDistribution(distName eos.Name) bool {
 }
 
 type IDistributionDefinition interface {
+	Clone() interface{}
 	GetNumWinners() int
 	HasBeneficiaryReward() bool
 	HasVesting() bool
@@ -77,6 +78,12 @@ func (m *BaseDistributionDefinition) GetVesting() *VestingConfig {
 	return m.VestingConfig
 }
 
+func (m *BaseDistributionDefinition) Clone() *BaseDistributionDefinition {
+	return &BaseDistributionDefinition{
+		VestingConfig: m.VestingConfig.Clone(),
+	}
+}
+
 type DistributionDefinitionFT struct {
 	AllParticipantsPerc uint32    `json:"all_participants_perc_x100000"`
 	BeneficiaryPerc     uint32    `json:"beneficiary_perc_x100000"`
@@ -85,6 +92,18 @@ type DistributionDefinitionFT struct {
 	Reward              eos.Asset `json:"reward"`
 	YieldSource         eos.Name  `json:"yield_source"`
 	*BaseDistributionDefinition
+}
+
+func (m *DistributionDefinitionFT) Clone() interface{} {
+	return &DistributionDefinitionFT{
+		AllParticipantsPerc:        m.AllParticipantsPerc,
+		BeneficiaryPerc:            m.BeneficiaryPerc,
+		RoundManagerPerc:           m.RoundManagerPerc,
+		WinnersPerc:                m.WinnersPerc,
+		Reward:                     m.Reward,
+		YieldSource:                m.YieldSource,
+		BaseDistributionDefinition: m.BaseDistributionDefinition.Clone(),
+	}
 }
 
 type DistributionDefinitionFTCustomJSON struct {
@@ -115,10 +134,12 @@ func (m *DistributionDefinitionFT) CalculateDistribution(numParticipantsEntered 
 	rewardToAllParticipants := reward * float64((float64(m.AllParticipantsPerc) / percAdj))
 	rewardToBeneficiary := reward * float64((float64(m.BeneficiaryPerc) / percAdj))
 	feeToManager := reward * float64((float64(m.RoundManagerPerc) / percAdj))
+	// fmt.Printf("rewardToAllParticipants: %f, rewardToBeneficiary: %f, feeToManager: %f\n", rewardToAllParticipants, rewardToBeneficiary, feeToManager)
 	minParticipantReward := eos.Asset{Amount: eos.Int64((rewardToAllParticipants / float64(numParticipantsEntered)) * float64(precisionAdj)), Symbol: totalReward.Symbol}
 	beneficiaryReward := eos.Asset{Amount: eos.Int64(rewardToBeneficiary * float64(precisionAdj)), Symbol: totalReward.Symbol}
 	managerFee := eos.Asset{Amount: eos.Int64(feeToManager * float64(precisionAdj)), Symbol: totalReward.Symbol}
 	remaining := totalReward.Sub(beneficiaryReward).Sub(managerFee).Sub(util.MultiplyAsset(minParticipantReward, int64(numParticipantsEntered)))
+	// fmt.Printf("minParticipantReward: %s, beneficiaryReward: %s, managerFee: %s, remaining: %s\n", minParticipantReward.String(), beneficiaryReward.String(), managerFee.String(), remaining.String())
 	winnerPrizes := make([]eos.Asset, 0)
 	if m.GetNumWinners() > 0 {
 		winnerPrize := remaining
@@ -199,6 +220,16 @@ func (m *DistributionDefinitionNFT) HasBeneficiaryReward() bool {
 	return m.BeneficiaryReward > 0
 }
 
+func (m *DistributionDefinitionNFT) Clone() interface{} {
+	return &DistributionDefinitionNFT{
+		EachParticipantReward: m.EachParticipantReward,
+		BeneficiaryReward:     m.BeneficiaryReward,
+		RoundManagerFee:       m.RoundManagerFee,
+		WinnerPrizes:          m.WinnerPrizes,
+		NFTConfig:             m.NFTConfig,
+	}
+}
+
 var DistributionDefinitionVariant = eos.NewVariantDefinition([]eos.VariantType{
 	{Name: "DistributionDefinitionFT", Type: &DistributionDefinitionFT{}},
 	{Name: "DistributionDefinitionNFT", Type: &DistributionDefinitionNFT{}},
@@ -277,9 +308,20 @@ func (m *DistributionDefinition) UnmarshalBinary(decoder *eos.Decoder) error {
 	return m.BaseVariant.UnmarshalBinaryVariant(decoder, DistributionDefinitionVariant)
 }
 
+func (m *DistributionDefinition) Clone() *DistributionDefinition {
+	return NewDistributionDefinition(m.Impl.(IDistributionDefinition).Clone())
+}
+
 type DistributionDefinitionEntry struct {
 	Key   eos.Name                `json:"first"`
 	Value *DistributionDefinition `json:"second"`
+}
+
+func (m *DistributionDefinitionEntry) Clone() *DistributionDefinitionEntry {
+	return &DistributionDefinitionEntry{
+		Key:   m.Key,
+		Value: m.Value.Clone(),
+	}
 }
 
 type DistributionDefinitions []*DistributionDefinitionEntry
@@ -427,4 +469,12 @@ func (m DistributionDefinitions) GetVestingTrackers() VestingTrackers {
 
 func (m DistributionDefinitions) GetVestingContext(cycle uint16, startTime eos.TimePoint) *VestingContext {
 	return m.GetVestingTrackers().GetContextForCycle(cycle, startTime)
+}
+
+func (m DistributionDefinitions) Clone() DistributionDefinitions {
+	dists := make(DistributionDefinitions, 0, len(m))
+	for _, distDefEntry := range m {
+		dists = append(dists, distDefEntry.Clone())
+	}
+	return dists
 }
