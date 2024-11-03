@@ -31,7 +31,8 @@ import (
 )
 
 var (
-	MaxParticipants = "max_participants"
+	MaxParticipants          = "max_participants"
+	MaxEntriesPerParticipant = "max_entries_per_participant"
 )
 
 type DefaultValue struct {
@@ -179,8 +180,8 @@ func (m *Term) SetMaxParticipants(maxParticipants uint32) {
 	m.AdditionalFields.Set(MaxParticipants, dto.FlexValueFromUint32(maxParticipants))
 }
 
-func (m *Term) RemoveMaxParticipants(maxParticipants uint32) {
-	m.AdditionalFields.Set(MaxParticipants, dto.FlexValueFromUint32(maxParticipants))
+func (m *Term) RemoveMaxParticipants() {
+	m.AdditionalFields.Remove(MaxParticipants)
 }
 
 func (m *Term) GetMaxParticipantsArg() int32 {
@@ -189,6 +190,21 @@ func (m *Term) GetMaxParticipantsArg() int32 {
 		maxParticipants = int32(m.GetMaxParticipants())
 	}
 	return maxParticipants
+}
+
+func (m *Term) GetMaxEntriesPerParticipant() uint32 {
+	if m.AdditionalFields.Has(MaxEntriesPerParticipant) {
+		return m.AdditionalFields.GetValue(MaxEntriesPerParticipant).Uint32()
+	}
+	return 1
+}
+
+func (m *Term) SetMaxEntriesPerParticipant(maxEntriesPerParticipant uint32) {
+	m.AdditionalFields.Set(MaxEntriesPerParticipant, dto.FlexValueFromUint32(maxEntriesPerParticipant))
+}
+
+func (m *Term) RemoveMaxEntriesPerParticipants() {
+	m.AdditionalFields.Remove(MaxEntriesPerParticipant)
 }
 
 func (m *Term) GetMinStakeAmount() eos.Asset {
@@ -233,6 +249,7 @@ type NewTermArgs struct {
 	RoundAccess              eos.Name                `json:"pool_access"`
 	NumParticipants          uint32                  `json:"num_participants"`
 	MaxNumParticipants       int32                   `json:"max_num_participants"`
+	MaxEntriesPerParticipant uint32                  `json:"max_entries_per_participant"`
 	EntryStake               eos.Asset               `json:"entry_stake"`
 	StakingPeriodHrs         uint32                  `json:"staking_period_hrs"`
 	EnrollmentTimeOutHrs     uint32                  `json:"enrollment_time_out_hrs"`
@@ -250,6 +267,7 @@ func TermToNewTermArgs(terms *Term) *NewTermArgs {
 		RoundAccess:              terms.RoundAccess,
 		NumParticipants:          terms.NumParticipants,
 		MaxNumParticipants:       terms.GetMaxParticipantsArg(),
+		MaxEntriesPerParticipant: terms.GetMaxEntriesPerParticipant(),
 		EntryStake:               terms.EntryStake,
 		StakingPeriodHrs:         uint32(terms.StakingPeriod.Hrs()),
 		EnrollmentTimeOutHrs:     uint32(terms.EnrollmentTimeOut.Hrs()),

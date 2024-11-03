@@ -97,3 +97,16 @@ func (p *AdditionalFields) Set(key string, value *dto.FlexValue) {
 	}
 	*p = m
 }
+
+func (p *AdditionalFields) Remove(key string) *AdditionalField {
+	m := *p
+	pos := m.FindPos(key)
+	if pos >= 0 {
+		def := m[pos]
+		m[pos] = m[len(m)-1]
+		m = m[:len(m)-1]
+		*p = m
+		return def
+	}
+	return nil
+}
