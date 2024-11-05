@@ -32,6 +32,7 @@ import (
 
 type IReturn interface {
 	HasReturns() bool
+	NotificationMsg() string
 }
 
 type ReturnsFT struct {
@@ -45,7 +46,20 @@ func (m *ReturnsFT) HasReturns() bool {
 	return m.GetTotalReturn().Amount > 0
 }
 
+func (m *ReturnsFT) NotificationMsg() string {
+	msg := fmt.Sprintf("Minimum Payout: %v. ", m.MinimumPayout)
+	if m.Prize.Amount > 0 {
+		msg += fmt.Sprintf("Winner Prize: %v. ", m.Prize)
+	}
+	if m.EarlyExitReturnFee.Amount > 0 {
+		msg += fmt.Sprintf("The early exit return fee was: %v, it includes the forfeited minimum payout. ", m.EarlyExitReturnFee)
+	}
+	msg += fmt.Sprintf("Your total return: %v.", m.GetTotalReturn())
+	return msg
+}
+
 func (m *ReturnsFT) GetTotalReturn() eos.Asset {
+	fmt.Printf("Getting total return. Prize: %v, Minimum payout: %v \n", m.Prize, m.MinimumPayout)
 	return m.Prize.Add(m.MinimumPayout)
 }
 
@@ -73,6 +87,15 @@ type ReturnsNFT struct {
 
 func (m *ReturnsNFT) HasReturns() bool {
 	return m.GetTotalReturn() > 0
+}
+
+func (m *ReturnsNFT) NotificationMsg() string {
+	msg := fmt.Sprintf("Minimum Payout: %v. NFT(s). ", m.MinimumPayout)
+	if m.Prize > 0 {
+		msg += fmt.Sprintf("Winner Prize: %v. NFT(s). ", m.Prize)
+	}
+	msg += fmt.Sprintf("Your total return: %v. NFT(s).", m.GetTotalReturn())
+	return msg
 }
 
 func (m *ReturnsNFT) GetTotalReturn() uint16 {

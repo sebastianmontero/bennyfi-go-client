@@ -1,6 +1,7 @@
 package bennyfi
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/sebastianmontero/bennyfi-go-client/util/utype"
@@ -10,10 +11,12 @@ import (
 
 type IDistributionWinners interface {
 	FindPos(account interface{}) int
+	FindPosByEntryPos(entryPos uint64) int
 	Upsert(winner interface{}) interface{}
 	Get(pos int) interface{}
 	AssignPrizes(dist *Distribution) error
 	Len() int
+	String() string
 }
 
 type DistributionWinnersFT []*WinnerFT
@@ -27,13 +30,23 @@ func (m DistributionWinnersFT) FindPos(account interface{}) int {
 	return -1
 }
 
+func (m DistributionWinnersFT) FindPosByEntryPos(entryPos uint64) int {
+	for i, winner := range m {
+		fmt.Printf("finding winner, entry pos: %v, winner entry pos: %v \n", entryPos, winner)
+		if winner.EntryPosition == entryPos {
+			return i
+		}
+	}
+	return -1
+}
+
 func (m DistributionWinnersFT) Get(pos int) interface{} {
 	return m[pos]
 }
 
 func (m DistributionWinnersFT) Upsert(winner interface{}) interface{} {
 	winnerFT := winner.(*WinnerFT)
-	pos := m.FindPos(winnerFT.Participant)
+	pos := m.FindPosByEntryPos(winnerFT.EntryPosition)
 	if pos >= 0 {
 		m[pos] = winnerFT
 	} else {
@@ -45,7 +58,7 @@ func (m DistributionWinnersFT) Upsert(winner interface{}) interface{} {
 func (m DistributionWinnersFT) AssignPrizes(dist *Distribution) error {
 	prizes := dist.DistributionFT().WinnerPrizes
 	if len(m) != len(prizes) {
-		return fmt.Errorf("failed FT assigning prizes, the numnber of winners: %v is different from the number of prizes: %v", len(m), len(prizes))
+		return fmt.Errorf("failed FT assigning prizes, the number of winners: %v is different from the number of prizes: %v", len(m), len(prizes))
 	}
 	for i, prize := range prizes {
 		m[i].Prize = prize
@@ -55,6 +68,14 @@ func (m DistributionWinnersFT) AssignPrizes(dist *Distribution) error {
 
 func (m DistributionWinnersFT) Len() int {
 	return len(m)
+}
+
+func (m DistributionWinnersFT) String() string {
+	result, err := json.Marshal(m)
+	if err != nil {
+		panic(fmt.Sprintf("Failed marshalling round: %v", err))
+	}
+	return string(result)
 }
 
 type DistributionWinnersNFT []*WinnerNFT
@@ -68,13 +89,22 @@ func (m DistributionWinnersNFT) FindPos(account interface{}) int {
 	return -1
 }
 
+func (m DistributionWinnersNFT) FindPosByEntryPos(entryPos uint64) int {
+	for i, winner := range m {
+		if winner.EntryPosition == entryPos {
+			return i
+		}
+	}
+	return -1
+}
+
 func (m DistributionWinnersNFT) Get(pos int) interface{} {
 	return m[pos]
 }
 
 func (m DistributionWinnersNFT) Upsert(winner interface{}) interface{} {
 	winnerNFT := winner.(*WinnerNFT)
-	pos := m.FindPos(winnerNFT.Participant)
+	pos := m.FindPosByEntryPos(winnerNFT.EntryPosition)
 	if pos >= 0 {
 		m[pos] = winnerNFT
 	} else {
@@ -96,6 +126,14 @@ func (m DistributionWinnersNFT) AssignPrizes(dist *Distribution) error {
 
 func (m DistributionWinnersNFT) Len() int {
 	return len(m)
+}
+
+func (m DistributionWinnersNFT) String() string {
+	result, err := json.Marshal(m)
+	if err != nil {
+		panic(fmt.Sprintf("Failed marshalling round: %v", err))
+	}
+	return string(result)
 }
 
 var DistributionWinnersVariant = eos.NewVariantDefinition([]eos.VariantType{
@@ -132,8 +170,8 @@ func NewDistributionWinnersFromWinner(value interface{}) *DistributionWinners {
 
 }
 
-func (m *DistributionWinners) FindPos(account interface{}) int {
-	return m.Impl.(IDistributionWinners).FindPos(account)
+func (m *DistributionWinners) FindPos(entryPos uint64) int {
+	return m.Impl.(IDistributionWinners).FindPosByEntryPos(entryPos)
 }
 
 func (m *DistributionWinners) Upsert(winner interface{}) {
@@ -144,24 +182,24 @@ func (m *DistributionWinners) Len() int {
 	return m.Impl.(IDistributionWinners).Len()
 }
 
-func (m *DistributionWinners) Find(account interface{}) interface{} {
-	pos := m.FindPos(account)
+func (m *DistributionWinners) Find(entryPos uint64) interface{} {
+	pos := m.FindPos(entryPos)
 	if pos >= 0 {
 		return m.Impl.(IDistributionWinners).Get(pos)
 	}
 	return nil
 }
 
-func (m *DistributionWinners) FindFT(account interface{}) *WinnerFT {
-	winner := m.Find(account)
+func (m *DistributionWinners) FindFT(entryPos uint64) *WinnerFT {
+	winner := m.Find(entryPos)
 	if winner != nil {
 		return winner.(*WinnerFT)
 	}
 	return nil
 }
 
-func (m *DistributionWinners) FindNFT(account interface{}) *WinnerNFT {
-	winner := m.Find(account)
+func (m *DistributionWinners) FindNFT(entryPos uint64) *WinnerNFT {
+	winner := m.Find(entryPos)
 	if winner != nil {
 		return winner.(*WinnerNFT)
 	}
@@ -274,20 +312,28 @@ func (m Winners) FindNFT(key eos.Name) DistributionWinnersNFT {
 	return nil
 }
 
-func (m Winners) FindWinnerFT(key eos.Name, account interface{}) *WinnerFT {
+func (m Winners) FindWinnerFT(key eos.Name, entryPos uint64) *WinnerFT {
 	v := m.Find(key)
 	if v != nil {
-		return v.Value.FindFT(account)
+		return v.Value.FindFT(entryPos)
 	}
 	return nil
 }
 
-func (m Winners) FindWinnerNFT(key eos.Name, account interface{}) *WinnerNFT {
+func (m Winners) FindWinnerNFT(key eos.Name, entryPos uint64) *WinnerNFT {
 	v := m.Find(key)
 	if v != nil {
-		return v.Value.FindNFT(account)
+		return v.Value.FindNFT(entryPos)
 	}
 	return nil
+}
+
+func (m Winners) String() string {
+	result, err := json.Marshal(m)
+	if err != nil {
+		panic(fmt.Sprintf("Failed marshalling round: %v", err))
+	}
+	return string(result)
 }
 
 func (p *Winners) Upsert(key eos.Name, winner interface{}) {

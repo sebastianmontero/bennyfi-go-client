@@ -299,12 +299,13 @@ func (m *Round) GetTotalEntryFee() eos.Asset {
 	return m.BeneficiaryEntryFee.Add(m.RoundManagerEntryFee).Add(util.MultiplyAsset(m.ParticipantEntryFee, int64(m.NumParticipantsEntered)))
 }
 
-func (m *Round) CalculateReturns(entryOwner eos.AccountName, distName eos.Name, isEarlyExit bool, earlyExitFeePerc uint32) interface{} {
+func (m *Round) CalculateReturns(entryPos uint64, distName eos.Name, isEarlyExit bool, earlyExitFeePerc uint32) interface{} {
 
 	if IsFTDistribution(distName) {
 		dist := m.Distributions.FindFT(distName)
 		minParticipantReward := dist.MinParticipantReward
-		winner := m.Winners.FindWinnerFT(distName, entryOwner)
+		fmt.Printf("Winners: %v\n", m.Winners)
+		winner := m.Winners.FindWinnerFT(distName, entryPos)
 		winnerPrize := eos.Asset{Amount: 0, Symbol: minParticipantReward.Symbol}
 		if winner != nil {
 			winnerPrize = winner.Prize
@@ -323,7 +324,7 @@ func (m *Round) CalculateReturns(entryOwner eos.AccountName, distName eos.Name, 
 		}
 	} else {
 		dist := m.Distributions.FindNFT(distName)
-		winner := m.Winners.FindWinnerNFT(distName, entryOwner)
+		winner := m.Winners.FindWinnerNFT(distName, entryPos)
 		winnerPrize := uint16(0)
 		if winner != nil {
 			winnerPrize = winner.Prize

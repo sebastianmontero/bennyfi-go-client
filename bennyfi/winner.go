@@ -22,6 +22,7 @@
 package bennyfi
 
 import (
+	"encoding/json"
 	"fmt"
 
 	eos "github.com/sebastianmontero/eos-go"
@@ -46,6 +47,14 @@ func NewBaseWinner(participant eos.AccountName, entryPosition uint64) *BaseWinne
 type WinnerFT struct {
 	*BaseWinner
 	Prize eos.Asset `json:"prize"`
+}
+
+func (m *WinnerFT) String() string {
+	result, err := json.Marshal(m)
+	if err != nil {
+		panic(fmt.Sprintf("Failed marshalling round: %v", err))
+	}
+	return string(result)
 }
 
 func NewWinnerFT(participant eos.AccountName, prize eos.Asset, entryPosition uint64) *WinnerFT {
