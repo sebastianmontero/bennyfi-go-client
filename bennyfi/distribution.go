@@ -315,6 +315,17 @@ func (m Distributions) FindNFT(key eos.Name) *DistributionNFT {
 	return nil
 }
 
+func (m Distributions) GetOrderedDistributions() Distributions {
+	dists := make(Distributions, 0)
+	for _, name := range OrderedDistributionNames {
+		dist := m.Find(name)
+		if dist != nil {
+			dists = append(dists, dist)
+		}
+	}
+	return dists
+}
+
 func (p *Distributions) Upsert(key eos.Name, distribution interface{}) {
 	m := *p
 	pos := m.FindPos(key)
