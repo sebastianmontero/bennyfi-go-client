@@ -443,6 +443,26 @@ func (m DistributionDefinitions) HasVesting() bool {
 	return false
 }
 
+func (m DistributionDefinitions) NumVestingRewards() int {
+	count := 0
+	for _, entry := range m {
+		if entry.Value.HasVesting() {
+			count++
+		}
+	}
+	return count
+}
+
+func (m DistributionDefinitions) NumNonVestingRewards() int {
+	count := 0
+	for _, entry := range m {
+		if !entry.Value.HasVesting() {
+			count++
+		}
+	}
+	return count
+}
+
 func (m DistributionDefinitions) GetDistributionDefinitionsFT() []*DistributionDefinitionFT {
 	distDefsFT := make([]*DistributionDefinitionFT, 0)
 	for _, distDefEntry := range m {

@@ -296,6 +296,7 @@ func (m *Round) CalculateEntryFees(settings *EntryFeeSettings, term *Term) {
 }
 
 func (m *Round) GetTotalEntryFee() eos.Asset {
+	// fmt.Printf("Calculating total entry fee, Round Manager Entry Fee: %v, Beneficiary Entry Fee: %v, Participant Entry Fee: %v \n", m.RoundManagerEntryFee, m.BeneficiaryEntryFee, m.ParticipantEntryFee)
 	return m.BeneficiaryEntryFee.Add(m.RoundManagerEntryFee).Add(util.MultiplyAsset(m.ParticipantEntryFee, int64(m.NumParticipantsEntered)))
 }
 
