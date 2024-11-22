@@ -30,15 +30,15 @@ import (
 )
 
 var (
-	SettingBennyfiContract      = "BENNYFI_CONTRACT"
-	SettingTokenContract        = "TOKEN_CONTRACT"
-	SettingBatchSize            = "BATCH_SIZE"
-	SettingMinStakingPeriod_hrs = "MIN_STAKING_PERIOD_HRS"
-	SettingMaxStakingPeriod_hrs = "MAX_STAKING_PERIOD_HRS"
-	SettingMinStakeAmount       = "MIN_STAKE_AMOUNT"
-	SettingMaxStakeAmount       = "MAX_STAKE_AMOUNT"
-	StateStaked                 = eos.Name("staked")
-	StateWithdrawn              = eos.Name("withdrawn")
+	SettingBennyfiContract     = "BENNYFI_CONTRACT"
+	SettingTokenContract       = "TOKEN_CONTRACT"
+	SettingBatchSize           = "BATCH_SIZE"
+	SettingMinStakingPeriodHrs = "MIN_STAKING_PERIOD_HRS"
+	SettingMaxStakingPeriodHrs = "MAX_STAKING_PERIOD_HRS"
+	SettingMinStakeAmount      = "MIN_STAKE_AMOUNT"
+	SettingMaxStakeAmount      = "MAX_STAKE_AMOUNT"
+	StateStaked                = eos.Name("staked")
+	StateWithdrawn             = eos.Name("withdrawn")
 )
 
 type DummyYieldContract struct {

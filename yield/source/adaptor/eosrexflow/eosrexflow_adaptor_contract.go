@@ -19,7 +19,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-package tlosrex
+package eosrexflow
 
 import (
 	"fmt"
@@ -31,40 +31,45 @@ import (
 )
 
 var (
-	SettingBennyfiContract     = "BENNYFI_CONTRACT"
-	SettingTokenContract       = "TOKEN_CONTRACT"
-	SettingRexContract         = "REX_CONTRACT"
-	SettingRexDeposit_account  = "REX_DEPOSIT_ACCOUNT"
-	SettingBatchSize           = "BATCH_SIZE"
-	SettingMinStakingPeriodHrs = "MIN_STAKING_PERIOD_HRS"
-	SettingMaxStakingPeriodHrs = "MAX_STAKING_PERIOD_HRS"
-	SettingMinStakeAmount      = "MIN_STAKE_AMOUNT"
-	SettingMaxStakeAmount      = "MAX_STAKE_AMOUNT"
-	RexStatePreRex             = eos.Name("prerex")
-	RexStateInSavings          = eos.Name("insavings")
-	RexStateInLockPeriod       = eos.Name("lockperiod")
-	RexStateSold               = eos.Name("sold")
-	RexStateWithdrawn          = eos.Name("withdrawn")
+	SettingBennyfiContract                     = "BENNYFI_CONTRACT"
+	SettingTokenContract                       = "TOKEN_CONTRACT"
+	SettingRexContract                         = "REX_CONTRACT"
+	SettingRexDeposit_account                  = "REX_DEPOSIT_ACCOUNT"
+	SettingBatchSize                           = "BATCH_SIZE"
+	SettingMinStakingPeriodHrs                 = "MIN_STAKING_PERIOD_HRS"
+	SettingMaxStakingPeriodHrs                 = "MAX_STAKING_PERIOD_HRS"
+	SettingMinStakeAmount                      = "MIN_STAKE_AMOUNT"
+	SettingMaxStakeAmount                      = "MAX_STAKE_AMOUNT"
+	SettingProceedsCalculationBufferPeriodMins = "PROCEEDS_CALCULATION_BUFFER_PERIOD_MINS"
+	SettingNotificationPeriodMins              = "NOTIFICATION_PERIOD_MINS"
+	SettingFailedSellLastNotifiedTime          = "FAILED_SELL_LAST_NOTIFIED_TIME"
+	SettingFailedWithdrawLastNotifiedTime      = "FAILED_WITHDRAW_LAST_NOTIFIED_TIME"
+	SettingFinalCycleBufferPeriodDays          = "FINAL_CYCLE_BUFFER_PERIOD_DAYS"
+	RexStatePreRex                             = eos.Name("prerex")
+	RexStateInSavings                          = eos.Name("insavings")
+	RexStateInLockPeriod                       = eos.Name("lockperiod")
+	RexStateProceedsCalculated                 = eos.Name("proceedscalc")
+	RexStateWithdrawn                          = eos.Name("withdrawn")
 )
 
-type TlosRexContract struct {
+type EosRexFlowContract struct {
 	*contract.SettingsContract
 	callCounter uint64
 }
 
-func NewTlosRexContract(eos *service.EOS, contractName string) *TlosRexContract {
-	return &TlosRexContract{
+func NewEosRexContract(eos *service.EOS, contractName string) *EosRexFlowContract {
+	return &EosRexFlowContract{
 		contract.NewSettingsContract(eos, contractName),
 		0,
 	}
 }
 
-func (m *TlosRexContract) NextCallCounter() uint64 {
+func (m *EosRexFlowContract) NextCallCounter() uint64 {
 	m.callCounter++
 	return m.callCounter
 }
 
-func (m *TlosRexContract) ExecAction(permissionLevel interface{}, action string, actionData interface{}) (string, error) {
+func (m *EosRexFlowContract) ExecAction(permissionLevel interface{}, action string, actionData interface{}) (string, error) {
 	resp, err := m.Contract.ExecAction(permissionLevel, action, actionData)
 	if err != nil {
 		return "", err
@@ -72,12 +77,14 @@ func (m *TlosRexContract) ExecAction(permissionLevel interface{}, action string,
 	return fmt.Sprintf("Tx ID: %v", resp.TransactionID), nil
 }
 
-func (m *TlosRexContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) error {
+func (m *EosRexFlowContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) error {
 	openActions := []string{
 		"mvfrmsvngsrn",
-		"sellrexrn",
+		"clcproceedrn",
 		"withdrwrexrn",
 		"mvfrmsavings",
+		"updaterex",
+		"calcproceeds",
 		"sellrex",
 		"withdrawrex",
 	}
@@ -94,7 +101,7 @@ func (m *TlosRexContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) erro
 	return nil
 }
 
-func (m *TlosRexContract) Reset(limit uint64, toDelete []string) (string, error) {
+func (m *EosRexFlowContract) Reset(limit uint64, toDelete []string) (string, error) {
 	actionData := struct {
 		Limit       uint64
 		ToDelete    []string
