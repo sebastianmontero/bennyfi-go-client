@@ -57,7 +57,7 @@ type EosRexFlowContract struct {
 	callCounter uint64
 }
 
-func NewEosRexContract(eos *service.EOS, contractName string) *EosRexFlowContract {
+func NewEosRexFlowContract(eos *service.EOS, contractName string) *EosRexFlowContract {
 	return &EosRexFlowContract{
 		contract.NewSettingsContract(eos, contractName),
 		0,

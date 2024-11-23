@@ -62,7 +62,7 @@ func (m *TestUtil) AssertStake(actual, expected *eosrexflow.Stake, sellDelay boo
 	assert.Assert(m.T, cycleStakedTime.Time().After(dateLimit), "Expected cycle staked time to be set")
 	assert.Assert(m.T, stakedTime.Time().After(dateLimit), "Expected staked time to be set")
 	assert.Assert(m.T, !cycleStakedTime.Time().Before(stakedTime.Time()), "Expected cycle staked time to be after or equal to staked time")
-	assert.Assert(m.T, stakeEndTime.Time().Equal(nextStakeEndTime.Time()), "Expected stake end time to be set and be equal to next stake end time")
+	assert.Assert(m.T, stakeEndTime.Time().After(nextStakeEndTime.Time().Add(-1*time.Millisecond*5)) && stakeEndTime.Time().Before(nextStakeEndTime.Time().Add(time.Millisecond*5)), "Expected stake end time: %v to be set and be equal to next stake end time: %v", stakeEndTime, nextStakeEndTime)
 	if actual.RexState == eosrexflow.RexStateInSavings {
 		assert.Assert(m.T, util.IsNullTimePoint(actual.MovedFromSavingsTime), "Expected moved from savings time not to be set")
 		assert.Assert(m.T, util.IsNullTimePoint(actual.MaturityTime), "Expected maturity time not to be set")

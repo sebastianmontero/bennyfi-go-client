@@ -11,6 +11,8 @@ import (
 )
 
 var RexLockPeriodDays = 21
+var RexLockPeriod = time.Duration(RexLockPeriodDays*24) * time.Hour
+var RexLockPeriodMicroseconds = dto.NewMicroseconds(int64(RexLockPeriod.Hours()))
 
 type Stake struct {
 	RoundID              uint64            `json:"pool_id"`
@@ -58,7 +60,8 @@ func (m *Stake) CalculateStakeEndTime() eos.TimePoint {
 
 func (m *Stake) GetNextStakeEndTime(finalCycleBufferPeriodDays uint32) eos.TimePoint {
 	nextStakeEndTime := eos.TimePoint(m.StakedTime.Time().Add(time.Hour * time.Duration(m.StakingPeriod.Hrs())).UnixMicro())
-	minTimeForNextPartialCycle := eos.TimePoint(m.CycleStakedTime.Time().Add(time.Hour * time.Duration(m.CycleStakingPeriod.Hrs()+((int64(finalCycleBufferPeriodDays)+int64(RexLockPeriodDays))*24))).UnixMicro())
+	finalCycleBufferPeriod := time.Duration(finalCycleBufferPeriodDays*24) * time.Hour
+	minTimeForNextPartialCycle := eos.TimePoint(m.CycleStakedTime.Time().Add((time.Hour * time.Duration(m.CycleStakingPeriod.Hrs())) + finalCycleBufferPeriod + RexLockPeriod).UnixMicro())
 	if minTimeForNextPartialCycle.Time().Before(nextStakeEndTime.Time()) {
 		nextStakeEndTime = eos.TimePoint(m.CycleStakedTime.Time().Add(time.Hour * time.Duration(m.CycleStakingPeriod.Hrs())).UnixMicro())
 	}
