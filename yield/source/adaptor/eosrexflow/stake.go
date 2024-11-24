@@ -11,8 +11,14 @@ import (
 )
 
 var RexLockPeriodDays = 21
-var RexLockPeriod = time.Duration(RexLockPeriodDays*24) * time.Hour
-var RexLockPeriodMicroseconds = dto.NewMicroseconds(int64(RexLockPeriod.Hours()))
+var RexLockPeriodHours = int64(RexLockPeriodDays) * 24
+var RexLockPeriod = time.Duration(RexLockPeriodHours) * time.Hour
+var RexLockPeriodMicroseconds = dto.NewMicroseconds(RexLockPeriodHours)
+
+func CalculateMinFinalCycleTime(finalCycleBufferPeriodDays uint32) time.Duration {
+	finalCycleBufferPeriod := time.Duration(finalCycleBufferPeriodDays*24) * time.Hour
+	return finalCycleBufferPeriod + RexLockPeriod
+}
 
 type Stake struct {
 	RoundID              uint64            `json:"pool_id"`
@@ -54,18 +60,59 @@ func (m *Stake) CalculateSellRexTime() eos.TimePoint {
 	return eos.TimePoint(m.MovedFromSavingsTime.Time().Add(time.Hour * time.Duration(24*RexLockPeriodDays)).UnixMicro())
 }
 
-func (m *Stake) CalculateStakeEndTime() eos.TimePoint {
+func (m *Stake) FinalStakeEndTime() eos.TimePoint {
 	return eos.TimePoint(m.StakedTime.Time().Add(time.Hour * time.Duration(m.StakingPeriod.Hrs())).UnixMicro())
 }
 
+func (m *Stake) IsFinalCycle() bool {
+	return !m.StakeEndTime.Time().Before(m.FinalStakeEndTime().Time())
+}
+
 func (m *Stake) GetNextStakeEndTime(finalCycleBufferPeriodDays uint32) eos.TimePoint {
-	nextStakeEndTime := eos.TimePoint(m.StakedTime.Time().Add(time.Hour * time.Duration(m.StakingPeriod.Hrs())).UnixMicro())
-	finalCycleBufferPeriod := time.Duration(finalCycleBufferPeriodDays*24) * time.Hour
-	minTimeForNextPartialCycle := eos.TimePoint(m.CycleStakedTime.Time().Add((time.Hour * time.Duration(m.CycleStakingPeriod.Hrs())) + finalCycleBufferPeriod + RexLockPeriod).UnixMicro())
-	if minTimeForNextPartialCycle.Time().Before(nextStakeEndTime.Time()) {
-		nextStakeEndTime = eos.TimePoint(m.CycleStakedTime.Time().Add(time.Hour * time.Duration(m.CycleStakingPeriod.Hrs())).UnixMicro())
+	if m.RexState == RexStateInSavings {
+		nextStakeEndTime := eos.TimePoint(m.StakedTime.Time().Add(time.Hour * time.Duration(m.StakingPeriod.Hrs())).UnixMicro())
+		minTimeForNextPartialCycle := eos.TimePoint(m.CycleStakedTime.Time().Add((time.Hour * time.Duration(m.CycleStakingPeriod.Hrs())) + CalculateMinFinalCycleTime(finalCycleBufferPeriodDays)).UnixMicro())
+		if minTimeForNextPartialCycle.Time().Before(nextStakeEndTime.Time()) {
+			nextStakeEndTime = eos.TimePoint(m.CycleStakedTime.Time().Add(time.Hour * time.Duration(m.CycleStakingPeriod.Hrs())).UnixMicro())
+		}
+		return nextStakeEndTime
 	}
-	return nextStakeEndTime
+	return eos.TimePoint(m.MovedFromSavingsTime.Time().Add(RexLockPeriod).UnixMicro())
+}
+
+func (m *Stake) SplitReturn() *ReturnSplit {
+	withdrawAmount := m.CycleReturn
+	if !m.IsFinalCycle() {
+		withdrawAmount = m.CycleReturn.Sub(m.InitialStake)
+		if withdrawAmount.Amount < m.MinimumReturn.Amount {
+			withdrawAmount.Amount = 0
+		}
+	}
+	return &ReturnSplit{
+		WithdrawAmount: withdrawAmount,
+		StakeAmount:    m.CycleReturn.Sub(withdrawAmount),
+	}
+}
+
+type ReturnSplit struct {
+	WithdrawAmount eos.Asset
+	StakeAmount    eos.Asset
+}
+
+func (m *ReturnSplit) HasWithdrawAmount() bool {
+	return m.WithdrawAmount.Amount > 0
+}
+
+func (m *ReturnSplit) HasStakeAmount() bool {
+	return m.StakeAmount.Amount > 0
+}
+
+func (m *ReturnSplit) String() string {
+	result, err := json.Marshal(m)
+	if err != nil {
+		panic(fmt.Sprintf("Failed marshalling round: %v", err))
+	}
+	return string(result)
 }
 
 func (m *EosRexFlowContract) CheckStakeParameters(authorizer, tokenContract eos.AccountName, minStakeAmount eos.Asset, maxStakeAmount eos.Asset, stakingPeriodHrs uint32) (string, error) {
