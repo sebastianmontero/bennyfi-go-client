@@ -49,8 +49,11 @@ func (m *TestUtil) AssertStake(actual, expected *eosrexflow.Stake, sellDelay boo
 	assert.DeepEqual(m.T, actual.CycleStakingPeriod, expected.CycleStakingPeriod)
 	assert.DeepEqual(m.T, actual.StakingPeriod, expected.StakingPeriod)
 	stakingPeriod := actual.StakingPeriod.AsTimeDuration()
-	shift := stakingPeriod + time.Minute
+	cycleStakingPeriod := actual.CycleStakingPeriod.AsTimeDuration()
+	shift := stakingPeriod + time.Minute*2
+	cycleShift := cycleStakingPeriod + time.Minute*2
 	dateLimit := time.Now().Add(shift * -1)
+	cycleDateLimit := time.Now().Add(cycleShift * -1)
 	stakedTime := actual.StakedTime
 	cycleStakedTime := actual.CycleStakedTime
 	finalCycleBufferPeriodDays, err := m.eosRexClient.SettingAsUint32(eosrexflow.SettingFinalCycleBufferPeriodDays)
@@ -59,7 +62,11 @@ func (m *TestUtil) AssertStake(actual, expected *eosrexflow.Stake, sellDelay boo
 	stakeEndTime := actual.StakeEndTime
 	assert.Assert(m.T, cycleStakedTime.Time().Add(-1*time.Second).Before(time.Now()))
 	assert.Assert(m.T, stakedTime.Time().Add(-1*time.Second).Before(time.Now()))
-	assert.Assert(m.T, cycleStakedTime.Time().After(dateLimit), "Expected cycle staked time to be set")
+	if !actual.IsFinalCycle() {
+		assert.Assert(m.T, cycleStakedTime.Time().After(cycleDateLimit), "Expected cycle staked time to be set cycle staked time: %v, date limit: %v", cycleStakedTime, cycleDateLimit)
+	} else {
+		assert.Assert(m.T, cycleStakedTime.Time().After(dateLimit), "Expected cycle staked time to be set cycle staked time: %v, date limit: %v", cycleStakedTime, dateLimit)
+	}
 	assert.Assert(m.T, stakedTime.Time().After(dateLimit), "Expected staked time to be set")
 	assert.Assert(m.T, !cycleStakedTime.Time().Before(stakedTime.Time()), "Expected cycle staked time to be after or equal to staked time")
 	assert.Assert(m.T, stakeEndTime.Time().After(nextStakeEndTime.Time().Add(-1*time.Millisecond*5)) && stakeEndTime.Time().Before(nextStakeEndTime.Time().Add(time.Millisecond*5)), "Expected stake end time: %v to be set and be equal to next stake end time: %v", stakeEndTime, nextStakeEndTime)
