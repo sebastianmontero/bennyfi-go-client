@@ -47,6 +47,7 @@ type Config struct {
 	LendableIncrement    uint64          `json:"lendable_increment"`
 	Version              eos.Name        `json:"version"`
 	YieldAdaptorContract eos.AccountName `json:"yield_adaptor_contract"`
+	RexFundSymbol        eos.Symbol      `json:"rex_fund_symbol"`
 }
 
 type Balance struct {
@@ -122,6 +123,7 @@ type InitRexArgs struct {
 	TokenContract        eos.AccountName `json:"token_contract"`
 	Version              eos.Name        `json:"version"`
 	YieldAdaptorContract eos.AccountName `json:"yield_adaptor_contract"`
+	RexFundSymbol        eos.Symbol      `json:"rex_fund_symbol"`
 }
 
 type SetLentArgs struct {
@@ -134,6 +136,7 @@ type InitConfArgs struct {
 	TokenContract        eos.AccountName `json:"token_contract"`
 	Version              eos.Name        `json:"version"`
 	YieldAdaptorContract eos.AccountName `json:"yield_adaptor_contract"`
+	RexFundSymbol        eos.Symbol      `json:"rex_fund_symbol"`
 }
 
 type RexContract struct {
@@ -157,7 +160,7 @@ func (m *RexContract) ExecAction(permissionLevel interface{}, action string, act
 	return fmt.Sprintf("Tx ID: %v", resp.TransactionID), nil
 }
 
-func (m *RexContract) Init(totalLendable, totalRex eos.Asset, lendableIncrement uint64, tokenContract eos.AccountName, version eos.Name, yieldAdaptorContract eos.AccountName) (string, error) {
+func (m *RexContract) Init(totalLendable, totalRex eos.Asset, lendableIncrement uint64, tokenContract eos.AccountName, version eos.Name, yieldAdaptorContract eos.AccountName, rexFundSymbol eos.Symbol) (string, error) {
 	actionData := &InitRexArgs{
 		TotalLendable:        totalLendable,
 		TotalRex:             totalRex,
@@ -165,6 +168,7 @@ func (m *RexContract) Init(totalLendable, totalRex eos.Asset, lendableIncrement 
 		TokenContract:        tokenContract,
 		Version:              version,
 		YieldAdaptorContract: yieldAdaptorContract,
+		RexFundSymbol:        rexFundSymbol,
 	}
 
 	return m.ExecAction(m.ContractName, "init", actionData)
@@ -186,12 +190,13 @@ func (m *RexContract) SetLent(totalLent, totalUnlent eos.Asset) (string, error) 
 	return m.ExecAction(m.ContractName, "setlent", actionData)
 }
 
-func (m *RexContract) InitConf(lendableIncrement uint64, tokenContract eos.AccountName, version eos.Name, yieldAdaptorContract eos.AccountName) (string, error) {
+func (m *RexContract) InitConf(lendableIncrement uint64, tokenContract eos.AccountName, version eos.Name, yieldAdaptorContract eos.AccountName, rexFundSymbol eos.Symbol) (string, error) {
 	actionData := &InitConfArgs{
 		LendableIncrement:    lendableIncrement,
 		TokenContract:        tokenContract,
 		Version:              version,
 		YieldAdaptorContract: yieldAdaptorContract,
+		RexFundSymbol:        rexFundSymbol,
 	}
 
 	return m.ExecAction(m.ContractName, "initconf", actionData)
