@@ -63,6 +63,10 @@ func (m *ReturnsFT) GetTotalReturn() eos.Asset {
 	return m.Prize.Add(m.MinimumPayout)
 }
 
+func (m *ReturnsFT) OutstandingReward() eos.Asset {
+	return m.GetTotalReturn().Sub(m.AmountPaidOut)
+}
+
 func (m *ReturnsFT) PaidTotalAmount() {
 	m.AmountPaidOut = m.GetTotalReturn()
 }

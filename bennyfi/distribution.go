@@ -59,6 +59,10 @@ func (m *DistributionFT) HasRoundManagerFee() bool {
 	return m.RoundManagerFee.Amount > 0
 }
 
+func (m *DistributionFT) OutstandingBeneficiaryReward() eos.Asset {
+	return m.BeneficiaryReward.Sub(m.BeneficiaryRewardPaid)
+}
+
 func (m *DistributionFT) PaidTotalBeneficiaryReward() {
 	m.BeneficiaryRewardPaid = m.BeneficiaryReward
 }
@@ -73,6 +77,10 @@ func (m *DistributionFT) PaidBeneficiaryReward(amount interface{}) {
 		panic(fmt.Sprintf("Total Paid amount: %v is greater than beneficiary reward: %v, current payment: %v", paid, m.BeneficiaryReward, amount))
 	}
 	m.BeneficiaryRewardPaid = paid
+}
+
+func (m *DistributionFT) OutstandingRoundManagerFee() eos.Asset {
+	return m.RoundManagerFee.Sub(m.RoundManagerFeePaid)
 }
 
 func (m *DistributionFT) PaidTotalRoundManagerFee() {

@@ -35,10 +35,12 @@ import (
 var (
 	EntryOwner = "entry_owner"
 
-	EntryStaked     = eos.Name("entrystaked")
-	EntryReturnPaid = eos.Name("returnpaid")
-	EntryUnstaked   = eos.Name("unstaked")
-	EntryEarlyExit  = eos.Name("earlyexit")
+	EntryStaked                = eos.Name("entrystaked")
+	EntryReturnPaid            = eos.Name("returnpaid")
+	EntryUnstaked              = eos.Name("unstaked")
+	EntryEarlyExit             = eos.Name("earlyexit")
+	EntryPayingPartialReturns1 = eos.Name("payreturns1")
+	EntryPayingPartialReturns2 = eos.Name("payreturns2")
 )
 
 type EnterRoundArgs struct {
@@ -114,8 +116,8 @@ func (m *BennyfiContract) EnterRound(roundId uint64, participant eos.AccountName
 	return m.ExecAction(participant, "enterpool", actionData)
 }
 
-func (m *BennyfiContract) ClaimReturn(entryId uint64, claimer eos.AccountName) (string, error) {
-	return m.ExecAction(claimer, "claimreturn", entryId)
+func (m *BennyfiContract) ClaimPartialReturn(entryId uint64, claimer eos.AccountName) (string, error) {
+	return m.ExecAction(claimer, "clmpartrtrn", entryId)
 }
 
 func (m *BennyfiContract) Unstake(entryId uint64, permissionLevel interface{}) (string, error) {

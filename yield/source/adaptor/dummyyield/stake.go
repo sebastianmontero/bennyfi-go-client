@@ -49,11 +49,12 @@ func (m *DummyYieldContract) CheckStakeParameters(authorizer, tokenContract eos.
 	return m.ExecAction(authorizer, "chckstkparam", actionData)
 }
 
-func (m *DummyYieldContract) Withdraw(roundID uint64, yieldPercx100000 uint32) (string, error) {
+func (m *DummyYieldContract) Withdraw(roundID uint64, yieldPercx100000 uint32, partial bool) (string, error) {
 	actionData := struct {
 		RoundID          uint64
 		YieldPercx100000 uint32
-	}{roundID, yieldPercx100000}
+		Partial          bool
+	}{roundID, yieldPercx100000, partial}
 	return m.ExecAction(m.ContractName, "withdraw", actionData)
 }
 
