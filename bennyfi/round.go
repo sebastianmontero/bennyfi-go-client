@@ -39,7 +39,7 @@ import (
 var (
 	PoolManagerFeeOwner    = "pool_manager_fee_owner"
 	BeneficiaryRewardOwner = "beneficiary_reward_owner"
-	PartialReturnCycle     = "partial_return_cycle"
+	ReturnCycle            = "return_cycle"
 	RoundNotStarted        = eos.Name("notstarted")
 	RoundPending           = eos.Name("pending")
 	RoundAcceptingEntries  = eos.Name("open")
@@ -204,15 +204,15 @@ func (m *Round) SetBeneficiaryRewardOwner(accountName interface{}) {
 	m.AdditionalFields.Set(BeneficiaryRewardOwner, dto.FlexValueFromName(account))
 }
 
-func (m *Round) GetPartialReturnCycle() uint32 {
-	if m.AdditionalFields.Has(PartialReturnCycle) {
-		return m.AdditionalFields.GetValue(PartialReturnCycle).Uint32()
+func (m *Round) GetReturnCycle() uint32 {
+	if m.AdditionalFields.Has(ReturnCycle) {
+		return m.AdditionalFields.GetValue(ReturnCycle).Uint32()
 	}
 	return 0
 }
 
-func (m *Round) SetPartialReturnCycle(cycle uint32) {
-	m.AdditionalFields.Set(PartialReturnCycle, dto.FlexValueFromUint32(cycle))
+func (m *Round) SetReturnCycle(cycle uint32) {
+	m.AdditionalFields.Set(ReturnCycle, dto.FlexValueFromUint32(cycle))
 }
 
 func (m *Round) UpsertDistribution(name eos.Name, distribution interface{}) {
@@ -355,21 +355,21 @@ func (m *Round) CalculateUnlockTime() eos.TimePoint {
 	return eos.TimePoint(m.StakedTime.Time().Add(time.Hour * time.Duration(m.StakingPeriod.Hrs())).UnixMicro())
 }
 
-func (m *Round) SetYieldReward(totalReturn eos.Asset, partial bool) eos.Asset {
+func (m *Round) SetYieldReward(totalReturn eos.Asset, partial bool) (reward eos.Asset, totalReward eos.Asset) {
 	r := m.Rewards.FindFT(DistributionMainToken)
-	reward := totalReturn
+	reward = totalReturn
 	reward = reward.Sub(m.TotalDeposits)
 	if partial {
 		r.FundingState = FundingStatePartiallyCommited
 	} else {
 		r.FundingState = FundingStateFunded
 	}
-	if reward.Amount > 0 {
-		r.Reward = reward
-	} else {
-		r.Reward = eos.Asset{Amount: 0, Symbol: totalReturn.Symbol}
+	if reward.Amount < 0 {
+		reward = eos.Asset{Amount: 0, Symbol: totalReturn.Symbol}
 	}
-	return r.Reward
+	totalReward = r.Reward.Add(reward)
+	r.Reward = totalReward
+	return
 }
 
 type NewRoundArgs struct {
