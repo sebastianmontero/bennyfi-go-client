@@ -37,13 +37,14 @@ import (
 )
 
 var (
-	PoolManagerFeeOwner    = "pool_manager_fee_owner"
-	BeneficiaryRewardOwner = "beneficiary_reward_owner"
-	ReturnCycle            = "return_cycle"
-	RoundNotStarted        = eos.Name("notstarted")
-	RoundPending           = eos.Name("pending")
-	RoundAcceptingEntries  = eos.Name("open")
-	RoundDrawing           = eos.Name("drawing")
+	PoolManagerFeeOwner      = "pool_manager_fee_owner"
+	BeneficiaryRewardOwner   = "beneficiary_reward_owner"
+	ReturnCycle              = "return_cycle"
+	NumClaimedPartialReturns = "num_claimed_partial_returns"
+	RoundNotStarted          = eos.Name("notstarted")
+	RoundPending             = eos.Name("pending")
+	RoundAcceptingEntries    = eos.Name("open")
+	RoundDrawing             = eos.Name("drawing")
 	// RoundOpen                        = eos.Name("roundopen")
 	RoundClosed                            = eos.Name("closed")
 	RoundPayingPartialReturns              = eos.Name("payreturns")
@@ -215,6 +216,17 @@ func (m *Round) SetReturnCycle(cycle uint32) {
 	m.AdditionalFields.Set(ReturnCycle, dto.FlexValueFromUint32(cycle))
 }
 
+func (m *Round) GetNumClaimedPartialReturns() uint32 {
+	if m.AdditionalFields.Has(NumClaimedPartialReturns) {
+		return m.AdditionalFields.GetValue(NumClaimedPartialReturns).Uint32()
+	}
+	return 0
+}
+
+func (m *Round) SetNumClaimedPartialReturns(numClaimedPartialReturns uint32) {
+	m.AdditionalFields.Set(NumClaimedPartialReturns, dto.FlexValueFromUint32(numClaimedPartialReturns))
+}
+
 func (m *Round) UpsertDistribution(name eos.Name, distribution interface{}) {
 	if m.Distributions == nil {
 		m.Distributions = make(Distributions, 0, 1)
@@ -362,7 +374,7 @@ func (m *Round) SetYieldReward(totalReturn eos.Asset, partial bool) (reward eos.
 	if partial {
 		r.FundingState = FundingStatePartiallyCommited
 	} else {
-		r.FundingState = FundingStateFunded
+		r.FundingState = FundingStateCommited
 	}
 	if reward.Amount < 0 {
 		reward = eos.Asset{Amount: 0, Symbol: totalReturn.Symbol}
