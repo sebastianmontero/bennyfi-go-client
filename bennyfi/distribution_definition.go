@@ -126,7 +126,7 @@ func (m *DistributionDefinitionFT) HasBeneficiaryReward() bool {
 	return m.BeneficiaryPerc > 0
 }
 
-func (m *DistributionDefinitionFT) CalculateDistribution(numParticipantsEntered uint32, totalReward eos.Asset, isPartialReturn bool) *Distribution {
+func (m *DistributionDefinitionFT) CalculateDistribution(numParticipantsEntered uint32, totalReward eos.Asset, isPartialReturn bool, currentDistribution *DistributionFT) *Distribution {
 
 	precisionAdj := math.Pow(10, float64(totalReward.Precision))
 	percAdj := float64(10000000)
@@ -162,13 +162,19 @@ func (m *DistributionDefinitionFT) CalculateDistribution(numParticipantsEntered 
 			managerFee = managerFee.Add(remaining)
 		}
 	}
+	beneficiaryRewardPaid := eos.Asset{Amount: 0, Symbol: totalReward.Symbol}
+	managerFeePaid := eos.Asset{Amount: 0, Symbol: totalReward.Symbol}
+	if currentDistribution != nil {
+		beneficiaryRewardPaid = currentDistribution.BeneficiaryRewardPaid
+		managerFeePaid = currentDistribution.RoundManagerFeePaid
+	}
 	return NewDistribution(&DistributionFT{
 		WinnerPrizes:          winnerPrizes,
 		BeneficiaryReward:     beneficiaryReward,
-		BeneficiaryRewardPaid: eos.Asset{Amount: 0, Symbol: totalReward.Symbol},
+		BeneficiaryRewardPaid: beneficiaryRewardPaid,
 		MinParticipantReward:  minParticipantReward,
 		RoundManagerFee:       managerFee,
-		RoundManagerFeePaid:   eos.Asset{Amount: 0, Symbol: totalReward.Symbol},
+		RoundManagerFeePaid:   managerFeePaid,
 	})
 }
 

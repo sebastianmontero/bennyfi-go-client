@@ -216,6 +216,10 @@ func (m *Round) SetReturnCycle(cycle uint32) {
 	m.AdditionalFields.Set(ReturnCycle, dto.FlexValueFromUint32(cycle))
 }
 
+func (m *Round) IncReturnCycle() {
+	m.AdditionalFields.Set(ReturnCycle, dto.FlexValueFromUint32(m.GetReturnCycle()+1))
+}
+
 func (m *Round) GetNumClaimedPartialReturns() uint32 {
 	if m.AdditionalFields.Has(NumClaimedPartialReturns) {
 		return m.AdditionalFields.GetValue(NumClaimedPartialReturns).Uint32()
@@ -224,6 +228,14 @@ func (m *Round) GetNumClaimedPartialReturns() uint32 {
 }
 
 func (m *Round) SetNumClaimedPartialReturns(numClaimedPartialReturns uint32) {
+	m.AdditionalFields.Set(NumClaimedPartialReturns, dto.FlexValueFromUint32(numClaimedPartialReturns))
+}
+
+func (m *Round) IncNumClaimedPartialReturns() {
+	numClaimedPartialReturns := m.GetNumClaimedPartialReturns() + 1
+	if numClaimedPartialReturns == m.NumParticipantsEntered {
+		numClaimedPartialReturns = 0
+	}
 	m.AdditionalFields.Set(NumClaimedPartialReturns, dto.FlexValueFromUint32(numClaimedPartialReturns))
 }
 
@@ -326,7 +338,7 @@ func (m *Round) GetTotalEntryFee() eos.Asset {
 	return m.BeneficiaryEntryFee.Add(m.RoundManagerEntryFee).Add(util.MultiplyAsset(m.ParticipantEntryFee, int64(m.NumParticipantsEntered)))
 }
 
-func (m *Round) CalculateReturns(entryPos uint64, distName eos.Name, isEarlyExit bool, earlyExitFeePerc uint32) interface{} {
+func (m *Round) CalculateReturns(entryPos uint64, distName eos.Name, isEarlyExit bool, earlyExitFeePerc uint32, currentReturns *Returns) interface{} {
 
 	if IsFTDistribution(distName) {
 		dist := m.Distributions.FindFT(distName)
@@ -343,11 +355,16 @@ func (m *Round) CalculateReturns(entryPos uint64, distName eos.Name, isEarlyExit
 			earlyExitRewardFee = earlyExitRewardFee.Add(minParticipantReward)
 			minParticipantReward = eos.Asset{Amount: 0, Symbol: minParticipantReward.Symbol}
 		}
+
+		amountPaidOut := eos.Asset{Amount: 0, Symbol: minParticipantReward.Symbol}
+		if currentReturns != nil {
+			amountPaidOut = currentReturns.ReturnsFT().AmountPaidOut
+		}
 		return &ReturnsFT{
 			Prize:              winnerPrize,
 			MinimumPayout:      minParticipantReward,
 			EarlyExitReturnFee: earlyExitRewardFee,
-			AmountPaidOut:      eos.Asset{Amount: 0, Symbol: winnerPrize.Symbol},
+			AmountPaidOut:      amountPaidOut,
 		}
 	} else {
 		dist := m.Distributions.FindNFT(distName)
