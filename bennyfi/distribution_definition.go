@@ -94,6 +94,10 @@ type DistributionDefinitionFT struct {
 	*BaseDistributionDefinition
 }
 
+func (m *DistributionDefinitionFT) WinnersRewardPerc() uint32 {
+	return util.HundredPercent - (m.AllParticipantsPerc + m.BeneficiaryPerc + m.RoundManagerPerc)
+}
+
 func (m *DistributionDefinitionFT) Clone() interface{} {
 	return &DistributionDefinitionFT{
 		AllParticipantsPerc:        m.AllParticipantsPerc,
@@ -131,6 +135,7 @@ func (m *DistributionDefinitionFT) CalculateDistribution(numParticipantsEntered 
 	precisionAdj := math.Pow(10, float64(totalReward.Precision))
 	percAdj := float64(10000000)
 	reward := float64(totalReward.Amount) / precisionAdj
+
 	rewardToAllParticipants := reward * float64((float64(m.AllParticipantsPerc) / percAdj))
 	rewardToBeneficiary := reward * float64((float64(m.BeneficiaryPerc) / percAdj))
 	feeToManager := reward * float64((float64(m.RoundManagerPerc) / percAdj))
@@ -139,6 +144,9 @@ func (m *DistributionDefinitionFT) CalculateDistribution(numParticipantsEntered 
 	beneficiaryReward := eos.Asset{Amount: eos.Int64(rewardToBeneficiary * float64(precisionAdj)), Symbol: totalReward.Symbol}
 	managerFee := eos.Asset{Amount: eos.Int64(feeToManager * float64(precisionAdj)), Symbol: totalReward.Symbol}
 	remaining := totalReward.Sub(beneficiaryReward).Sub(managerFee).Sub(util.MultiplyAsset(minParticipantReward, int64(numParticipantsEntered)))
+	if isPartialReturn {
+		remaining = util.CalculateAssetPercentage(totalReward, m.WinnersRewardPerc())
+	}
 	// fmt.Printf("minParticipantReward: %s, beneficiaryReward: %s, managerFee: %s, remaining: %s\n", minParticipantReward.String(), beneficiaryReward.String(), managerFee.String(), remaining.String())
 	winnerPrizes := make([]eos.Asset, 0)
 	if m.GetNumWinners() > 0 {
