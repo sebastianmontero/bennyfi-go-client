@@ -54,7 +54,7 @@ func (m *ReturnsFT) NotificationMsg() string {
 	if m.EarlyExitReturnFee.Amount > 0 {
 		msg += fmt.Sprintf("The early exit return fee was: %v, it includes the forfeited minimum payout. ", m.EarlyExitReturnFee)
 	}
-	msg += fmt.Sprintf("Your total return: %v.", m.GetTotalReturn())
+	msg += fmt.Sprintf("Final payment of %v for a total return of %v.", m.OutstandingReward(), m.GetTotalReturn())
 	return msg
 }
 
