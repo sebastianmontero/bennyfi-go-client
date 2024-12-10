@@ -22,7 +22,9 @@
 package bennyfi
 
 import (
+	"encoding/json"
 	"fmt"
+	"math/big"
 
 	"github.com/sebastianmontero/bennyfi-go-client/common/types"
 	eos "github.com/sebastianmontero/eos-go"
@@ -217,6 +219,68 @@ func (m *Term) GetMaxStakeAmount() eos.Asset {
 
 func (m *Term) ToNewTermArgs() *NewTermArgs {
 	return TermToNewTermArgs(m)
+}
+
+type EntryFees struct {
+	PoolManagerEntryFee eos.Asset
+	BeneficiaryEntryFee eos.Asset
+	ParticipantEntryFee eos.Asset
+}
+
+func (m *EntryFees) String() string {
+	result, err := json.Marshal(m)
+	if err != nil {
+		panic(fmt.Sprintf("Failed marshalling round: %v", err))
+	}
+	return string(result)
+}
+
+func (m *Term) CalculateEntryFees(contract *BennyfiContract, numParticipantsEntered uint32) (*EntryFees, error) {
+	numParticipants := m.GetMaxParticipants()
+	var entryFee eos.Asset
+	if numParticipantsEntered > 0 {
+		numParticipants = numParticipantsEntered
+	}
+	benyToken, err := contract.SettingAsAsset(SettingBenyToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed calculating entry fees, error getting beny token value setting: %v", err)
+	}
+	if m.RoundType == RoundTypeFunded {
+		selfFundedPerUser, err := contract.SettingAsAsset(SettingEntryFeeSelffundedPeruserBeny)
+		if err != nil {
+			return nil, fmt.Errorf("failed calculating entry fees, error getting entry fee per user setting: %v", err)
+		}
+		entryFee = util.MultiplyAsset(selfFundedPerUser, int64(numParticipants))
+		fmt.Println("Entry fee1: ", entryFee)
+	} else {
+		distDef := m.DistributionDefinitions.FindFT(DistributionMainToken)
+		ys, err := contract.GetYieldSourceById(distDef.YieldSource)
+		if err != nil {
+			return nil, fmt.Errorf("failed calculating entry fees, error getting yield source: %v", err)
+		}
+		totalStake := util.MultiplyAsset(m.EntryStake, int64(numParticipants))
+		yield := util.CalculateAssetPercentage(util.MultiplyAsset(totalStake, int64(m.StakingPeriod.Hrs())), ys.HourlyYield())
+		yieldUSD := util.MultiplyAssets(yield, ys.TokenValue)
+		yieldPerc := util.CalculateAssetPercentage(yieldUSD, ys.EntryFeePercentageOfYieldx100000)
+		unAdjustedEntryFee := util.DivideAssets(yieldPerc, ys.BenyValue)
+		adjustedEntryFee := util.AdjustPrecision(big.NewInt(int64(unAdjustedEntryFee.Amount)), unAdjustedEntryFee.Precision, benyToken.Precision)
+		// fmt.Printf("Entry fee values, total stake: %v, yield: %v, yieldUSD: %v, yieldPerc: %v, entryFee: %v, adjustedEntryFee: %v \n", totalStake, yield, yieldUSD, yieldPerc, entryFee, adjustedEntryFee)
+		entryFee = eos.Asset{Amount: eos.Int64(adjustedEntryFee.Int64()), Symbol: benyToken.Symbol}
+	}
+	fmt.Println("Entry fee2: ", entryFee)
+
+	roundManagerEntryFee := util.CalculateAssetPercentage(entryFee, m.RoundManagerEntryFeePerc)
+	beneficiaryEntryFee := util.CalculateAssetPercentage(entryFee, m.BeneficiaryEntryFeePerc)
+	participantEntryFee := entryFee.Sub(roundManagerEntryFee).Sub(beneficiaryEntryFee)
+	// fmt.Printf("Round manager percent fee: %v, beneficiary percent fee: %v\n", term.RoundManagerEntryFeePerc, term.BeneficiaryEntryFeePerc)
+	// fmt.Printf("Entryfee: %v, Beneficiary Entry fee: %v, Round Manager Entry fee: %v, Participant Entry Fee total: %v \n", entryFee, beneficiaryEntryFee, roundManagerEntryFee, participantEntryFee)
+	participantEntryFee = util.DivideAsset(participantEntryFee, uint64(numParticipants))
+	fmt.Println("Entry fees: ", entryFee, roundManagerEntryFee, beneficiaryEntryFee, participantEntryFee)
+	return &EntryFees{
+		PoolManagerEntryFee: roundManagerEntryFee,
+		BeneficiaryEntryFee: beneficiaryEntryFee,
+		ParticipantEntryFee: participantEntryFee,
+	}, nil
 }
 
 func (m *Term) Clone() *Term {

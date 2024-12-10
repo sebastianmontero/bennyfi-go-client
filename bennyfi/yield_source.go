@@ -46,6 +46,10 @@ type YieldSource struct {
 	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
 }
 
+func (m *YieldSource) HourlyYield() uint32 {
+	return m.DailyYieldx100000 / 24
+}
+
 func (m *YieldSource) Update(args *UpdateYieldSourceArgs) {
 	m.DailyYieldx100000 = args.DailyYieldx100000
 	m.TokenValue = args.TokenValue

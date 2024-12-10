@@ -25,7 +25,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"strconv"
 	"strings"
 	"time"
@@ -303,34 +302,10 @@ func (m *Round) UpdateFundingState(dist eos.Name, state eos.Name) {
 	m.Rewards.UpdateFundingState(dist, state)
 }
 
-func (m *Round) CalculateEntryFee(settings *EntryFeeSettings) eos.Asset {
-	if m.RoundType == RoundTypeFunded {
-		// fmt.Println("Manager funded entry fee: ", util.MultiplyAsset(settings.SelfFundedPerUser, int64(m.NumParticipants)))
-		return util.MultiplyAsset(settings.SelfFundedPerUser, int64(m.NumParticipants))
-	} else {
-
-		totalStake := util.MultiplyAsset(m.EntryStake, int64(m.NumParticipants))
-		yield := util.CalculateAssetPercentage(util.MultiplyAsset(totalStake, int64(m.StakingPeriod.Hrs())), settings.HourlyYield())
-		yieldUSD := util.MultiplyAssets(yield, settings.ValueTLOS)
-		yieldPerc := util.CalculateAssetPercentage(yieldUSD, settings.PercOfYield)
-		entryFee := util.DivideAssets(yieldPerc, settings.ValueBENY)
-		adjustedEntryFee := util.AdjustPrecision(big.NewInt(int64(entryFee.Amount)), entryFee.Precision, settings.BENYToken.Precision)
-		// fmt.Printf("Entry fee values, total stake: %v, yield: %v, yieldUSD: %v, yieldPerc: %v, entryFee: %v, adjustedEntryFee: %v \n", totalStake, yield, yieldUSD, yieldPerc, entryFee, adjustedEntryFee)
-		return eos.Asset{Amount: eos.Int64(adjustedEntryFee.Int64()), Symbol: settings.BENYToken.Symbol}
-	}
-}
-
-func (m *Round) CalculateEntryFees(settings *EntryFeeSettings, term *Term) {
-	entryFee := m.CalculateEntryFee(settings)
-	roundManagerEntryFee := util.CalculateAssetPercentage(entryFee, term.RoundManagerEntryFeePerc)
-	beneficiaryEntryFee := util.CalculateAssetPercentage(entryFee, term.BeneficiaryEntryFeePerc)
-	participantEntryFee := entryFee.Sub(roundManagerEntryFee).Sub(beneficiaryEntryFee)
-	// fmt.Printf("Round manager percent fee: %v, beneficiary percent fee: %v\n", term.RoundManagerEntryFeePerc, term.BeneficiaryEntryFeePerc)
-	// fmt.Printf("Entryfee: %v, Beneficiary Entry fee: %v, Round Manager Entry fee: %v, Participant Entry Fee total: %v \n", entryFee, beneficiaryEntryFee, roundManagerEntryFee, participantEntryFee)
-	participantEntryFee = util.DivideAsset(participantEntryFee, uint64(m.NumParticipants))
-	m.RoundManagerEntryFee = roundManagerEntryFee
-	m.BeneficiaryEntryFee = beneficiaryEntryFee
-	m.ParticipantEntryFee = participantEntryFee
+func (m *Round) UpdateEntryFees(entryFees *EntryFees) {
+	m.RoundManagerEntryFee = entryFees.PoolManagerEntryFee
+	m.BeneficiaryEntryFee = entryFees.BeneficiaryEntryFee
+	m.ParticipantEntryFee = entryFees.ParticipantEntryFee
 }
 
 func (m *Round) GetTotalEntryFee() eos.Asset {
