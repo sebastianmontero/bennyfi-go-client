@@ -59,7 +59,7 @@ func (m *ReturnsFT) NotificationMsg() string {
 }
 
 func (m *ReturnsFT) GetTotalReturn() eos.Asset {
-	fmt.Printf("Getting total return. Prize: %v, Minimum payout: %v \n", m.Prize, m.MinimumPayout)
+	// fmt.Printf("Getting total return. Prize: %v, Minimum payout: %v \n", m.Prize, m.MinimumPayout)
 	return m.Prize.Add(m.MinimumPayout)
 }
 
