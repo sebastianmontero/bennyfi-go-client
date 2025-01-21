@@ -296,6 +296,26 @@ func (m *RexContract) MatureAmount(owner eos.AccountName, amount int64) (string,
 	return m.ExecAction(m.ContractName, "matureamount", actionData)
 }
 
+func (m *RexContract) SetBalance(owner eos.AccountName, fundInBalance eos.Asset, rexBought eos.Asset, rexInSavings eos.Asset, rexLiquid eos.Asset, rexInSellOrders eos.Asset) (string, error) {
+	actionData := struct {
+		Owner           eos.AccountName
+		FundInBalance   eos.Asset
+		RexBought       eos.Asset
+		RexInSavings    eos.Asset
+		RexLiquid       eos.Asset
+		RexInSellOrders eos.Asset
+	}{owner, fundInBalance, rexBought, rexInSavings, rexLiquid, rexInSellOrders}
+	return m.ExecAction(m.ContractName, "setbalance", actionData)
+}
+
+func (m *RexContract) SetPool(totalLendable eos.Asset, totalRex eos.Asset) (string, error) {
+	actionData := struct {
+		TotalLendable eos.Asset
+		TotalRex      eos.Asset
+	}{totalLendable, totalRex}
+	return m.ExecAction(m.ContractName, "setpool", actionData)
+}
+
 func (m *RexContract) ResetConf() (string, error) {
 	return m.ExecAction(m.ContractName, "resetconf", nil)
 }
