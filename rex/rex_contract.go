@@ -296,6 +296,15 @@ func (m *RexContract) MatureAmount(owner eos.AccountName, amount int64) (string,
 	return m.ExecAction(m.ContractName, "matureamount", actionData)
 }
 
+func (m *RexContract) FillMaturity(owner eos.AccountName, maturityBucketNum uint32, amount int64) (string, error) {
+	actionData := struct {
+		Owner             eos.AccountName
+		MaturityBucketNum uint32
+		Amount            int64
+	}{owner, maturityBucketNum, amount}
+	return m.ExecAction(m.ContractName, "fillmaturity", actionData)
+}
+
 func (m *RexContract) SetBalance(owner eos.AccountName, fundInBalance eos.Asset, rexBought eos.Asset, rexInSavings eos.Asset, rexLiquid eos.Asset, rexInSellOrders eos.Asset) (string, error) {
 	actionData := struct {
 		Owner           eos.AccountName
