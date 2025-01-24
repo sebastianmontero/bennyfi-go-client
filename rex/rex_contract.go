@@ -83,7 +83,11 @@ type InitialPool struct {
 
 type PairTimePointSecInt64 struct {
 	First  eos.TimePointSec `json:"first"`
-	Second int64            `json:"second"`
+	Second eos.Int64        `json:"second"`
+}
+
+func (m *PairTimePointSecInt64) String() string {
+	return fmt.Sprintf("\nMaturity: %v, Amount: %v", m.First, m.Second)
 }
 
 type RexBalance struct {
