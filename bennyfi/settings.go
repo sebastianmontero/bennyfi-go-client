@@ -23,6 +23,7 @@ const (
 	SettingBeneficiaryUnstakingPeriodHrs = "BENEFICIARY_UNSTAKING_PERIOD_HRS"
 	SettingIsPaused                      = "IS_PAUSED"
 	SettingMaxEntriesPerParticipant      = "MAX_ENTRIES_PER_PARTICIPANT"
+	SettingMaxPoolStartPrdHrs            = "MAX_POOL_START_PRD_HRS"
 )
 
 type EntryFeeSettings struct {

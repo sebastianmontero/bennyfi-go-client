@@ -41,6 +41,7 @@ var (
 	BeneficiaryRewardOwner   = "beneficiary_reward_owner"
 	ReturnCycle              = "return_cycle"
 	NumClaimedPartialReturns = "num_claimed_partial_returns"
+	ExpectedYield            = "yield"
 	RoundNotStarted          = eos.Name("notstarted")
 	RoundPending             = eos.Name("pending")
 	RoundAcceptingEntries    = eos.Name("open")
@@ -203,6 +204,17 @@ func (m *Round) SetBeneficiaryRewardOwner(accountName interface{}) {
 		panic(fmt.Sprintf("could not convert %v to eos.Name, error: %v", account, err))
 	}
 	m.AdditionalFields.Set(BeneficiaryRewardOwner, dto.FlexValueFromName(account))
+}
+
+func (m *Round) GetExpectedYield() uint32 {
+	if m.AdditionalFields.Has(ExpectedYield) {
+		return m.AdditionalFields.GetValue(ExpectedYield).Uint32()
+	}
+	return 0
+}
+
+func (m *Round) SetExpectedYield(expectedYield uint32) {
+	m.AdditionalFields.Set(ExpectedYield, dto.FlexValueFromUint32(expectedYield))
 }
 
 func (m *Round) GetReturnCycle() uint32 {
