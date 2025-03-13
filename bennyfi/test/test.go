@@ -165,5 +165,5 @@ func AssertReward(t *testing.T, actual, expected *bennyfi.Reward) {
 }
 
 func AssertTime(t *testing.T, actual, expected eos.TimePoint) {
-	assert.Assert(t, actual.Time().Sub(expected.Time()).Abs().Milliseconds() < 500)
+	assert.Assert(t, actual.Time().Sub(expected.Time()).Abs().Milliseconds() <= 500, "Expected time: %v, actual: %v", expected, actual)
 }
