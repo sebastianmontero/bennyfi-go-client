@@ -39,6 +39,10 @@ func (m AdditionalField) Clone() *AdditionalField {
 	}
 }
 
+func (m *AdditionalField) String() string {
+	return fmt.Sprintf("key: %v, value: %v", m.Key, m.Value)
+}
+
 type AdditionalFields []*AdditionalField
 
 func (m AdditionalFields) FindPos(key string) int {
@@ -84,6 +88,15 @@ func (m AdditionalFields) Clone() AdditionalFields {
 		clone[i] = attr.Clone()
 	}
 	return clone
+}
+
+func (m AdditionalFields) String() string {
+	str := "["
+	for _, field := range m {
+		str += fmt.Sprintf("\n%v", field.String())
+	}
+	str += "]\n"
+	return str
 }
 
 func (p *AdditionalFields) Set(key string, value *dto.FlexValue) {

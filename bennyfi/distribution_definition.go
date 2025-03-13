@@ -134,15 +134,12 @@ func (m *DistributionDefinitionFT) CalculateDistribution(numParticipantsEntered 
 
 	precisionAdj := math.Pow(10, float64(totalReward.Precision))
 	percAdj := float64(10000000)
-	reward := float64(totalReward.Amount) / precisionAdj
 
-	rewardToAllParticipants := reward * float64((float64(m.AllParticipantsPerc) / percAdj))
-	rewardToBeneficiary := reward * float64((float64(m.BeneficiaryPerc) / percAdj))
-	feeToManager := reward * float64((float64(m.RoundManagerPerc) / percAdj))
-	// fmt.Printf("rewardToAllParticipants: %f, rewardToBeneficiary: %f, feeToManager: %f\n", rewardToAllParticipants, rewardToBeneficiary, feeToManager)
-	minParticipantReward := eos.Asset{Amount: eos.Int64((rewardToAllParticipants / float64(numParticipantsEntered)) * float64(precisionAdj)), Symbol: totalReward.Symbol}
-	beneficiaryReward := eos.Asset{Amount: eos.Int64(rewardToBeneficiary * float64(precisionAdj)), Symbol: totalReward.Symbol}
-	managerFee := eos.Asset{Amount: eos.Int64(feeToManager * float64(precisionAdj)), Symbol: totalReward.Symbol}
+	rewardToAllParticipants := util.CalculatePercentage(int64(totalReward.Amount), m.AllParticipantsPerc)
+	beneficiaryReward := util.CalculateAssetPercentage(totalReward, m.BeneficiaryPerc)
+	managerFee := util.CalculateAssetPercentage(totalReward, m.RoundManagerPerc)
+	minParticipantReward := eos.Asset{Amount: eos.Int64(util.DivideAmounts(rewardToAllParticipants, int64(numParticipantsEntered))), Symbol: totalReward.Symbol}
+	// fmt.Printf("rewardToAllParticipants: %v, rewardToBeneficiary: %v, feeToManager: %v, minParticipantReward: %v\n", rewardToAllParticipants, beneficiaryReward, managerFee, minParticipantReward)
 	remaining := totalReward.Sub(beneficiaryReward).Sub(managerFee).Sub(util.MultiplyAsset(minParticipantReward, int64(numParticipantsEntered)))
 	if isPartialReturn {
 		remaining = util.CalculateAssetPercentage(totalReward, m.WinnersRewardPerc())

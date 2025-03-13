@@ -47,14 +47,14 @@ func (m *ReturnsFT) HasReturns() bool {
 }
 
 func (m *ReturnsFT) NotificationMsg() string {
-	msg := fmt.Sprintf("MinimumPayout:%v", m.MinimumPayout)
+	msg := fmt.Sprintf("Minimum Payout: %v. ", m.MinimumPayout)
 	if m.Prize.Amount > 0 {
-		msg += fmt.Sprintf(";Prize:%v", m.Prize)
+		msg += fmt.Sprintf("Winner Prize: %v. ", m.Prize)
 	}
 	if m.EarlyExitReturnFee.Amount > 0 {
-		msg += fmt.Sprintf(";EarlyExitFee:%v", m.EarlyExitReturnFee)
+		msg += fmt.Sprintf("The early exit return fee was: %v, it includes the forfeited minimum payout. ", m.EarlyExitReturnFee)
 	}
-	msg += fmt.Sprintf(";FinalPayment:%v;TotalAmount:%v", m.OutstandingReward(), m.GetTotalReturn())
+	msg += fmt.Sprintf("Final payment of %v for a total return of %v.", m.OutstandingReward(), m.GetTotalReturn())
 	return msg
 }
 
@@ -94,11 +94,11 @@ func (m *ReturnsNFT) HasReturns() bool {
 }
 
 func (m *ReturnsNFT) NotificationMsg() string {
-	msg := fmt.Sprintf("MinimumPayout:%v", m.MinimumPayout)
+	msg := fmt.Sprintf("Minimum Payout: %v NFT(s). ", m.MinimumPayout)
 	if m.Prize > 0 {
-		msg += fmt.Sprintf(";Prize:%v", m.Prize)
+		msg += fmt.Sprintf("Winner Prize: %v NFT(s). ", m.Prize)
 	}
-	msg += fmt.Sprintf(";TotalAmount:%v", m.GetTotalReturn())
+	msg += fmt.Sprintf("Your total return: %v NFT(s).", m.GetTotalReturn())
 	return msg
 }
 
