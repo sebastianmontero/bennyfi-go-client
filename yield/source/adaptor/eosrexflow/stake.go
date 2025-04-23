@@ -166,6 +166,14 @@ func (m *EosRexFlowContract) SetStake(roundId uint64, rexBalance eos.Asset, tota
 	return m.ExecAction(m.GetValueOrContract(authorizer), "setstake", actionData)
 }
 
+func (m *EosRexFlowContract) SetCycleReturn(roundId uint64, cycleReturn eos.Asset, authorizer interface{}) (string, error) {
+	actionData := struct {
+		RoundId     uint64
+		CycleReturn eos.Asset
+	}{roundId, cycleReturn}
+	return m.ExecAction(m.GetValueOrContract(authorizer), "setcyclertrn", actionData)
+}
+
 func (m *EosRexFlowContract) TstLapseTime(roundId uint64) (string, error) {
 	actionData := struct {
 		RoundId     uint64
