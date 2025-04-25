@@ -48,6 +48,13 @@ func (m *BaseOffer) IsSellOffer() bool {
 	return m.OfferType == OfferTypeSell
 }
 
+func (m *BaseOffer) Maker() eos.AccountName {
+	if m.IsBuyOffer() {
+		return m.Buyer
+	}
+	return m.Seller
+}
+
 func (m *BaseOffer) Cost() eos.Asset {
 	return m.Price.Add(m.BuyerFee)
 }
