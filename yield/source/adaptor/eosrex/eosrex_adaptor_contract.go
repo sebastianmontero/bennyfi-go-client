@@ -48,6 +48,7 @@ var (
 	RexStateInSavings                          = eos.Name("insavings")
 	RexStateInLockPeriod                       = eos.Name("lockperiod")
 	RexStateProceedsCalculated                 = eos.Name("proceedscalc")
+	RexStateProceedsCalculatedAfterWindow      = eos.Name("prceedsclcaw")
 	RexStateWithdrawn                          = eos.Name("withdrawn")
 )
 

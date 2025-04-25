@@ -92,20 +92,29 @@ func (m *EosRexContract) WithdrawRex(callCounter uint64) (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "withdrawrex", callCounter)
 }
 
-func (m *EosRexContract) SetStake(roundId uint64, rexBalance eos.Asset, totalReturn eos.Asset, authorizer interface{}) (string, error) {
+func (m *EosRexContract) SetRexBalance(roundId uint64, rexBalance eos.Asset, authorizer interface{}) (string, error) {
 	actionData := struct {
-		RoundId     uint64
-		RexBalance  eos.Asset
-		TotalReturn eos.Asset
-	}{roundId, rexBalance, totalReturn}
-	return m.ExecAction(m.GetValueOrContract(authorizer), "setstake", actionData)
+		RoundId    uint64
+		RexBalance eos.Asset
+	}{roundId, rexBalance}
+	return m.ExecAction(m.GetValueOrContract(authorizer), "setrexbal", actionData)
 }
 
-func (m *EosRexContract) TstLapseTime(roundId uint64) (string, error) {
+func (m *EosRexContract) SetTotalReturn(roundId uint64, totalReturn eos.Asset, updateState bool, authorizer interface{}) (string, error) {
 	actionData := struct {
 		RoundId     uint64
+		TotalReturn eos.Asset
+		UpdateState bool
+	}{roundId, totalReturn, updateState}
+	return m.ExecAction(m.GetValueOrContract(authorizer), "settotalrtrn", actionData)
+}
+
+func (m *EosRexContract) TstLapseTime(roundId uint64, inTests bool) (string, error) {
+	actionData := struct {
+		RoundId     uint64
+		InTests     bool
 		CallCounter uint64
-	}{roundId, m.NextCallCounter()}
+	}{roundId, inTests, m.NextCallCounter()}
 	return m.ExecAction(eos.AN(m.ContractName), "tstlapsetime", actionData)
 }
 

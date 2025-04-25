@@ -175,6 +175,20 @@ func (m *BennyfiContract) Unescrow(authorizer eos.AccountName, account interface
 	return m.ExecAction(authorizer, "unescrow", actionData)
 }
 
+func (m *BennyfiContract) ChargeCreationFee(authorizer eos.AccountName, who interface{}, hint string) (string, error) {
+	w, err := util.ToAccountName(who)
+	if err != nil {
+		return "", fmt.Errorf("failed parsing charge creation fee who account: %v, error: %v", who, err)
+	}
+
+	actionData := struct {
+		Who  eos.AccountName
+		Hint string
+	}{w, hint}
+
+	return m.ExecAction(authorizer, "chrgcreatfee", actionData)
+}
+
 func (m *BennyfiContract) Withdraw(from eos.AccountName, quantity eos.Asset) (string, error) {
 	actionData := &WithdrawArgs{
 		From:     from,
