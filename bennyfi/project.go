@@ -91,15 +91,23 @@ func (m *Project) ToSetProjectArgs() *SetProjectArgs {
 }
 
 func (m *BennyfiContract) SetProject(projectArgs *SetProjectArgs) (string, error) {
-	return m.ExecAction(projectArgs.Authorizer, "setproject", projectArgs)
+	return m.SetProjectWithOtherAuthorizer(projectArgs, projectArgs.Authorizer)
+}
+
+func (m *BennyfiContract) SetProjectWithOtherAuthorizer(projectArgs *SetProjectArgs, otherAuthorizer eos.AccountName) (string, error) {
+	return m.ExecAction(otherAuthorizer, "setproject", projectArgs)
 }
 func (m *BennyfiContract) EraseProject(projectId uint64, authorizer eos.AccountName, erase bool) (string, error) {
+	return m.EraseProjectWithOtherAuthorizer(projectId, authorizer, erase, authorizer)
+}
+
+func (m *BennyfiContract) EraseProjectWithOtherAuthorizer(projectId uint64, authorizer eos.AccountName, erase bool, otherAuthorizer eos.AccountName) (string, error) {
 	actionData := &EraseProjectArgs{
 		ProjectID:  projectId,
 		Authorizer: authorizer,
 		Erase:      erase,
 	}
-	return m.ExecAction(authorizer, "eraseproject", actionData)
+	return m.ExecAction(otherAuthorizer, "eraseproject", actionData)
 }
 
 func (m *BennyfiContract) SetProjectFromProject(project *Project) (string, error) {
