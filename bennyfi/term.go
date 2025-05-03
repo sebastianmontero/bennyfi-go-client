@@ -310,7 +310,6 @@ type NewTermArgs struct {
 	Authorizer               eos.AccountName         `json:"authorizer"`
 	TermName                 string                  `json:"term_name"`
 	RoundType                eos.Name                `json:"pool_type"`
-	RoundAccess              eos.Name                `json:"pool_access"`
 	NumParticipants          uint32                  `json:"num_participants"`
 	MaxNumParticipants       int32                   `json:"max_num_participants"`
 	MaxEntriesPerParticipant uint32                  `json:"max_entries_per_participant"`
@@ -323,12 +322,19 @@ type NewTermArgs struct {
 	DefaultValues            DefaultValues           `json:"default_values"`
 }
 
+func (m *NewTermArgs) String() string {
+	result, err := json.Marshal(m)
+	if err != nil {
+		panic(fmt.Sprintf("Failed marshalling round: %v", err))
+	}
+	return string(result)
+}
+
 func TermToNewTermArgs(terms *Term) *NewTermArgs {
 	return &NewTermArgs{
 		TermName:                 terms.TermName,
 		Authorizer:               terms.Authorizer,
 		RoundType:                terms.RoundType,
-		RoundAccess:              terms.RoundAccess,
 		NumParticipants:          terms.NumParticipants,
 		MaxNumParticipants:       terms.GetMaxParticipantsArg(),
 		MaxEntriesPerParticipant: terms.GetMaxEntriesPerParticipant(),
@@ -353,6 +359,7 @@ func (m *BennyfiContract) NewTerm(term *Term) (string, error) {
 }
 
 func (m *BennyfiContract) NewTermFromTermArgs(termArgs *NewTermArgs) (string, error) {
+	fmt.Println("NewTermArgs: ", termArgs.String())
 	return m.ExecAction(termArgs.Authorizer, "newterm", termArgs)
 }
 
