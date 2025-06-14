@@ -14,16 +14,18 @@ import (
 )
 
 type TestUtil struct {
-	eosRexClient *eosrexflow.EosRexFlowContract
-	rexContract  eos.AccountName
+	eosRexClient     *eosrexflow.EosRexFlowContract
+	rexContract      eos.AccountName
+	rexProxyContract eos.AccountName
 	*test.TestUtil
 }
 
-func NewTestUtil(t *testing.T, eosRexClient *eosrexflow.EosRexFlowContract, rexContract eos.AccountName) *TestUtil {
+func NewTestUtil(t *testing.T, eosRexClient *eosrexflow.EosRexFlowContract, rexContract eos.AccountName, rexProxyContract eos.AccountName) *TestUtil {
 	return &TestUtil{
-		eosRexClient: eosRexClient,
-		rexContract:  rexContract,
-		TestUtil:     test.NewTestUtil(t, eosRexClient.EOS),
+		eosRexClient:     eosRexClient,
+		rexContract:      rexContract,
+		rexProxyContract: rexProxyContract,
+		TestUtil:         test.NewTestUtil(t, eosRexClient.EOS),
 	}
 }
 
@@ -104,56 +106,96 @@ func (m *TestUtil) AssertTREXNotifications(account eos.AccountName, notification
 }
 
 func (m *TestUtil) AssertInvestedInRex(stakeAmount, rexAmount eos.Asset) {
-	m.AssertAction(m.rexContract, "deposit", map[string]interface{}{
+	m.assertInvestedInRex(m.rexProxyContract, stakeAmount, rexAmount)
+	m.assertInvestedInRex(m.rexContract, stakeAmount, rexAmount)
+}
+
+func (m *TestUtil) assertInvestedInRex(contract eos.AccountName, stakeAmount, rexAmount eos.Asset) {
+	m.AssertAction(contract, "deposit", map[string]interface{}{
 		"owner":  m.eosRexClient.ContractName,
 		"amount": stakeAmount.String(),
 	}, 0)
 
-	m.AssertAction(m.rexContract, "buyrex", map[string]interface{}{
+	m.AssertAction(contract, "buyrex", map[string]interface{}{
 		"from":   m.eosRexClient.ContractName,
 		"amount": stakeAmount.String(),
 	}, 0)
 
-	m.AssertNumActions(m.rexContract, "mvtosavings", 0)
+	m.AssertNumActions(contract, "mvtosavings", 0)
 }
 
 func (m *TestUtil) AssertRexMovedFromSavings(rexBalance eos.Asset) {
-	m.AssertAction(m.rexContract, "mvfrsavings", map[string]interface{}{
+	m.assertRexMovedFromSavings(m.rexProxyContract, rexBalance)
+	m.assertRexMovedFromSavings(m.rexContract, rexBalance)
+}
+
+func (m *TestUtil) assertRexMovedFromSavings(contract eos.AccountName, rexBalance eos.Asset) {
+	m.AssertAction(contract, "mvfrsavings", map[string]interface{}{
 		"owner": m.eosRexClient.ContractName,
 		"rex":   rexBalance.String(),
 	}, 0)
 }
 
 func (m *TestUtil) AssertUpdateRexCalled() {
-	m.AssertAction(m.rexContract, "updaterex", map[string]interface{}{
+	m.assertUpdateRexCalled(m.rexProxyContract)
+	m.assertUpdateRexCalled(m.rexContract)
+}
+
+func (m *TestUtil) assertUpdateRexCalled(contract eos.AccountName) {
+	m.AssertAction(contract, "updaterex", map[string]interface{}{
 		"owner": m.eosRexClient.ContractName,
 	}, 0)
 }
 
 func (m *TestUtil) AssertUpdateRexCalledNTimes(times int) {
-	m.AssertNumActions(m.rexContract, "updaterex", times)
+	m.assertUpdateRexCalledNTimes(m.rexProxyContract, times)
+	m.assertUpdateRexCalledNTimes(m.rexContract, times)
+}
+
+func (m *TestUtil) assertUpdateRexCalledNTimes(contract eos.AccountName, times int) {
+	m.AssertNumActions(contract, "updaterex", times)
 }
 
 func (m *TestUtil) AssertRexSold(rexBalance eos.Asset) {
-	m.AssertAction(m.rexContract, "sellrex", map[string]interface{}{
+	m.assertRexSold(m.rexProxyContract, rexBalance)
+	m.assertRexSold(m.rexContract, rexBalance)
+}
+
+func (m *TestUtil) assertRexSold(contract eos.AccountName, rexBalance eos.Asset) {
+	m.AssertAction(contract, "sellrex", map[string]interface{}{
 		"from": m.eosRexClient.ContractName,
 		"rex":  rexBalance.String(),
 	}, 0)
 }
 
 func (m *TestUtil) AssertRexSellCalledNTimes(times int) {
-	m.AssertNumActions(m.rexContract, "sellrex", times)
+	m.assertRexSellCalledNTimes(m.rexProxyContract, times)
+	m.assertRexSellCalledNTimes(m.rexContract, times)
+}
+
+func (m *TestUtil) assertRexSellCalledNTimes(contract eos.AccountName, times int) {
+	m.AssertNumActions(contract, "sellrex", times)
 }
 
 func (m *TestUtil) AssertRexWithdrawn(amount eos.Asset) {
-	m.AssertAction(m.rexContract, "withdraw", map[string]interface{}{
+	m.assertRexWithdrawn(m.rexProxyContract, amount)
+	m.assertRexWithdrawn(m.rexContract, amount)
+}
+
+func (m *TestUtil) assertRexWithdrawn(contract eos.AccountName, amount eos.Asset) {
+	m.AssertAction(contract, "withdraw", map[string]interface{}{
 		"owner":  m.eosRexClient.ContractName,
 		"amount": amount.String(),
 	}, 0)
 }
 
 func (m *TestUtil) AssertRexWithdrawCalledNTimes(times int) {
-	m.AssertNumActions(m.rexContract, "withdraw", times)
+	m.assertRexWithdrawCalledNTimes(m.rexProxyContract, times)
+	m.assertRexWithdrawCalledNTimes(m.rexContract, times)
+}
+
+func (m *TestUtil) assertRexWithdrawCalledNTimes(contract eos.AccountName, times int) {
+	m.AssertNumActions(contract, "withdraw", times)
 }
 
 func (m *TestUtil) LapseLastNotifiedTime(lastNotifiedSetting string, shift time.Duration) {
