@@ -14,16 +14,18 @@ import (
 )
 
 type TestUtil struct {
-	eosRexClient *eosrex.EosRexContract
-	rexContract  eos.AccountName
+	eosRexClient     *eosrex.EosRexContract
+	rexContract      eos.AccountName
+	rexProxyContract eos.AccountName
 	*test.TestUtil
 }
 
-func NewTestUtil(t *testing.T, eosRexClient *eosrex.EosRexContract, rexContract eos.AccountName) *TestUtil {
+func NewTestUtil(t *testing.T, eosRexClient *eosrex.EosRexContract, rexContract eos.AccountName, rexProxyContract eos.AccountName) *TestUtil {
 	return &TestUtil{
-		eosRexClient: eosRexClient,
-		rexContract:  rexContract,
-		TestUtil:     test.NewTestUtil(t, eosRexClient.EOS),
+		eosRexClient:     eosRexClient,
+		rexContract:      rexContract,
+		rexProxyContract: rexProxyContract,
+		TestUtil:         test.NewTestUtil(t, eosRexClient.EOS),
 	}
 }
 
@@ -87,6 +89,15 @@ func (m *TestUtil) AssertTREXNotifications(account eos.AccountName, notification
 }
 
 func (m *TestUtil) AssertInvestedInRex(stakeAmount, rexAmount eos.Asset) {
+	m.AssertAction(m.rexProxyContract, "deposit", map[string]interface{}{
+		"owner":  m.eosRexClient.ContractName,
+		"amount": stakeAmount.String(),
+	}, 0)
+
+	m.AssertAction(m.rexProxyContract, "buyrex", map[string]interface{}{
+		"from":   m.eosRexClient.ContractName,
+		"amount": stakeAmount.String(),
+	}, 0)
 	m.AssertAction(m.rexContract, "deposit", map[string]interface{}{
 		"owner":  m.eosRexClient.ContractName,
 		"amount": stakeAmount.String(),

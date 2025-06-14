@@ -38,8 +38,13 @@ var (
 		Precision: 4,
 		Symbol:    "BTLOS",
 	}
-	VersionEOS   = eos.Name("eos")
-	VersionTELOS = eos.Name("telos")
+	RexOriginalFundSymbol = eos.Symbol{
+		Precision: 4,
+		Symbol:    "EOS",
+	}
+	VersionEOS    = eos.Name("eos")
+	VersionTELOS  = eos.Name("telos")
+	VersionVaulta = eos.Name("vaulta")
 )
 
 type Config struct {
@@ -65,6 +70,15 @@ type RexPool struct {
 	TotalUnlent   eos.Asset `json:"total_unlent"`
 	TotalLendable eos.Asset `json:"total_lendable"`
 	TotalRex      eos.Asset `json:"total_rex"`
+}
+
+func (m *RexPool) ToVaultaRexPool() *RexPool {
+	return &RexPool{
+		TotalLent:     eos.Asset{Amount: m.TotalLent.Amount, Symbol: RexOriginalFundSymbol},
+		TotalUnlent:   eos.Asset{Amount: m.TotalUnlent.Amount, Symbol: RexOriginalFundSymbol},
+		TotalLendable: eos.Asset{Amount: m.TotalLendable.Amount, Symbol: RexOriginalFundSymbol},
+		TotalRex:      m.TotalRex,
+	}
 }
 
 func (m *RexPool) ToInitialPool() *InitialPool {
@@ -109,10 +123,30 @@ type RexOrder struct {
 	IsOpen       uint8           `json:"is_open"`
 }
 
+func (m *RexOrder) ToVaultaRexOrder() *RexOrder {
+	return &RexOrder{
+		Version:      m.Version,
+		Owner:        m.Owner,
+		RexRequested: m.RexRequested,
+		Proceeds:     eos.Asset{Amount: m.Proceeds.Amount, Symbol: RexOriginalFundSymbol},
+		StakeChange:  m.StakeChange,
+		OrderTime:    m.OrderTime,
+		IsOpen:       m.IsOpen,
+	}
+}
+
 type RexFund struct {
 	Version uint8           `json:"version"`
 	Owner   eos.AccountName `json:"owner"`
 	Balance eos.Asset       `json:"balance"`
+}
+
+func (m *RexFund) ToVaultaRexFund() *RexFund {
+	return &RexFund{
+		Version: m.Version,
+		Owner:   m.Owner,
+		Balance: eos.Asset{Amount: m.Balance.Amount, Symbol: RexOriginalFundSymbol},
+	}
 }
 
 type SetInitialPoolArgs struct {
