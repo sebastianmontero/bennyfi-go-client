@@ -30,6 +30,11 @@ import (
 
 type YieldSourceStruct = YieldSource
 
+var (
+	YieldSourceStateActive = eos.Name("active")
+	YieldSourceStatePaused = eos.Name("paused")
+)
+
 type YieldSource struct {
 	YieldSource                      eos.Name        `json:"yield_source"`
 	YieldSourceName                  string          `json:"yield_source_name"`
@@ -41,6 +46,7 @@ type YieldSource struct {
 	DailyYieldx100000                uint32          `json:"daily_yield_x100000"`
 	TokenValue                       eos.Asset       `json:"token_value"`
 	BenyValue                        eos.Asset       `json:"beny_value"`
+	State                            eos.Name        `json:"state"`
 	Authorizer                       eos.AccountName `json:"authorizer"`
 	// NOT USED AT THE MOMENT
 	// AdditionalFields types.AdditionalFields `json:"additional_fields"`

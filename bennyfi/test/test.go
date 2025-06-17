@@ -72,6 +72,7 @@ func AssertYieldSource(t *testing.T, actual, expected *bennyfi.YieldSource) {
 	assert.Equal(t, actual.DailyYieldx100000, expected.DailyYieldx100000)
 	assert.Equal(t, actual.TokenValue, expected.TokenValue)
 	assert.Equal(t, actual.BenyValue, expected.BenyValue)
+	assert.Equal(t, actual.State, expected.State)
 }
 
 func AssertDistributionDefFT(t *testing.T, actual, expected *bennyfi.DistributionDefinitionFT) {

@@ -359,7 +359,7 @@ func (m *BennyfiContract) NewTerm(term *Term) (string, error) {
 }
 
 func (m *BennyfiContract) NewTermFromTermArgs(termArgs *NewTermArgs) (string, error) {
-	fmt.Println("NewTermArgs: ", termArgs.String())
+	// fmt.Println("NewTermArgs: ", termArgs.String())
 	return m.ExecAction(termArgs.Authorizer, "newterm", termArgs)
 }
 
