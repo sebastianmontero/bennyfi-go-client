@@ -468,6 +468,29 @@ func (m *BennyfiContract) StartRound(roundID uint64) (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "startpool", roundID)
 }
 
+func (m *BennyfiContract) TimeoutRound(roundID uint64, sudo bool, authorizer interface{}) (string, error) {
+	var permissionLevel interface{}
+	var author eos.AccountName
+	var err error
+	if authorizer == nil {
+		permissionLevel = fmt.Sprintf("%v@open", m.ContractName)
+		author = eos.AccountName(m.ContractName)
+	} else {
+		permissionLevel = authorizer
+		author, err = util.ToAccountName(authorizer)
+		if err != nil {
+			return "", fmt.Errorf("failed parsing authorizer account: %v, error: %v", authorizer, err)
+		}
+	}
+	actionData := struct {
+		Authorizer eos.AccountName
+		RoundId    uint64
+		Sudo       bool
+	}{author, roundID, sudo}
+	// fmt.Printf("Permission level: %v\n", permissionLevel)
+	return m.ExecAction(permissionLevel, "timeoutpool", actionData)
+}
+
 func (m *BennyfiContract) FundRound(roundID uint64, funder interface{}) (string, error) {
 	f, err := util.ToAccountName(funder)
 	if err != nil {
@@ -513,8 +536,8 @@ func (m *BennyfiContract) DeleteTimedoutRounds(callCounter uint64) (string, erro
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "deltmdpools", callCounter)
 }
 
-func (m *BennyfiContract) Redraw() (string, error) {
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "redraw", nil)
+func (m *BennyfiContract) Redraw(callCounter uint64) (string, error) {
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "redraw", callCounter)
 }
 
 func (m *BennyfiContract) VestingRounds(callCounter uint64) (string, error) {

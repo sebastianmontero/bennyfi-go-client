@@ -45,6 +45,7 @@ var (
 	VersionEOS    = eos.Name("eos")
 	VersionTELOS  = eos.Name("telos")
 	VersionVaulta = eos.Name("vaulta")
+	VersionFail   = eos.Name("fail")
 )
 
 type Config struct {
