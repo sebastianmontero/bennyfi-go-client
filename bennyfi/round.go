@@ -50,18 +50,21 @@ var (
 	RoundClosedYieldWithdrawnTestSetupOnly = eos.Name("closedyield")
 	RoundUnlocked                          = eos.Name("unlocked")
 	RoundTimedOut                          = eos.Name("cancelled")
+	RoundStopped                           = eos.Name("stopped")
 	RoundStakeStateNotStarted              = eos.Name("notstarted")
 	RoundStakeStateStaked                  = eos.Name("staked")
 	RoundStakeStatePayingPartialReturns    = eos.Name("payreturns")
 	RoundStakeStateUnstakingTimedOut       = eos.Name("unstakingtmo")
 	RoundStakeStateUnstakingUnlocked       = eos.Name("unstakingulk")
 	RoundStakeStateUnstaked                = eos.Name("unstaked")
+	RoundStakeStateStopped                 = eos.Name("stopped")
 	VestingStateNotApplicable              = eos.Name("notaplicable")
 	VestingStateNotStarted                 = eos.Name("notstarted")
 	VestingStateVesting                    = eos.Name("vesting")
 	VestingStateVesting1                   = eos.Name("vesting1") //used for entries to enable handling the different vesting cycles
 	VestingStateVesting2                   = eos.Name("vesting2")
 	VestingStateFinished                   = eos.Name("finished")
+	VestingStateStopped                    = eos.Name("stopped")
 	RoundTypeFunded                        = eos.Name("funded")
 	RoundTypeYield                         = eos.Name("yield")
 	RoundAccessPrivate                     = eos.Name("private")
@@ -466,6 +469,29 @@ func (m *BennyfiContract) NewRoundFromRoundArgs(roundArgs *NewRoundArgs) (string
 
 func (m *BennyfiContract) StartRound(roundID uint64) (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "startpool", roundID)
+}
+
+func (m *BennyfiContract) StopRound(roundID uint64, sudo bool, authorizer interface{}) (string, error) {
+	var permissionLevel interface{}
+	var author eos.AccountName
+	var err error
+	if authorizer == nil {
+		permissionLevel = fmt.Sprintf("%v@open", m.ContractName)
+		author = eos.AccountName(m.ContractName)
+	} else {
+		permissionLevel = authorizer
+		author, err = util.ToAccountName(authorizer)
+		if err != nil {
+			return "", fmt.Errorf("failed parsing authorizer account: %v, error: %v", authorizer, err)
+		}
+	}
+	actionData := struct {
+		Authorizer eos.AccountName
+		RoundId    uint64
+		Sudo       bool
+	}{author, roundID, sudo}
+	// fmt.Printf("Permission level: %v\n", permissionLevel)
+	return m.ExecAction(permissionLevel, "stoppool", actionData)
 }
 
 func (m *BennyfiContract) FundRound(roundID uint64, funder interface{}) (string, error) {

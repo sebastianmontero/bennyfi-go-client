@@ -31,8 +31,9 @@ import (
 type YieldSourceStruct = YieldSource
 
 var (
-	YieldSourceStateActive = eos.Name("active")
-	YieldSourceStatePaused = eos.Name("paused")
+	YieldSourceStateActive  = eos.Name("active")
+	YieldSourceStatePaused  = eos.Name("paused")
+	YieldSourceStateStopped = eos.Name("stopped")
 )
 
 type YieldSource struct {

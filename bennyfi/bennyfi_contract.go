@@ -95,6 +95,7 @@ func (m *BennyfiContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) erro
 		"vestingpools",
 		"claimathstks",
 		"clmprtrtrnpl",
+		"stoppool",
 	}
 	err := m.EOS.CreateSimplePermission(m.ContractName, "open", publicKey)
 	if err != nil {
