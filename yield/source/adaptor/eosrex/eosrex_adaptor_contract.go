@@ -50,6 +50,8 @@ var (
 	RexStateProceedsCalculated                 = eos.Name("proceedscalc")
 	RexStateProceedsCalculatedAfterWindow      = eos.Name("prceedsclcaw")
 	RexStateWithdrawn                          = eos.Name("withdrawn")
+	RexStateStopped                            = eos.Name("stopped")
+	FieldStateWhenStopped                      = "state_when_stopped"
 )
 
 type EosRexContract struct {
