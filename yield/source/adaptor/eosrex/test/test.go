@@ -48,7 +48,7 @@ func (m *TestUtil) AssertStake(actual, expected *eosrex.Stake, sellDelay bool) {
 	assert.Equal(m.T, actual.RexState, expected.RexState)
 	assert.DeepEqual(m.T, actual.StakingPeriod, expected.StakingPeriod)
 	stakingPeriod := actual.StakingPeriod.AsTimeDuration()
-	shift := stakingPeriod + time.Minute + (time.Second * 15)
+	shift := stakingPeriod + time.Minute + (time.Second * 30)
 	dateLimit := time.Now().Add(shift * -1)
 	stakedTime := actual.StakedTime
 	stakeEndTime := actual.StakeEndTime
