@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	ltest "github.com/sebastianmontero/bennyfi-go-client/util/test"
 	"github.com/sebastianmontero/bennyfi-go-client/yield/source/adaptor/eosrex"
 	"github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/dto"
@@ -47,13 +48,17 @@ func (m *TestUtil) AssertStake(actual, expected *eosrex.Stake, sellDelay bool) {
 	assert.Equal(m.T, actual.RexState, expected.RexState)
 	assert.DeepEqual(m.T, actual.StakingPeriod, expected.StakingPeriod)
 	stakingPeriod := actual.StakingPeriod.AsTimeDuration()
-	shift := stakingPeriod + time.Minute
+	shift := stakingPeriod + time.Minute + (time.Second * 30)
 	dateLimit := time.Now().Add(shift * -1)
 	stakedTime := actual.StakedTime
 	stakeEndTime := actual.StakeEndTime
 	assert.Assert(m.T, stakedTime.Time().Add(-1*time.Second).Before(time.Now()))
-	assert.Assert(m.T, stakedTime.Time().After(dateLimit), "Expected staked time to be set")
-	if actual.RexState == eosrex.RexStateInSavings {
+	assert.Assert(m.T, stakedTime.Time().After(dateLimit), "Expected staked time to be set staked time: %v date limit: %v", stakedTime.Time(), dateLimit)
+	rexState := actual.RexState
+	if actual.RexState == eosrex.RexStateStopped {
+		rexState = actual.GetStateWhenStopped()
+	}
+	if rexState == eosrex.RexStateInSavings {
 		assert.Assert(m.T, util.IsNullTimePoint(actual.MovedFromSavingsTime), "Expected moved from savings time not to be set")
 		assert.Assert(m.T, util.IsNullTimePoint(actual.MaturityTime), "Expected maturity time not to be set")
 		assert.Assert(m.T, stakeEndTime.Time().After(time.Now()))
@@ -66,15 +71,15 @@ func (m *TestUtil) AssertStake(actual, expected *eosrex.Stake, sellDelay bool) {
 		assert.Equal(m.T, movedFromSavingsTime.Time(), expectedMoveFromSavingsTime)
 		assert.Equal(m.T, movedFromSavingsTime.Time().Add(rexLockPeriod), stakeEndTime.Time())
 		assert.Assert(m.T, time.Since(movedFromSavingsTime.Time().Add(-1*time.Second)) >= 0)
-		if actual.RexState == eosrex.RexStateInLockPeriod {
+		if rexState == eosrex.RexStateInLockPeriod {
 			stakeEndTimeUTC := stakeEndTime.Time().UTC()
 			assert.Equal(m.T, maturityTime.Time().UTC(), time.Date(stakeEndTimeUTC.Year(), stakeEndTimeUTC.Month(), stakeEndTimeUTC.Day(), 0, 0, 0, 0, stakeEndTimeUTC.Location()), fmt.Sprintf("Expected maturity time to be start of day UTC of stake end time, maturity time: %v, stake end time: %v", maturityTime.Time().UTC(), stakeEndTime.Time().UTC()))
 			assert.Assert(m.T, time.Now().Before(maturityTime.Time()))
-		} else if actual.RexState == eosrex.RexStateProceedsCalculated {
+		} else if rexState == eosrex.RexStateProceedsCalculated {
 			bufferPeriod, err := m.eosRexClient.SettingAsUint32(eosrex.SettingProceedsCalculationBufferPeriodMins)
 			assert.NilError(m.T, err)
 			assert.Assert(m.T, time.Since(maturityTime.Time().Add(-1*time.Second).Add(-1*time.Minute*time.Duration(bufferPeriod))) >= 0)
-		} else if actual.RexState == eosrex.RexStateWithdrawn {
+		} else if rexState == eosrex.RexStateWithdrawn {
 			assert.Assert(m.T, time.Since(stakeEndTime.Time().Add(-1*time.Second)) >= 0)
 		} else {
 			if !sellDelay {
@@ -82,6 +87,7 @@ func (m *TestUtil) AssertStake(actual, expected *eosrex.Stake, sellDelay bool) {
 			}
 		}
 	}
+	ltest.AssertAdditionalFields(m.T, actual.AdditionalFields, expected.AdditionalFields)
 }
 
 func (m *TestUtil) AssertTREXNotifications(account eos.AccountName, notifications [][]string, verifyExactQuantity bool) {

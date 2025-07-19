@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sebastianmontero/bennyfi-go-client/common/types"
 	"github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/dto"
 )
@@ -21,25 +22,24 @@ func CalculateMinFinalCycleTime(finalCycleBufferPeriodDays uint32) time.Duration
 }
 
 type Stake struct {
-	RoundID              uint64            `json:"pool_id"`
-	InitialStake         eos.Asset         `json:"initial_stake"`
-	CycleStake           eos.Asset         `json:"cycle_stake"`
-	RexBalance           eos.Asset         `json:"rex_balance"`
-	MinimumReturn        eos.Asset         `json:"minimum_return"`
-	CycleReturn          eos.Asset         `json:"cycle_return"`
-	TotalReturn          eos.Asset         `json:"total_return"`
-	RexState             eos.Name          `json:"rex_state"`
-	Cycle                uint32            `json:"cycle"`
-	CycleStakingPeriod   *dto.Microseconds `json:"cycle_staking_period"`
-	StakingPeriod        *dto.Microseconds `json:"staking_period"`
-	CycleStakedTime      eos.TimePoint     `json:"cycle_staked_time"`
-	StakedTime           eos.TimePoint     `json:"staked_time"`
-	MovedFromSavingsTime eos.TimePoint     `json:"moved_from_savings_time"`
-	MaturityTime         eos.TimePoint     `json:"maturity_time"`
-	StakeEndTime         eos.TimePoint     `json:"stake_end_time"`
-	UpdatedDate          eos.TimePoint     `json:"updated_date"`
-	// NOT USED AT THE MOMENT
-	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
+	RoundID              uint64                 `json:"pool_id"`
+	InitialStake         eos.Asset              `json:"initial_stake"`
+	CycleStake           eos.Asset              `json:"cycle_stake"`
+	RexBalance           eos.Asset              `json:"rex_balance"`
+	MinimumReturn        eos.Asset              `json:"minimum_return"`
+	CycleReturn          eos.Asset              `json:"cycle_return"`
+	TotalReturn          eos.Asset              `json:"total_return"`
+	RexState             eos.Name               `json:"rex_state"`
+	Cycle                uint32                 `json:"cycle"`
+	CycleStakingPeriod   *dto.Microseconds      `json:"cycle_staking_period"`
+	StakingPeriod        *dto.Microseconds      `json:"staking_period"`
+	CycleStakedTime      eos.TimePoint          `json:"cycle_staked_time"`
+	StakedTime           eos.TimePoint          `json:"staked_time"`
+	MovedFromSavingsTime eos.TimePoint          `json:"moved_from_savings_time"`
+	MaturityTime         eos.TimePoint          `json:"maturity_time"`
+	StakeEndTime         eos.TimePoint          `json:"stake_end_time"`
+	UpdatedDate          eos.TimePoint          `json:"updated_date"`
+	AdditionalFields     types.AdditionalFields `json:"additional_fields"`
 }
 
 func (m *Stake) String() string {
@@ -69,7 +69,11 @@ func (m *Stake) IsFinalCycle() bool {
 }
 
 func (m *Stake) GetNextStakeEndTime(finalCycleBufferPeriodDays uint32) eos.TimePoint {
-	if m.RexState == RexStateInSavings {
+	rexState := m.RexState
+	if rexState == RexStateStopped {
+		rexState = m.GetStateWhenStopped()
+	}
+	if rexState == RexStateInSavings {
 		nextStakeEndTime := eos.TimePoint(m.StakedTime.Time().Add(time.Hour * time.Duration(m.StakingPeriod.Hrs())).UnixMicro())
 		minTimeForNextPartialCycle := eos.TimePoint(m.CycleStakedTime.Time().Add((time.Hour * time.Duration(m.CycleStakingPeriod.Hrs())) + CalculateMinFinalCycleTime(finalCycleBufferPeriodDays)).UnixMicro())
 		if minTimeForNextPartialCycle.Time().Before(nextStakeEndTime.Time()) {
@@ -92,6 +96,17 @@ func (m *Stake) SplitReturn() *ReturnSplit {
 		WithdrawAmount: withdrawAmount,
 		StakeAmount:    m.CycleReturn.Sub(withdrawAmount),
 	}
+}
+
+func (m *Stake) GetStateWhenStopped() eos.Name {
+	if m.RexState != RexStateStopped {
+		panic("Stake is not stopped")
+	}
+	return m.AdditionalFields.GetValue(FieldStateWhenStopped).Name()
+}
+
+func (m *Stake) SetStateWhenStopped(stateWhenStopped eos.Name) {
+	m.AdditionalFields.Set(FieldStateWhenStopped, dto.FlexValueFromName(stateWhenStopped))
 }
 
 type ReturnSplit struct {
@@ -155,6 +170,14 @@ func (m *EosRexFlowContract) SellRex(callCounter uint64) (string, error) {
 
 func (m *EosRexFlowContract) WithdrawRex(callCounter uint64) (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "withdrawrex", callCounter)
+}
+
+func (m *EosRexFlowContract) StopStake(roundId uint64, authorizer interface{}) (string, error) {
+	return m.ExecAction(m.GetValueOrContract(authorizer), "stopstake", roundId)
+}
+
+func (m *EosRexFlowContract) StopStakes(callCounter uint64, authorizer interface{}) (string, error) {
+	return m.ExecAction(m.GetValueOrContract(authorizer), "stopstakes", callCounter)
 }
 
 func (m *EosRexFlowContract) SetStake(roundId uint64, rexBalance eos.Asset, totalReturn eos.Asset, authorizer interface{}) (string, error) {

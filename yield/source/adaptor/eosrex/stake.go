@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sebastianmontero/bennyfi-go-client/common/types"
 	"github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/dto"
 )
@@ -25,7 +26,7 @@ type Stake struct {
 	StakeEndTime         eos.TimePoint     `json:"stake_end_time"`
 	UpdatedDate          eos.TimePoint     `json:"updated_date"`
 	// NOT USED AT THE MOMENT
-	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
+	AdditionalFields types.AdditionalFields `json:"additional_fields"`
 }
 
 func (m *Stake) String() string {
@@ -48,6 +49,17 @@ func (m *Stake) CalculateSellRexTime() eos.TimePoint {
 
 func (m *Stake) CalculateStakeEndTime() eos.TimePoint {
 	return eos.TimePoint(m.StakedTime.Time().Add(time.Hour * time.Duration(m.StakingPeriod.Hrs())).UnixMicro())
+}
+
+func (m *Stake) GetStateWhenStopped() eos.Name {
+	if m.RexState != RexStateStopped {
+		panic("Stake is not stopped")
+	}
+	return m.AdditionalFields.GetValue(FieldStateWhenStopped).Name()
+}
+
+func (m *Stake) SetStateWhenStopped(stateWhenStopped eos.Name) {
+	m.AdditionalFields.Set(FieldStateWhenStopped, dto.FlexValueFromName(stateWhenStopped))
 }
 
 func (m *EosRexContract) CheckStakeParameters(authorizer, tokenContract eos.AccountName, minStakeAmount eos.Asset, maxStakeAmount eos.Asset, stakingPeriodHrs uint32) (string, error) {
@@ -90,6 +102,14 @@ func (m *EosRexContract) SellRex(callCounter uint64) (string, error) {
 
 func (m *EosRexContract) WithdrawRex(callCounter uint64) (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "withdrawrex", callCounter)
+}
+
+func (m *EosRexContract) StopStake(roundId uint64, authorizer interface{}) (string, error) {
+	return m.ExecAction(m.GetValueOrContract(authorizer), "stopstake", roundId)
+}
+
+func (m *EosRexContract) StopStakes(callCounter uint64, authorizer interface{}) (string, error) {
+	return m.ExecAction(m.GetValueOrContract(authorizer), "stopstakes", callCounter)
 }
 
 func (m *EosRexContract) SetRexBalance(roundId uint64, rexBalance eos.Asset, authorizer interface{}) (string, error) {
