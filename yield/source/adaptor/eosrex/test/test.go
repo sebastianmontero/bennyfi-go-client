@@ -126,7 +126,7 @@ func (m *TestUtil) assertRexMovedFromSavings(contract eos.AccountName, rexBalanc
 }
 
 func (m *TestUtil) AssertUpdateRexCalled() {
-	m.assertUpdateRexCalled(m.rexProxyContract)
+	// The updaterex action was not added to the vaulta rex contract so it has to be called directly on the rex contract(eosio)
 	m.assertUpdateRexCalled(m.rexContract)
 }
 
