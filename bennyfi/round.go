@@ -494,6 +494,15 @@ func (m *BennyfiContract) TimeoutRound(roundID uint64, sudo bool, authorizer int
 	return m.ExecAction(permissionLevel, "timeoutpool", actionData)
 }
 
+func (m *BennyfiContract) DeleteStoppedRound(roundID uint64, authorizer eos.AccountName) (string, error) {
+	actionData := struct {
+		Authorizer eos.AccountName
+		RoundId    uint64
+	}{authorizer, roundID}
+	// fmt.Printf("Permission level: %v\n", permissionLevel)
+	return m.ExecAction(authorizer, "delstppdpool", actionData)
+}
+
 func (m *BennyfiContract) StopRound(roundID uint64, sudo bool, authorizer interface{}) (string, error) {
 	var permissionLevel interface{}
 	var author eos.AccountName
@@ -516,7 +525,6 @@ func (m *BennyfiContract) StopRound(roundID uint64, sudo bool, authorizer interf
 	// fmt.Printf("Permission level: %v\n", permissionLevel)
 	return m.ExecAction(permissionLevel, "stoppool", actionData)
 }
-
 
 func (m *BennyfiContract) FundRound(roundID uint64, funder interface{}) (string, error) {
 	f, err := util.ToAccountName(funder)

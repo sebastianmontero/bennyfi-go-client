@@ -132,7 +132,7 @@ func (m *BennyfiContract) Vesting(entryId uint64, permissionLevel interface{}) (
 	return m.ExecAction(permissionLevel, "vesting", entryId)
 }
 
-func (m *BennyfiContract) GetEntries() ([]Entry, error) {
+func (m *BennyfiContract) GetEntries() ([]*Entry, error) {
 
 	return m.GetEntriesReq(&eos.GetTableRowsRequest{})
 }
@@ -144,7 +144,7 @@ func (m *BennyfiContract) GetAllEntriesAsMap() ([]map[string]interface{}, error)
 	return m.GetAllTableRowsAsMap(req, "entry_id")
 }
 
-func (m *BennyfiContract) GetEntriesbyParticipant(participant eos.AccountName) ([]Entry, error) {
+func (m *BennyfiContract) GetEntriesbyParticipant(participant eos.AccountName) ([]*Entry, error) {
 	request := &eos.GetTableRowsRequest{}
 	m.FilterEntriesbyParticipant(request, participant)
 	return m.GetEntriesReq(request)
@@ -157,7 +157,7 @@ func (m *BennyfiContract) FilterEntriesbyParticipant(req *eos.GetTableRowsReques
 	req.UpperBound = string(participant)
 }
 
-func (m *BennyfiContract) GetEntriesbyRound(roundID uint64) ([]Entry, error) {
+func (m *BennyfiContract) GetEntriesbyRound(roundID uint64) ([]*Entry, error) {
 	request := &eos.GetTableRowsRequest{}
 	m.FilterEntriesbyRound(request, roundID)
 	return m.GetEntriesReq(request)
@@ -172,7 +172,7 @@ func (m *BennyfiContract) FilterEntriesbyRound(req *eos.GetTableRowsRequest, rou
 
 }
 
-func (m *BennyfiContract) GetEntriesbyStatus(status eos.Name) ([]Entry, error) {
+func (m *BennyfiContract) GetEntriesbyStatus(status eos.Name) ([]*Entry, error) {
 	request := &eos.GetTableRowsRequest{}
 	m.FilterEntriesbyStatus(request, status)
 	return m.GetEntriesReq(request)
@@ -186,7 +186,7 @@ func (m *BennyfiContract) FilterEntriesbyStatus(req *eos.GetTableRowsRequest, st
 	req.UpperBound = string(status)
 }
 
-func (m *BennyfiContract) GetEntriesbyRoundAndPos(roundID uint64, pos uint64) ([]Entry, error) {
+func (m *BennyfiContract) GetEntriesbyRoundAndPos(roundID uint64, pos uint64) ([]*Entry, error) {
 	request := &eos.GetTableRowsRequest{}
 	err := m.FilterEntriesbyRoundAndPos(request, roundID, pos)
 	if err != nil {
@@ -208,7 +208,7 @@ func (m *BennyfiContract) FilterEntriesbyRoundAndPos(req *eos.GetTableRowsReques
 	return err
 }
 
-func (m *BennyfiContract) GetEntriesbyRoundAndStatus(roundID uint64, status eos.Name) ([]Entry, error) {
+func (m *BennyfiContract) GetEntriesbyRoundAndStatus(roundID uint64, status eos.Name) ([]*Entry, error) {
 	request := &eos.GetTableRowsRequest{}
 	err := m.FilterEntriesbyRoundAndStatus(request, roundID, status)
 	if err != nil {
@@ -237,7 +237,7 @@ func (m *BennyfiContract) GetEntryByParticipantAndRound(participant eos.AccountN
 	}
 	for _, entry := range entries {
 		if entry.RoundID == roundID {
-			return &entry, nil
+			return entry, nil
 		}
 	}
 	return nil, nil
@@ -252,7 +252,7 @@ func (m *BennyfiContract) GetLastEntry() (*Entry, error) {
 		return nil, err
 	}
 	if len(entries) > 0 {
-		return &entries[0], nil
+		return entries[0], nil
 	}
 	return nil, nil
 }
@@ -267,14 +267,14 @@ func (m *BennyfiContract) GetEntryById(entryID uint64) (*Entry, error) {
 		return nil, err
 	}
 	if len(entries) > 0 {
-		return &entries[0], nil
+		return entries[0], nil
 	}
 	return nil, nil
 }
 
-func (m *BennyfiContract) GetEntriesReq(req *eos.GetTableRowsRequest) ([]Entry, error) {
+func (m *BennyfiContract) GetEntriesReq(req *eos.GetTableRowsRequest) ([]*Entry, error) {
 
-	var entries []Entry
+	var entries []*Entry
 	if req == nil {
 		req = &eos.GetTableRowsRequest{}
 	}

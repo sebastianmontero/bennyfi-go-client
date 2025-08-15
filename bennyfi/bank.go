@@ -129,6 +129,16 @@ func (m *Balance) String() string {
 	return string(result)
 }
 
+func (m *Balance) Clone() *Balance {
+	return &Balance{
+		TokenHolder:   m.TokenHolder,
+		Symbol:        m.Symbol,
+		LiquidBalance: m.LiquidBalance,
+		StakedBalance: m.StakedBalance,
+		TokenContract: m.TokenContract,
+	}
+}
+
 func (m *BennyfiContract) Pay(authorizer eos.AccountName, from interface{}, to interface{}, amount eos.Asset, fromEscrow bool) (string, error) {
 	f, err := util.ToAccountName(from)
 	if err != nil {
