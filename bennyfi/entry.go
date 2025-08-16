@@ -61,6 +61,10 @@ type Entry struct {
 	AdditionalFields types.AdditionalFields `json:"additional_fields"`
 }
 
+func (m *Entry) IsEntryStaked() bool {
+	return m.EntryStatus == EntryStaked || m.EntryStatus == EntryPayingPartialReturns1 || m.EntryStatus == EntryPayingPartialReturns2
+}
+
 func (m *Entry) String() string {
 	result, err := json.Marshal(m)
 	if err != nil {
