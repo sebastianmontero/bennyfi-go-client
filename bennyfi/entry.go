@@ -212,20 +212,42 @@ func (m *BennyfiContract) FilterEntriesbyRoundAndPos(req *eos.GetTableRowsReques
 	return err
 }
 
-func (m *BennyfiContract) GetEntriesbyRoundAndStatus(roundID uint64, status eos.Name) ([]*Entry, error) {
+func (m *BennyfiContract) GetEntriesByRoundAndStatus(roundID uint64, status eos.Name) ([]*Entry, error) {
 	request := &eos.GetTableRowsRequest{}
-	err := m.FilterEntriesbyRoundAndStatus(request, roundID, status)
+	err := m.FilterEntriesByRoundAndStatus(request, roundID, status)
 	if err != nil {
 		return nil, err
 	}
 	return m.GetEntriesReq(request)
 }
 
-func (m *BennyfiContract) FilterEntriesbyRoundAndStatus(req *eos.GetTableRowsRequest, roundID uint64, status eos.Name) error {
+func (m *BennyfiContract) FilterEntriesByRoundAndStatus(req *eos.GetTableRowsRequest, roundID uint64, status eos.Name) error {
 
 	req.Index = "8"
 	req.KeyType = "i128"
 	rndAndStatus, err := m.EOS.GetComposedIndexValue(roundID, status)
+	if err != nil {
+		return fmt.Errorf("failed to generate composed index, err: %v", err)
+	}
+	req.LowerBound = rndAndStatus
+	req.UpperBound = rndAndStatus
+	return err
+}
+
+func (m *BennyfiContract) GetEntriesbyRoundAndVestingState(roundID uint64, vestingState eos.Name) ([]*Entry, error) {
+	request := &eos.GetTableRowsRequest{}
+	err := m.FilterEntriesbyRoundAndVestingState(request, roundID, vestingState)
+	if err != nil {
+		return nil, err
+	}
+	return m.GetEntriesReq(request)
+}
+
+func (m *BennyfiContract) FilterEntriesbyRoundAndVestingState(req *eos.GetTableRowsRequest, roundID uint64, vestingState eos.Name) error {
+
+	req.Index = "11"
+	req.KeyType = "i128"
+	rndAndStatus, err := m.EOS.GetComposedIndexValue(roundID, vestingState)
 	if err != nil {
 		return fmt.Errorf("failed to generate composed index, err: %v", err)
 	}

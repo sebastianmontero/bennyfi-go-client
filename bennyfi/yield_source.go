@@ -53,6 +53,14 @@ type YieldSource struct {
 	// AdditionalFields types.AdditionalFields `json:"additional_fields"`
 }
 
+func (m *YieldSource) IsPaused() bool {
+	return m.State == YieldSourceStatePaused
+}
+
+func (m *YieldSource) IsStopped() bool {
+	return m.State == YieldSourceStateStopped
+}
+
 func (m *YieldSource) HourlyYield() uint32 {
 	return m.DailyYieldx100000 / 24
 }

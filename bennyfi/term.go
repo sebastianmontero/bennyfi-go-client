@@ -221,6 +221,17 @@ func (m *Term) ToNewTermArgs() *NewTermArgs {
 	return TermToNewTermArgs(m)
 }
 
+func (m *Term) IsYieldPool() bool {
+	return m.RoundType == RoundTypeYield
+}
+
+func (m *Term) GetYieldSourceName() eos.Name {
+	if !m.IsYieldPool() {
+		panic("Is not of type yield")
+	}
+	return m.DistributionDefinitions.FindFT(DistributionMainToken).YieldSource
+}
+
 type EntryFees struct {
 	PoolManagerEntryFee eos.Asset
 	BeneficiaryEntryFee eos.Asset

@@ -374,6 +374,14 @@ func (m *Round) CalculateUnlockTime() eos.TimePoint {
 	return eos.TimePoint(m.StakedTime.Time().Add(time.Hour * time.Duration(m.StakingPeriod.Hrs())).UnixMicro())
 }
 
+func (m *Round) IsParticipantsFulfilled() bool {
+	return m.NumParticipantsEntered >= m.NumParticipants
+}
+
+func (m *Round) IsYieldPool() bool {
+	return m.RoundType == RoundTypeYield
+}
+
 func (m *Round) SetYieldReward(totalReturn eos.Asset, partial bool) (reward eos.Asset, totalReward eos.Asset) {
 	r := m.Rewards.FindFT(DistributionMainToken)
 	reward = totalReturn
@@ -762,6 +770,108 @@ func (m *BennyfiContract) FilterRoundsbyManagerAndId(req *eos.GetTableRowsReques
 	// fmt.Println("LB: ", mgrAndRndLB, "UB: ", mgrAndRndUB)
 	req.LowerBound = mgrAndRndLB
 	req.UpperBound = mgrAndRndUB
+	return err
+}
+
+func (m *BennyfiContract) GetRoundsByStateAndEnrollmentEnd(state eos.Name) ([]Round, error) {
+	request := &eos.GetTableRowsRequest{}
+	err := m.FilterRoundsByStateAndEnrollmentEnd(request, state)
+	if err != nil {
+		return nil, err
+	}
+	return m.GetRoundsReq(request)
+}
+
+func (m *BennyfiContract) FilterRoundsByStateAndEnrollmentEnd(req *eos.GetTableRowsRequest, state eos.Name) error {
+
+	return m.FilterRoundsByStateAndTimeMeasure(req, state, "6")
+}
+
+func (m *BennyfiContract) GetRoundsByStateAndStartTime(state eos.Name) ([]Round, error) {
+	request := &eos.GetTableRowsRequest{}
+	err := m.FilterRoundsByStateAndStartTime(request, state)
+	if err != nil {
+		return nil, err
+	}
+	return m.GetRoundsReq(request)
+}
+
+func (m *BennyfiContract) FilterRoundsByStateAndStartTime(req *eos.GetTableRowsRequest, state eos.Name) error {
+
+	return m.FilterRoundsByStateAndTimeMeasure(req, state, "14")
+}
+
+func (m *BennyfiContract) GetRoundsByStateAndStakeEnd(state eos.Name) ([]Round, error) {
+	request := &eos.GetTableRowsRequest{}
+	err := m.FilterRoundsByStateAndStakeEnd(request, state)
+	if err != nil {
+		return nil, err
+	}
+	return m.GetRoundsReq(request)
+}
+
+func (m *BennyfiContract) FilterRoundsByStateAndStakeEnd(req *eos.GetTableRowsRequest, state eos.Name) error {
+
+	return m.FilterRoundsByStateAndTimeMeasure(req, state, "7")
+}
+
+func (m *BennyfiContract) GetRoundsByStakeStateAndStakeEnd(stakeState eos.Name) ([]Round, error) {
+	request := &eos.GetTableRowsRequest{}
+	err := m.FilterRoundsByStakeStateAndStakeEnd(request, stakeState)
+	if err != nil {
+		return nil, err
+	}
+	return m.GetRoundsReq(request)
+}
+
+func (m *BennyfiContract) FilterRoundsByStakeStateAndStakeEnd(req *eos.GetTableRowsRequest, stakeState eos.Name) error {
+
+	return m.FilterRoundsByStateAndTimeMeasure(req, stakeState, "10")
+}
+
+func (m *BennyfiContract) GetRoundsByStakeStateAndEnrollmentEnd(stakeState eos.Name) ([]Round, error) {
+	request := &eos.GetTableRowsRequest{}
+	err := m.FilterRoundsByStakeStateAndEnrollmentEnd(request, stakeState)
+	if err != nil {
+		return nil, err
+	}
+	return m.GetRoundsReq(request)
+}
+
+func (m *BennyfiContract) FilterRoundsByStakeStateAndEnrollmentEnd(req *eos.GetTableRowsRequest, stakeState eos.Name) error {
+
+	return m.FilterRoundsByStateAndTimeMeasure(req, stakeState, "9")
+}
+
+func (m *BennyfiContract) GetRoundsByVestingStateAndNextVestingTime(vestingState eos.Name) ([]Round, error) {
+	request := &eos.GetTableRowsRequest{}
+	err := m.FilterRoundsByVestingStateAndNextVestingTime(request, vestingState)
+	if err != nil {
+		return nil, err
+	}
+	return m.GetRoundsReq(request)
+}
+
+func (m *BennyfiContract) FilterRoundsByVestingStateAndNextVestingTime(req *eos.GetTableRowsRequest, vestingState eos.Name) error {
+
+	return m.FilterRoundsByStateAndTimeMeasure(req, vestingState, "11")
+}
+
+func (m *BennyfiContract) FilterRoundsByStateAndTimeMeasure(req *eos.GetTableRowsRequest, state eos.Name, indexPosition string) error {
+
+	req.Index = indexPosition
+	req.KeyType = "i128"
+	stateAndRndLB, err := m.EOS.GetComposedIndexValue(state, 0)
+	if err != nil {
+		return fmt.Errorf("failed to generate lower bound composed index, err: %v", err)
+	}
+	stateAndRndUB, err := m.EOS.GetComposedIndexValue(state, uint64(18446744073709551615))
+	if err != nil {
+		return fmt.Errorf("failed to generate upper bound composed index, err: %v", err)
+	}
+	fmt.Println("LB: ", stateAndRndLB, "UB: ", stateAndRndUB)
+	req.LowerBound = stateAndRndLB
+	req.UpperBound = stateAndRndUB
 	return err
 }
 
