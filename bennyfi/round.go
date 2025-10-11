@@ -588,34 +588,34 @@ func (m *BennyfiContract) VestingRounds(callCounter uint64) (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "vestingpools", callCounter)
 }
 
-func (m *BennyfiContract) EndEnrollment() error {
-	err := m.endEnrollment(RoundPending)
-	if err != nil {
-		return err
-	}
-	return m.endEnrollment(RoundAcceptingEntries)
+func (m *BennyfiContract) EndEnrollment() []error {
+	errors := m.endEnrollment(RoundPending)
+	errors = append(errors, m.endEnrollment(RoundAcceptingEntries)...)
+	return errors
 }
 
-func (m *BennyfiContract) endEnrollment(state eos.Name) error {
+func (m *BennyfiContract) endEnrollment(state eos.Name) []error {
 	timeBoundary, err := m.EOS.API.GetHeadTime(context.Background())
 	if err != nil {
-		return fmt.Errorf("failed getting head time, err: %v", err)
+		return []error{fmt.Errorf("failed getting head time, err: %v", err)}
 	}
 	fmt.Println("Time boundary: ", timeBoundary)
 	pools, err := m.GetRoundsByStateAndEnrollmentEnd(state)
 	if err != nil {
-		return fmt.Errorf("failed getting rounds by state and enrollment end, err: %v", err)
+		return []error{fmt.Errorf("failed getting rounds by state and enrollment end, err: %v", err)}
 	}
+	errors := []error{}
 	for _, pool := range pools {
 		// fmt.Printf("Pool %v\n", pool.String())
 		if pool.CurrentState == state && pool.EnrollmentTimeEnd.Time().Before(timeBoundary) {
 			// fmt.Printf("Processing Pool %v\n", pool.RoundID)
 			term, err := m.GetTermsById(pool.TermID)
 			if err != nil {
-				return fmt.Errorf("failed getting terms by id, err: %v", err)
+				errors = append(errors, fmt.Errorf("failed getting terms by id, err: %v", err))
+				return errors
 			}
 			if term == nil {
-				fmt.Printf("Term %v not found\n", pool.TermID)
+				errors = append(errors, fmt.Errorf("term %v not found", pool.TermID))
 				continue
 			}
 			rewardSourceIsStopped := false
@@ -625,10 +625,11 @@ func (m *BennyfiContract) endEnrollment(state eos.Name) error {
 				yieldSourceName := term.GetYieldSourceName()
 				ys, err := m.GetYieldSourceById(yieldSourceName)
 				if err != nil {
-					return fmt.Errorf("failed getting yield source by id, err: %v", err)
+					errors = append(errors, fmt.Errorf("failed getting yield source by id, err: %v", err))
+					return errors
 				}
 				if ys == nil {
-					fmt.Printf("Yield source %v not found\n", yieldSourceName)
+					errors = append(errors, fmt.Errorf("yield source %v not found", yieldSourceName))
 					continue
 				}
 				if participantsFulfilled && ys.IsPaused() {
@@ -640,21 +641,21 @@ func (m *BennyfiContract) endEnrollment(state eos.Name) error {
 				// fmt.Printf("Timing out pool %v\n", pool.RoundID)
 				_, err := m.TimeoutRound(pool.RoundID, false, nil)
 				if err != nil {
-					fmt.Printf("Failed timing out pool %v, err: %v\n", pool.RoundID, err)
+					errors = append(errors, fmt.Errorf("failed timing out pool %v, err: %v", pool.RoundID, err))
 					continue
 				}
 			} else {
 				// fmt.Printf("Completing enrollment for pool %v\n", pool.RoundID)
 				_, err := m.CompleteEnrollment(pool.RoundID)
 				if err != nil {
-					fmt.Printf("Failed completing enrollment for pool %v, err: %v\n", pool.RoundID, err)
+					errors = append(errors, fmt.Errorf("failed completing enrollment for pool %v, err: %v", pool.RoundID, err))
 					continue
 				}
 			}
 
 		}
 	}
-	return nil
+	return errors
 }
 
 func (m *BennyfiContract) TstLapseTime(roundId uint64) (string, error) {
