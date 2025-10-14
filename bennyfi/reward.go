@@ -117,6 +117,10 @@ func (m *Reward) GetFundingState() eos.Name {
 	return m.Impl.(IReward).GetFundingState()
 }
 
+func (m *Reward) IsCommited() bool {
+	return m.GetFundingState() == FundingStateCommited
+}
+
 func (m *Reward) GetFunder() eos.AccountName {
 	return m.Impl.(IReward).GetFunder()
 }
@@ -259,6 +263,15 @@ func (m Rewards) GetFundedRewardsNFT() []*RewardEntry {
 		}
 	}
 	return rewardsNFT
+}
+
+func (m Rewards) AreAllCommited() bool {
+	for _, rewardEntry := range m {
+		if !rewardEntry.Value.IsCommited() {
+			return false
+		}
+	}
+	return true
 }
 
 func (m Rewards) FindPos(key eos.Name) int {

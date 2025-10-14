@@ -288,6 +288,10 @@ func (m *Round) RemoveReward(name eos.Name) {
 	m.Rewards.Remove(name)
 }
 
+func (m *Round) AreAllRewardsCommitted() bool {
+	return m.Rewards.AreAllCommited()
+}
+
 func (m *Round) UpsertEarlyExitRewardFee(name eos.Name, earlyExitRewardFee eos.Asset) {
 	if m.TotalEarlyExitRewardFees == nil {
 		m.TotalEarlyExitRewardFees = make(TotalEarlyExitRewardFees, 0, 1)
@@ -548,10 +552,6 @@ func (m *BennyfiContract) FundRound(roundID uint64, funder interface{}) (string,
 	return m.ExecAction(funder, "fundpool", actionData)
 }
 
-func (m *BennyfiContract) StartRounds(callCounter uint64) (string, error) {
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "startpools", callCounter)
-}
-
 func (m *BennyfiContract) CompleteEnrollment(roundId uint64) (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "cmplenrollmt", roundId)
 }
@@ -560,20 +560,8 @@ func (m *BennyfiContract) ClaimPartialReturns(callCounter uint64) (string, error
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "clmprtrtrnpl", callCounter)
 }
 
-func (m *BennyfiContract) UnlockRounds(callCounter uint64) (string, error) {
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unlockpools", callCounter)
-}
-
 func (m *BennyfiContract) UnlockRound(roundId uint64) (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unlockpool", roundId)
-}
-
-func (m *BennyfiContract) UnstakeUnlockedRounds(callCounter uint64) (string, error) {
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "ustkulkpools", callCounter)
-}
-
-func (m *BennyfiContract) UnstakeTimedoutRounds(callCounter uint64) (string, error) {
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "ustktmdpools", callCounter)
 }
 
 func (m *BennyfiContract) DeleteTimedoutRounds(callCounter uint64) (string, error) {
@@ -653,6 +641,151 @@ func (m *BennyfiContract) endEnrollment(state eos.Name) []error {
 				}
 			}
 
+		}
+	}
+	return errors
+}
+
+func (m *BennyfiContract) StartRounds() []error {
+	timeBoundary, err := m.EOS.API.GetHeadTime(context.Background())
+	if err != nil {
+		return []error{fmt.Errorf("failed getting head time, err: %v", err)}
+	}
+	pools, err := m.GetRoundsByStateAndStartTime(RoundNotStarted)
+	if err != nil {
+		return []error{fmt.Errorf("failed getting rounds by state and start time, err: %v", err)}
+	}
+	errors := []error{}
+	for _, pool := range pools {
+		// fmt.Printf("Pool %v\n", pool.String())
+		if pool.CurrentState == RoundNotStarted && !pool.StartTime.Time().After(timeBoundary) {
+			// fmt.Printf("Starting Pool %v\n", pool.RoundID)
+			_, err := m.StartRound(pool.RoundID)
+			if err != nil {
+				errors = append(errors, fmt.Errorf("failed starting pool %v, err: %v", pool.RoundID, err))
+				continue
+			}
+		}
+	}
+	return errors
+}
+
+func (m *BennyfiContract) UnlockRounds() []error {
+	timeBoundary, err := m.EOS.API.GetHeadTime(context.Background())
+	if err != nil {
+		return []error{fmt.Errorf("failed getting head time, err: %v", err)}
+	}
+	fmt.Println("Time boundary: ", timeBoundary)
+	pools, err := m.GetRoundsByStateAndStakeEnd(RoundClosed)
+	if err != nil {
+		return []error{fmt.Errorf("failed getting rounds by state and stake end, err: %v", err)}
+	}
+	errors := []error{}
+	for _, pool := range pools {
+		fmt.Println("Pool Stake end: ", pool.StakeEndTime)
+		// fmt.Printf("Pool %v\n", pool.String())
+		if pool.CurrentState == RoundClosed && pool.StakeEndTime.Time().Before(timeBoundary) {
+			// fmt.Printf("Unlocking Pool %v\n", pool.RoundID)
+			if !pool.AreAllRewardsCommitted() {
+				continue
+			}
+			_, err := m.UnlockRound(pool.RoundID)
+			if err != nil {
+				errors = append(errors, fmt.Errorf("failed unlocking pool %v, err: %v", pool.RoundID, err))
+				continue
+			}
+		}
+	}
+	return errors
+}
+
+func (m *BennyfiContract) UnstakeTimedoutRounds() []error {
+	batchSizeU, err := m.SettingAsUint32(SettingBatchSize)
+	if err != nil {
+		return []error{fmt.Errorf("failed getting batch size, err: %v", err)}
+	}
+	batchSize := int(batchSizeU)
+	pools, err := m.GetRoundsByStakeStateAndEnrollmentEnd(RoundStakeStateUnstakingTimedOut)
+	if err != nil {
+		return []error{fmt.Errorf("failed getting rounds by stake state and enrollment end, err: %v", err)}
+	}
+	errors := []error{}
+	for _, pool := range pools {
+		if pool.StakeState == RoundStakeStateUnstakingTimedOut {
+			hasUnstakeErrors := false
+			for {
+				entries, err := m.GetEntriesByRoundAndStatus(pool.RoundID, EntryStaked)
+				if err != nil {
+					errors = append(errors, fmt.Errorf("failed getting entries by round and status, err: %v", err))
+					return errors
+				}
+				if len(entries) == 0 {
+					break
+				}
+				entryIdsBatch := splitEntriesIntoBatchSizeEntryIds(entries, batchSize)
+				for _, entryIds := range entryIdsBatch {
+					fmt.Println("Unstaking entries: ", entryIds)
+					_, err = m.UnstakeOpenEntries(entryIds)
+					if err != nil {
+						errors = append(errors, fmt.Errorf("failed unstaking entries, err: %v", err))
+						hasUnstakeErrors = true
+						break
+					}
+				}
+				if hasUnstakeErrors {
+					break
+				}
+			}
+		}
+	}
+	return errors
+}
+
+func (m *BennyfiContract) UnstakeUnlockedRounds() []error {
+	batchSizeU, err := m.SettingAsUint32(SettingBatchSize)
+	if err != nil {
+		return []error{fmt.Errorf("failed getting batch size, err: %v", err)}
+	}
+	batchSize := int(batchSizeU)
+	pools, err := m.GetRoundsByStakeStateAndStakeEnd(RoundStakeStateUnstakingUnlocked)
+	if err != nil {
+		return []error{fmt.Errorf("failed getting rounds by stake state and stake end, err: %v", err)}
+	}
+	errors := []error{}
+	for _, pool := range pools {
+		if pool.StakeState == RoundStakeStateUnstakingUnlocked {
+			hasUnstakeErrors := false
+			entryStatus := EntryStaked
+			if pool.GetReturnCycle() > 0 {
+				if pool.GetReturnCycle()%2 == 0 {
+					entryStatus = EntryPayingPartialReturns2
+				} else {
+					entryStatus = EntryPayingPartialReturns1
+				}
+			}
+			for {
+				entries, err := m.GetEntriesByRoundAndStatus(pool.RoundID, entryStatus)
+				if err != nil {
+					errors = append(errors, fmt.Errorf("failed getting entries by round and status, err: %v", err))
+					return errors
+				}
+				if len(entries) == 0 {
+					break
+				}
+				entryIdsBatch := splitEntriesIntoBatchSizeEntryIds(entries, batchSize)
+				for _, entryIds := range entryIdsBatch {
+					fmt.Println("Unstaking entries: ", entryIds)
+					_, err = m.UnstakeOpenEntries(entryIds)
+					if err != nil {
+						errors = append(errors, fmt.Errorf("failed unstaking entries, err: %v", err))
+						hasUnstakeErrors = true
+						break
+					}
+				}
+				if hasUnstakeErrors {
+					break
+				}
+			}
 		}
 	}
 	return errors
@@ -959,4 +1092,20 @@ func createEOSProof(randomNumber uint64) map[string]interface{} {
 	proof["output_u256"] = "u256"
 	proof["output_u64"] = randomNumber
 	return proof
+}
+
+func splitEntriesIntoBatchSizeEntryIds(entries []*Entry, batchSize int) [][]uint64 {
+	result := [][]uint64{}
+	for i := 0; i < len(entries); i += batchSize {
+		endIndex := i + batchSize
+		if endIndex > len(entries) {
+			endIndex = len(entries)
+		}
+		entryIds := make([]uint64, endIndex-i)
+		for j := i; j < endIndex; j++ {
+			entryIds[j-i] = entries[j].EntryID
+		}
+		result = append(result, entryIds)
+	}
+	return result
 }

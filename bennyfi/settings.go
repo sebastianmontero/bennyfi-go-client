@@ -24,6 +24,7 @@ const (
 	SettingIsPaused                      = "IS_PAUSED"
 	SettingMaxEntriesPerParticipant      = "MAX_ENTRIES_PER_PARTICIPANT"
 	SettingMaxPoolStartPrdHrs            = "MAX_POOL_START_PRD_HRS"
+	SettingBatchSize                     = "BATCH_SIZE"
 )
 
 func (m *BennyfiContract) ShouldBurnFees() (bool, error) {

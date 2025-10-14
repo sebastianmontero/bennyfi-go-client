@@ -132,6 +132,21 @@ func (m *BennyfiContract) UnstakeOpen(entryId uint64) (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "unstakeopen", entryId)
 }
 
+func (m *BennyfiContract) UnstakeOpenEntries(entryIds []uint64) (string, error) {
+	actions := make([]*eos.Action, 0, len(entryIds))
+	for _, entryId := range entryIds {
+		actions = append(actions, &eos.Action{
+			Account: eos.AccountName(m.ContractName),
+			Name:    eos.ActionName("unstakeopen"),
+			Authorization: []eos.PermissionLevel{
+				{Actor: eos.AccountName(m.ContractName), Permission: eos.PermissionName("open")},
+			},
+			ActionData: eos.NewActionData(entryId),
+		})
+	}
+	return m.ExecActions(actions...)
+}
+
 func (m *BennyfiContract) Vesting(entryId uint64, permissionLevel interface{}) (string, error) {
 	return m.ExecAction(permissionLevel, "vesting", entryId)
 }
