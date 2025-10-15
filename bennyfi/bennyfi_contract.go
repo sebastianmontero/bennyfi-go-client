@@ -83,18 +83,14 @@ func (m *BennyfiContract) ProposeAction(proposerName interface{}, requested []eo
 func (m *BennyfiContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) error {
 	openActions := []string{
 		"startpool",
-		"startpools",
 		"cmplenrollmt",
 		"unlockpool",
-		"unlockpools",
-		"redraw",
+		"draw",
 		"unstakeopen",
-		"ustkulkpools",
-		"ustktmdpools",
 		"deltmdpools",
-		"vestingpools",
-		"claimathstks",
-		"clmprtrtrnpl",
+		"vesting",
+		"claimathstk",
+		"clmpartrtrn",
 		"timeoutpool",
 		"stoppool",
 	}

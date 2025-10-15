@@ -124,6 +124,21 @@ func (m *BennyfiContract) ClaimPartialReturn(entryId uint64, claimer eos.Account
 	return m.ExecAction(claimer, "clmpartrtrn", entryId)
 }
 
+func (m *BennyfiContract) ClaimPartialReturnEntries(entryIds []uint64) (string, error) {
+	actions := make([]*eos.Action, 0, len(entryIds))
+	for _, entryId := range entryIds {
+		actions = append(actions, &eos.Action{
+			Account: eos.AccountName(m.ContractName),
+			Name:    eos.ActionName("clmpartrtrn"),
+			Authorization: []eos.PermissionLevel{
+				{Actor: eos.AccountName(m.ContractName), Permission: eos.PermissionName("open")},
+			},
+			ActionData: eos.NewActionData(entryId),
+		})
+	}
+	return m.ExecActions(actions...)
+}
+
 func (m *BennyfiContract) Unstake(entryId uint64, permissionLevel interface{}) (string, error) {
 	return m.ExecAction(permissionLevel, "unstake", entryId)
 }
@@ -149,6 +164,21 @@ func (m *BennyfiContract) UnstakeOpenEntries(entryIds []uint64) (string, error) 
 
 func (m *BennyfiContract) Vesting(entryId uint64, permissionLevel interface{}) (string, error) {
 	return m.ExecAction(permissionLevel, "vesting", entryId)
+}
+
+func (m *BennyfiContract) VestingEntries(entryIds []uint64) (string, error) {
+	actions := make([]*eos.Action, 0, len(entryIds))
+	for _, entryId := range entryIds {
+		actions = append(actions, &eos.Action{
+			Account: eos.AccountName(m.ContractName),
+			Name:    eos.ActionName("vesting"),
+			Authorization: []eos.PermissionLevel{
+				{Actor: eos.AccountName(m.ContractName), Permission: eos.PermissionName("open")},
+			},
+			ActionData: eos.NewActionData(entryId),
+		})
+	}
+	return m.ExecActions(actions...)
 }
 
 func (m *BennyfiContract) GetEntries() ([]*Entry, error) {

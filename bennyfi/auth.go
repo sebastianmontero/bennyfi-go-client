@@ -22,6 +22,7 @@
 package bennyfi
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -196,8 +197,36 @@ func (m *BennyfiContract) UnstakeAuth(authorizer, account eos.AccountName) (stri
 	return "", nil
 }
 
-func (m *BennyfiContract) ClaimAuthStakes(callCounter uint64) (string, error) {
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "claimathstks", callCounter)
+func (m *BennyfiContract) ClaimAuthStake(account eos.AccountName) (string, error) {
+	actionData := struct {
+		Account eos.AccountName
+	}{account}
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "claimathstk", actionData)
+}
+
+func (m *BennyfiContract) ClaimAuthStakes() []error {
+	timeBoundary, err := m.EOS.API.GetHeadTime(context.Background())
+	if err != nil {
+		return []error{fmt.Errorf("failed getting head time, err: %v", err)}
+	}
+	fmt.Println("Time boundary: ", timeBoundary)
+	auths, err := m.GetAuthsByUnstakeWaitingPeriodEnd()
+	if err != nil {
+		return []error{fmt.Errorf("failed getting auths by unstake waiting period end, err: %v", err)}
+	}
+	errors := []error{}
+	for _, auth := range auths {
+		fmt.Println("Auth: ", auth.Account, " unstake waiting period end: ", auth.UnstakeWaitingPeriodEnd.Time())
+		if auth.UnstakeWaitingPeriodEnd.Time().Before(timeBoundary) {
+
+			_, err := m.ClaimAuthStake(auth.Account)
+			if err != nil {
+				errors = append(errors, fmt.Errorf("failed claiming auth stake for %v, err: %v", auth.Account, err))
+				continue
+			}
+		}
+	}
+	return errors
 }
 
 func (m *BennyfiContract) CanCreateToken(user eos.AccountName) (string, error) {
@@ -272,4 +301,17 @@ func (m *BennyfiContract) GetAuthsReq(req *eos.GetTableRowsRequest) ([]Auth, err
 		return nil, fmt.Errorf("get table rows %v", err)
 	}
 	return auths, nil
+}
+
+func (m *BennyfiContract) GetAuthsByUnstakeWaitingPeriodEnd() ([]Auth, error) {
+	request := &eos.GetTableRowsRequest{}
+	m.FilterAuthsByUnstakeWaitingPeriodEnd(request)
+	return m.GetAuthsReq(request)
+}
+
+func (m *BennyfiContract) FilterAuthsByUnstakeWaitingPeriodEnd(req *eos.GetTableRowsRequest) {
+
+	req.Index = "5"
+	req.KeyType = "i64"
+	req.LowerBound = "1"
 }

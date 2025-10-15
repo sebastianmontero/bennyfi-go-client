@@ -556,8 +556,8 @@ func (m *BennyfiContract) CompleteEnrollment(roundId uint64) (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "cmplenrollmt", roundId)
 }
 
-func (m *BennyfiContract) ClaimPartialReturns(callCounter uint64) (string, error) {
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "clmprtrtrnpl", callCounter)
+func (m *BennyfiContract) Draw(roundId uint64) (string, error) {
+	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "draw", roundId)
 }
 
 func (m *BennyfiContract) UnlockRound(roundId uint64) (string, error) {
@@ -566,14 +566,6 @@ func (m *BennyfiContract) UnlockRound(roundId uint64) (string, error) {
 
 func (m *BennyfiContract) DeleteTimedoutRounds(callCounter uint64) (string, error) {
 	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "deltmdpools", callCounter)
-}
-
-func (m *BennyfiContract) Redraw(callCounter uint64) (string, error) {
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "redraw", callCounter)
-}
-
-func (m *BennyfiContract) VestingRounds(callCounter uint64) (string, error) {
-	return m.ExecAction(fmt.Sprintf("%v@open", m.ContractName), "vestingpools", callCounter)
 }
 
 func (m *BennyfiContract) EndEnrollment() []error {
@@ -699,6 +691,74 @@ func (m *BennyfiContract) UnlockRounds() []error {
 	return errors
 }
 
+func (m *BennyfiContract) Redraw() []error {
+	timeBoundary, err := m.EOS.API.GetHeadTime(context.Background())
+	if err != nil {
+		return []error{fmt.Errorf("failed getting head time, err: %v", err)}
+	}
+	fmt.Println("Time boundary: ", timeBoundary)
+	redrawTimeout, err := m.SettingAsUint32(SettingRedrawTimeoutMins)
+	if err != nil {
+		return []error{fmt.Errorf("failed getting redraw timeout, err: %v", err)}
+	}
+	timeBoundary = timeBoundary.Add(time.Duration(-redrawTimeout) * time.Minute)
+
+	pools, err := m.GetRoundsbyStateAndId(RoundDrawing, false)
+	if err != nil {
+		return []error{fmt.Errorf("failed getting rounds by state and id, err: %v", err)}
+	}
+	errors := []error{}
+	for _, pool := range pools {
+		// fmt.Printf("Pool %v\n", pool.String())
+		if pool.CurrentState == RoundDrawing && pool.ClosedTime.Time().Before(timeBoundary) {
+			// fmt.Printf("Unlocking Pool %v\n", pool.RoundID)
+			term, err := m.GetTermsById(pool.TermID)
+			if err != nil {
+				errors = append(errors, fmt.Errorf("failed getting terms by id, err: %v", err))
+				return errors
+			}
+			if term == nil {
+				errors = append(errors, fmt.Errorf("term %v not found", pool.TermID))
+				continue
+			}
+			rewardSourceIsStopped := false
+
+			if pool.IsYieldPool() {
+				yieldSourceName := term.GetYieldSourceName()
+				ys, err := m.GetYieldSourceById(yieldSourceName)
+				if err != nil {
+					errors = append(errors, fmt.Errorf("failed getting yield source by id, err: %v", err))
+					return errors
+				}
+				if ys == nil {
+					errors = append(errors, fmt.Errorf("yield source %v not found", yieldSourceName))
+					continue
+				}
+				if ys.IsPaused() {
+					continue
+				}
+				rewardSourceIsStopped = ys.IsStopped()
+			}
+			if rewardSourceIsStopped {
+				// fmt.Printf("Timing out pool %v\n", pool.RoundID)
+				_, err := m.TimeoutRound(pool.RoundID, false, nil)
+				if err != nil {
+					errors = append(errors, fmt.Errorf("failed timing out pool %v, err: %v", pool.RoundID, err))
+					continue
+				}
+			} else {
+				// fmt.Printf("Completing enrollment for pool %v\n", pool.RoundID)
+				_, err := m.Draw(pool.RoundID)
+				if err != nil {
+					errors = append(errors, fmt.Errorf("failed calling draw for pool %v, err: %v", pool.RoundID, err))
+					continue
+				}
+			}
+		}
+	}
+	return errors
+}
+
 func (m *BennyfiContract) UnstakeTimedoutRounds() []error {
 	batchSizeU, err := m.SettingAsUint32(SettingBatchSize)
 	if err != nil {
@@ -756,7 +816,7 @@ func (m *BennyfiContract) UnstakeUnlockedRounds() []error {
 		if pool.StakeState == RoundStakeStateUnstakingUnlocked {
 			hasUnstakeErrors := false
 			entryStatus := EntryStaked
-			if pool.GetReturnCycle() > 0 {
+			if pool.GetReturnCycle() > 1 {
 				if pool.GetReturnCycle()%2 == 0 {
 					entryStatus = EntryPayingPartialReturns2
 				} else {
@@ -783,6 +843,110 @@ func (m *BennyfiContract) UnstakeUnlockedRounds() []error {
 					}
 				}
 				if hasUnstakeErrors {
+					break
+				}
+			}
+		}
+	}
+	return errors
+}
+
+func (m *BennyfiContract) VestingRounds() []error {
+	batchSizeU, err := m.SettingAsUint32(SettingBatchSize)
+	if err != nil {
+		return []error{fmt.Errorf("failed getting batch size, err: %v", err)}
+	}
+	timeBoundary, err := m.EOS.API.GetHeadTime(context.Background())
+	if err != nil {
+		return []error{fmt.Errorf("failed getting head time, err: %v", err)}
+	}
+	batchSize := int(batchSizeU)
+	pools, err := m.GetRoundsByVestingStateAndNextVestingTime(VestingStateVesting)
+	if err != nil {
+		return []error{fmt.Errorf("failed getting rounds by vesting state and next vesting time, err: %v", err)}
+	}
+	errors := []error{}
+	for _, pool := range pools {
+		if pool.VestingState == VestingStateVesting && pool.NextVestingTime.Time().Before(timeBoundary) {
+			hasClaimPartialReturnErrors := false
+			vestingState := VestingStateNotStarted
+			if pool.VestingCycle > 1 {
+				if pool.VestingCycle%2 == 0 {
+					vestingState = VestingStateVesting2
+				} else {
+					vestingState = VestingStateVesting1
+				}
+			}
+			for {
+				entries, err := m.GetEntriesbyRoundAndVestingState(pool.RoundID, vestingState)
+				if err != nil {
+					errors = append(errors, fmt.Errorf("failed getting entries by round and vesting state, err: %v", err))
+					return errors
+				}
+				if len(entries) == 0 {
+					break
+				}
+				entryIdsBatch := splitEntriesIntoBatchSizeEntryIds(entries, batchSize)
+				for _, entryIds := range entryIdsBatch {
+					fmt.Println("Vesting entries: ", entryIds)
+					_, err = m.VestingEntries(entryIds)
+					if err != nil {
+						errors = append(errors, fmt.Errorf("failed vesting entries, err: %v", err))
+						hasClaimPartialReturnErrors = true
+						break
+					}
+				}
+				if hasClaimPartialReturnErrors {
+					break
+				}
+			}
+		}
+	}
+	return errors
+}
+
+func (m *BennyfiContract) ClaimPartialReturns() []error {
+	batchSizeU, err := m.SettingAsUint32(SettingBatchSize)
+	if err != nil {
+		return []error{fmt.Errorf("failed getting batch size, err: %v", err)}
+	}
+	batchSize := int(batchSizeU)
+	pools, err := m.GetRoundsByStakeStateAndStakeEnd(RoundStakeStatePayingPartialReturns)
+	if err != nil {
+		return []error{fmt.Errorf("failed getting rounds by stake state and stake end, err: %v", err)}
+	}
+	errors := []error{}
+	for _, pool := range pools {
+		if pool.StakeState == RoundStakeStatePayingPartialReturns {
+			hasClaimPartialReturnErrors := false
+			entryStatus := EntryStaked
+			if pool.GetReturnCycle() > 1 {
+				if pool.GetReturnCycle()%2 == 0 {
+					entryStatus = EntryPayingPartialReturns2
+				} else {
+					entryStatus = EntryPayingPartialReturns1
+				}
+			}
+			for {
+				entries, err := m.GetEntriesByRoundAndStatus(pool.RoundID, entryStatus)
+				if err != nil {
+					errors = append(errors, fmt.Errorf("failed getting entries by round and status, err: %v", err))
+					return errors
+				}
+				if len(entries) == 0 {
+					break
+				}
+				entryIdsBatch := splitEntriesIntoBatchSizeEntryIds(entries, batchSize)
+				for _, entryIds := range entryIdsBatch {
+					fmt.Println("Claiming partial returns: ", entryIds)
+					_, err = m.ClaimPartialReturnEntries(entryIds)
+					if err != nil {
+						errors = append(errors, fmt.Errorf("failed claiming partial returns, err: %v", err))
+						hasClaimPartialReturnErrors = true
+						break
+					}
+				}
+				if hasClaimPartialReturnErrors {
 					break
 				}
 			}
@@ -921,20 +1085,20 @@ func (m *BennyfiContract) GetRoundsReq(req *eos.GetTableRowsRequest) ([]Round, e
 	return rounds, nil
 }
 
-func (m *BennyfiContract) GetRoundsbyStateAndId(state eos.Name) ([]Round, error) {
+func (m *BennyfiContract) GetRoundsbyStateAndId(state eos.Name, reverse bool) ([]Round, error) {
 	request := &eos.GetTableRowsRequest{}
-	err := m.FilterRoundsbyStateAndId(request, state)
+	err := m.FilterRoundsbyStateAndId(request, state, reverse)
 	if err != nil {
 		return nil, err
 	}
 	return m.GetRoundsReq(request)
 }
 
-func (m *BennyfiContract) FilterRoundsbyStateAndId(req *eos.GetTableRowsRequest, state eos.Name) error {
+func (m *BennyfiContract) FilterRoundsbyStateAndId(req *eos.GetTableRowsRequest, state eos.Name, reverse bool) error {
 
 	req.Index = "2"
 	req.KeyType = "i128"
-	req.Reverse = true
+	req.Reverse = reverse
 	stateAndRndLB, err := m.EOS.GetComposedIndexValue(state, 0)
 	if err != nil {
 		return fmt.Errorf("failed to generate lower bound composed index, err: %v", err)
