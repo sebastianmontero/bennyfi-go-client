@@ -35,6 +35,7 @@ import (
 var (
 	MaxParticipants          = "max_participants"
 	MaxEntriesPerParticipant = "max_entries_per_participant"
+	TermAFArtifactCID        = "artifact_cid"
 )
 
 type DefaultValue struct {
@@ -205,6 +206,17 @@ func (m *Term) SetMaxEntriesPerParticipant(maxEntriesPerParticipant uint32) {
 	m.AdditionalFields.Set(MaxEntriesPerParticipant, dto.FlexValueFromUint32(maxEntriesPerParticipant))
 }
 
+func (m *Term) GetArtifactCID() string {
+	if m.AdditionalFields.Has(TermAFArtifactCID) {
+		return m.AdditionalFields.GetValue(TermAFArtifactCID).String()
+	}
+	return ""
+}
+
+func (m *Term) SetArtifactCID(artifactCID string) {
+	m.AdditionalFields.Set(TermAFArtifactCID, dto.FlexValueFromString(artifactCID))
+}
+
 func (m *Term) RemoveMaxEntriesPerParticipants() {
 	m.AdditionalFields.Remove(MaxEntriesPerParticipant)
 }
@@ -320,6 +332,7 @@ type NewTermArgs struct {
 	RoundManagerEntryFeePerc uint32                  `json:"pool_manager_entry_fee_perc_x100000"`
 	DistributionDefinitions  DistributionDefinitions `json:"distribution_definitions"`
 	DefaultValues            DefaultValues           `json:"default_values"`
+	ArtifactCID              string                  `json:"artifact_cid"`
 }
 
 func (m *NewTermArgs) String() string {
@@ -345,6 +358,7 @@ func TermToNewTermArgs(terms *Term) *NewTermArgs {
 		RoundManagerEntryFeePerc: terms.RoundManagerEntryFeePerc,
 		DistributionDefinitions:  terms.DistributionDefinitions,
 		DefaultValues:            terms.DefaultValues,
+		ArtifactCID:              terms.GetArtifactCID(),
 	}
 }
 
