@@ -209,7 +209,7 @@ func (m *BennyfiContract) ClaimAuthStakes() []error {
 	if err != nil {
 		return []error{fmt.Errorf("failed getting head time, err: %v", err)}
 	}
-	fmt.Println("Time boundary: ", timeBoundary)
+	// fmt.Println("Time boundary: ", timeBoundary)
 	auths, err := m.GetAuthsByUnstakeWaitingPeriodEnd()
 	if err != nil {
 		return []error{fmt.Errorf("failed getting auths by unstake waiting period end, err: %v", err)}

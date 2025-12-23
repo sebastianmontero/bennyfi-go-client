@@ -131,7 +131,7 @@ func (m *DummyYieldContract) FilterStakesByStateAndId(req *eos.GetTableRowsReque
 	if err != nil {
 		return fmt.Errorf("failed to generate upper bound composed index, err: %v", err)
 	}
-	fmt.Println("LB: ", stateAndRndLB, "UB: ", stateAndRndUB)
+	// fmt.Println("LB: ", stateAndRndLB, "UB: ", stateAndRndUB)
 	req.LowerBound = stateAndRndLB
 	req.UpperBound = stateAndRndUB
 	return err

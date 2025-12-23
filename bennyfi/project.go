@@ -192,7 +192,7 @@ func (m *BennyfiContract) FilterProjectsByAuthorizerAndId(req *eos.GetTableRowsR
 	if err != nil {
 		return fmt.Errorf("failed to generate upper bound composed index, err: %v", err)
 	}
-	fmt.Println("LB: ", authAndRndLB, "UB: ", authAndRndUB)
+	// fmt.Println("LB: ", authAndRndLB, "UB: ", authAndRndUB)
 	req.LowerBound = authAndRndLB
 	req.UpperBound = authAndRndUB
 	return err
@@ -223,7 +223,7 @@ func (m *BennyfiContract) FilterProjectsByBeneficiaryAndId(req *eos.GetTableRows
 	if err != nil {
 		return fmt.Errorf("failed to generate upper bound composed index, err: %v", err)
 	}
-	fmt.Println("LB: ", beneAndRndLB, "UB: ", beneAndRndUB)
+	// fmt.Println("LB: ", beneAndRndLB, "UB: ", beneAndRndUB)
 	req.LowerBound = beneAndRndLB
 	req.UpperBound = beneAndRndUB
 	return err

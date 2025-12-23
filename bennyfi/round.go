@@ -579,7 +579,7 @@ func (m *BennyfiContract) endEnrollment(state eos.Name) []error {
 	if err != nil {
 		return []error{fmt.Errorf("failed getting head time, err: %v", err)}
 	}
-	fmt.Println("Time boundary: ", timeBoundary)
+	// fmt.Println("Time boundary: ", timeBoundary)
 	pools, err := m.GetRoundsByStateAndEnrollmentEnd(state)
 	if err != nil {
 		return []error{fmt.Errorf("failed getting rounds by state and enrollment end, err: %v", err)}
@@ -667,14 +667,14 @@ func (m *BennyfiContract) UnlockRounds() []error {
 	if err != nil {
 		return []error{fmt.Errorf("failed getting head time, err: %v", err)}
 	}
-	fmt.Println("Time boundary: ", timeBoundary)
+	// fmt.Println("Time boundary: ", timeBoundary)
 	pools, err := m.GetRoundsByStateAndStakeEnd(RoundClosed)
 	if err != nil {
 		return []error{fmt.Errorf("failed getting rounds by state and stake end, err: %v", err)}
 	}
 	errors := []error{}
 	for _, pool := range pools {
-		fmt.Println("Pool Stake end: ", pool.StakeEndTime)
+		// fmt.Println("Pool Stake end: ", pool.StakeEndTime)
 		// fmt.Printf("Pool %v\n", pool.String())
 		if pool.CurrentState == RoundClosed && pool.StakeEndTime.Time().Before(timeBoundary) {
 			// fmt.Printf("Unlocking Pool %v\n", pool.RoundID)
@@ -696,7 +696,7 @@ func (m *BennyfiContract) Redraw() []error {
 	if err != nil {
 		return []error{fmt.Errorf("failed getting head time, err: %v", err)}
 	}
-	fmt.Println("Time boundary: ", timeBoundary)
+	// fmt.Println("Time boundary: ", timeBoundary)
 	redrawTimeout, err := m.SettingAsUint32(SettingRedrawTimeoutMins)
 	if err != nil {
 		return []error{fmt.Errorf("failed getting redraw timeout, err: %v", err)}
@@ -1036,7 +1036,7 @@ func (m *BennyfiContract) FilterRoundsbyTermAndId(req *eos.GetTableRowsRequest, 
 	if err != nil {
 		return fmt.Errorf("failed to generate upper bound composed index, err: %v", err)
 	}
-	fmt.Println("LB: ", termAndRndLB, "UB: ", termAndRndUB)
+	// fmt.Println("LB: ", termAndRndLB, "UB: ", termAndRndUB)
 	req.LowerBound = termAndRndLB
 	req.UpperBound = termAndRndUB
 	return err
@@ -1107,7 +1107,7 @@ func (m *BennyfiContract) FilterRoundsbyStateAndId(req *eos.GetTableRowsRequest,
 	if err != nil {
 		return fmt.Errorf("failed to generate upper bound composed index, err: %v", err)
 	}
-	fmt.Println("LB: ", stateAndRndLB, "UB: ", stateAndRndUB)
+	// fmt.Println("LB: ", stateAndRndLB, "UB: ", stateAndRndUB)
 	req.LowerBound = stateAndRndLB
 	req.UpperBound = stateAndRndUB
 	return err
@@ -1237,7 +1237,7 @@ func (m *BennyfiContract) FilterRoundsByStateAndTimeMeasure(req *eos.GetTableRow
 	if err != nil {
 		return fmt.Errorf("failed to generate upper bound composed index, err: %v", err)
 	}
-	fmt.Println("LB: ", stateAndRndLB, "UB: ", stateAndRndUB)
+	// fmt.Println("LB: ", stateAndRndLB, "UB: ", stateAndRndUB)
 	req.LowerBound = stateAndRndLB
 	req.UpperBound = stateAndRndUB
 	return err
