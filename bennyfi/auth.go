@@ -216,7 +216,7 @@ func (m *BennyfiContract) ClaimAuthStakes() []error {
 	}
 	errors := []error{}
 	for _, auth := range auths {
-		fmt.Println("Auth: ", auth.Account, " unstake waiting period end: ", auth.UnstakeWaitingPeriodEnd.Time())
+		// fmt.Println("Auth: ", auth.Account, " unstake waiting period end: ", auth.UnstakeWaitingPeriodEnd.Time())
 		if auth.UnstakeWaitingPeriodEnd.Time().Before(timeBoundary) {
 
 			_, err := m.ClaimAuthStake(auth.Account)
