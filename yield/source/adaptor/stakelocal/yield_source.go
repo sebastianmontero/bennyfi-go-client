@@ -16,7 +16,7 @@ type YieldSource struct {
 	MaxStakeAmount         eos.Asset       `json:"max_stake_amount"`
 	RewardTokenContract    eos.AccountName `json:"reward_token_contract"`
 	RewardTokenSymbol      eos.Symbol      `json:"reward_token_symbol"`
-	SupportsPartialReturns bool            `json:"supports_partial_returns"`
+	SupportsPartialReturns uint8           `json:"supports_partial_returns"`
 }
 
 func (m *YieldSource) String() string {
