@@ -8,6 +8,7 @@ require (
 	github.com/ethereum/go-ethereum v1.16.7
 	github.com/sebastianmontero/eos-go v0.10.5-0.20251014033848-1f05f693154c
 	github.com/sebastianmontero/eos-go-toolbox v0.0.0-20251016002805-ba6e9b03a28e
+	golang.org/x/sync v0.12.0
 	gotest.tools v2.2.0+incompatible
 )
 
@@ -51,7 +52,6 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.17.0 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
-	golang.org/x/sync v0.12.0 // indirect
 	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/term v0.30.0 // indirect
 )

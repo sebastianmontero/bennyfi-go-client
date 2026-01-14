@@ -2,6 +2,7 @@ package exsatusdc
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"golang.org/x/sync/errgroup"
 )
 
 // ExSatBankYieldSourceAdaptorABI is the ABI of the ExSatBankYieldSourceAdaptor contract.
@@ -148,6 +150,30 @@ func NewClient(rpcUrl string, privateKeyHex string, contractAddr common.Address)
 	}, nil
 }
 
+// NewReadClient creates a new Client for read-only operations.
+// It dials the RPC URL but does not set up a transaction authorizer.
+func NewReadClient(rpcUrl string, contractAddr common.Address) (*Client, error) {
+	// 1. Connect to Eth Client
+	client, err := ethclient.Dial(rpcUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. Parse ABI
+	parsedABI, err := abi.JSON(strings.NewReader(ExSatBankYieldSourceAdaptorABI))
+	if err != nil {
+		return nil, err
+	}
+
+	// 3. Create Bound Contract
+	contract := bind.NewBoundContract(contractAddr, parsedABI, client, client, client)
+	return &Client{
+		contract: contract,
+		address:  contractAddr,
+		auth:     nil,
+	}, nil
+}
+
 // GetStake retrieves the stake information for a given pool ID.
 func (c *Client) GetStake(poolId uint64) (*Stake, error) {
 	var out []interface{}
@@ -167,7 +193,33 @@ func (c *Client) GetStake(poolId uint64) (*Stake, error) {
 	}, nil
 }
 
+// GetStakes retrieves multiple stake information for a given list of pool IDs in parallel.
+func (c *Client) GetStakes(poolIds []uint64) ([]*Stake, error) {
+	results := make([]*Stake, len(poolIds))
+	g, _ := errgroup.WithContext(context.Background())
+
+	for i, pid := range poolIds {
+		i, pid := i, pid // capture variables
+		g.Go(func() error {
+			stake, err := c.GetStake(pid)
+			if err != nil {
+				return err
+			}
+			results[i] = stake
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
 // TriggerUnstake calls the triggerUnstake function on the contract.
 func (c *Client) TriggerUnstake(poolId uint64) (*types.Transaction, error) {
+	if c.auth == nil {
+		return nil, fmt.Errorf("client is read-only")
+	}
 	return c.contract.Transact(c.auth, "triggerUnstake", poolId)
 }
