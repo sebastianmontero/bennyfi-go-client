@@ -2,7 +2,6 @@ package exsatfs
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 	"strings"
 	"sync"
@@ -96,16 +95,21 @@ type Stake struct {
 	TotalReturn *big.Int
 }
 
-// ExSatFS interacts with the ExSatBankFixedStakingYieldSourceAdaptor contract.
-type ExSatFS struct {
+// ExSatFSRead interacts with the ExSatBankFixedStakingYieldSourceAdaptor contract for read-only operations.
+type ExSatFSRead struct {
 	contract *bind.BoundContract
 	address  common.Address
-	auth     *bind.TransactOpts
 }
 
-// New creates a new ExSatFS client.
+// ExSatFSWrite interacts with the ExSatBankFixedStakingYieldSourceAdaptor contract for write operations.
+type ExSatFSWrite struct {
+	*ExSatFSRead
+	auth *bind.TransactOpts
+}
+
+// New creates a new ExSatFSWrite client.
 // It dials the RPC URL, parses the private key, and sets up the transaction authorizer.
-func New(rpcUrl string, privateKeyHex string, contractAddr common.Address) (*ExSatFS, error) {
+func New(rpcUrl string, privateKeyHex string, contractAddr common.Address) (*ExSatFSWrite, error) {
 	// 1. Parse Private Key
 	privateKey, err := crypto.HexToECDSA(privateKeyHex)
 	if err != nil {
@@ -138,16 +142,20 @@ func New(rpcUrl string, privateKeyHex string, contractAddr common.Address) (*ExS
 
 	// 6. Create Bound Contract
 	contract := bind.NewBoundContract(contractAddr, parsedABI, client, client, client)
-	return &ExSatFS{
+	readClient := &ExSatFSRead{
 		contract: contract,
 		address:  contractAddr,
-		auth:     auth,
+	}
+
+	return &ExSatFSWrite{
+		ExSatFSRead: readClient,
+		auth:        auth,
 	}, nil
 }
 
-// NewRead creates a new ExSatFS client for read-only operations.
+// NewRead creates a new ExSatFSRead client for read-only operations.
 // It dials the RPC URL but does not set up a transaction authorizer.
-func NewRead(rpcUrl string, contractAddr common.Address) (*ExSatFS, error) {
+func NewRead(rpcUrl string, contractAddr common.Address) (*ExSatFSRead, error) {
 	// 1. Connect to Eth Client
 	client, err := ethclient.Dial(rpcUrl)
 	if err != nil {
@@ -162,15 +170,14 @@ func NewRead(rpcUrl string, contractAddr common.Address) (*ExSatFS, error) {
 
 	// 3. Create Bound Contract
 	contract := bind.NewBoundContract(contractAddr, parsedABI, client, client, client)
-	return &ExSatFS{
+	return &ExSatFSRead{
 		contract: contract,
 		address:  contractAddr,
-		auth:     nil,
 	}, nil
 }
 
 // GetStake retrieves the stake information for a given pool ID.
-func (c *ExSatFS) GetStake(poolId uint64) (*Stake, error) {
+func (c *ExSatFSRead) GetStake(poolId uint64) (*Stake, error) {
 	var out []interface{}
 	err := c.contract.Call(nil, &out, "stakes", poolId)
 	if err != nil {
@@ -188,7 +195,7 @@ func (c *ExSatFS) GetStake(poolId uint64) (*Stake, error) {
 }
 
 // GetStakes retrieves multiple stake information for a given list of pool IDs in parallel.
-func (c *ExSatFS) GetStakes(poolIds []uint64) (map[uint64]*Stake, error) {
+func (c *ExSatFSRead) GetStakes(poolIds []uint64) (map[uint64]*Stake, error) {
 	results := make(map[uint64]*Stake, len(poolIds))
 	var mu sync.Mutex
 	g, _ := errgroup.WithContext(context.Background())
@@ -215,9 +222,6 @@ func (c *ExSatFS) GetStakes(poolIds []uint64) (map[uint64]*Stake, error) {
 }
 
 // Unstake calls the unstake function on the contract.
-func (c *ExSatFS) Unstake(poolId uint64) (*types.Transaction, error) {
-	if c.auth == nil {
-		return nil, fmt.Errorf("client is read-only")
-	}
+func (c *ExSatFSWrite) Unstake(poolId uint64) (*types.Transaction, error) {
 	return c.contract.Transact(c.auth, "unstake", poolId)
 }

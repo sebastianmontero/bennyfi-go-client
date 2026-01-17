@@ -2,7 +2,6 @@ package exsatusdc
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 	"strings"
 	"sync"
@@ -102,16 +101,21 @@ type Stake struct {
 	TotalReturn *big.Int
 }
 
-// Client interacts with the ExSatBankYieldSourceAdaptor contract.
-type Client struct {
+// ExSatUSDCRead interacts with the ExSatBankYieldSourceAdaptor contract for read-only operations.
+type ExSatUSDCRead struct {
 	contract *bind.BoundContract
 	address  common.Address
-	auth     *bind.TransactOpts
 }
 
-// NewClient creates a new Client.
+// ExSatUSDCWrite interacts with the ExSatBankYieldSourceAdaptor contract for write operations.
+type ExSatUSDCWrite struct {
+	*ExSatUSDCRead
+	auth *bind.TransactOpts
+}
+
+// New creates a new ExSatUSDCWrite client.
 // It dials the RPC URL, parses the private key, and sets up the transaction authorizer.
-func NewClient(rpcUrl string, privateKeyHex string, contractAddr common.Address) (*Client, error) {
+func New(rpcUrl string, privateKeyHex string, contractAddr common.Address) (*ExSatUSDCWrite, error) {
 	// 1. Parse Private Key
 	privateKey, err := crypto.HexToECDSA(privateKeyHex)
 	if err != nil {
@@ -144,16 +148,20 @@ func NewClient(rpcUrl string, privateKeyHex string, contractAddr common.Address)
 
 	// 6. Create Bound Contract
 	contract := bind.NewBoundContract(contractAddr, parsedABI, client, client, client)
-	return &Client{
+	readClient := &ExSatUSDCRead{
 		contract: contract,
 		address:  contractAddr,
-		auth:     auth,
+	}
+
+	return &ExSatUSDCWrite{
+		ExSatUSDCRead: readClient,
+		auth:          auth,
 	}, nil
 }
 
-// NewReadClient creates a new Client for read-only operations.
+// NewRead creates a new ExSatUSDCRead client for read-only operations.
 // It dials the RPC URL but does not set up a transaction authorizer.
-func NewReadClient(rpcUrl string, contractAddr common.Address) (*Client, error) {
+func NewRead(rpcUrl string, contractAddr common.Address) (*ExSatUSDCRead, error) {
 	// 1. Connect to Eth Client
 	client, err := ethclient.Dial(rpcUrl)
 	if err != nil {
@@ -168,15 +176,14 @@ func NewReadClient(rpcUrl string, contractAddr common.Address) (*Client, error) 
 
 	// 3. Create Bound Contract
 	contract := bind.NewBoundContract(contractAddr, parsedABI, client, client, client)
-	return &Client{
+	return &ExSatUSDCRead{
 		contract: contract,
 		address:  contractAddr,
-		auth:     nil,
 	}, nil
 }
 
 // GetStake retrieves the stake information for a given pool ID.
-func (c *Client) GetStake(poolId uint64) (*Stake, error) {
+func (c *ExSatUSDCRead) GetStake(poolId uint64) (*Stake, error) {
 	var out []interface{}
 	err := c.contract.Call(nil, &out, "stakes", poolId)
 	if err != nil {
@@ -195,7 +202,7 @@ func (c *Client) GetStake(poolId uint64) (*Stake, error) {
 }
 
 // GetStakes retrieves multiple stake information for a given list of pool IDs in parallel.
-func (c *Client) GetStakes(poolIds []uint64) (map[uint64]*Stake, error) {
+func (c *ExSatUSDCRead) GetStakes(poolIds []uint64) (map[uint64]*Stake, error) {
 	results := make(map[uint64]*Stake, len(poolIds))
 	var mu sync.Mutex
 	g, _ := errgroup.WithContext(context.Background())
@@ -222,9 +229,6 @@ func (c *Client) GetStakes(poolIds []uint64) (map[uint64]*Stake, error) {
 }
 
 // TriggerUnstake calls the triggerUnstake function on the contract.
-func (c *Client) TriggerUnstake(poolId uint64) (*types.Transaction, error) {
-	if c.auth == nil {
-		return nil, fmt.Errorf("client is read-only")
-	}
+func (c *ExSatUSDCWrite) TriggerUnstake(poolId uint64) (*types.Transaction, error) {
 	return c.contract.Transact(c.auth, "triggerUnstake", poolId)
 }
