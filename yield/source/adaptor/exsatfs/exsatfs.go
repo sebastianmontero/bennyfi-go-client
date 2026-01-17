@@ -1,4 +1,4 @@
-package exsatusdc
+package exsatfs
 
 import (
 	"context"
@@ -16,13 +16,13 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// ExSatBankYieldSourceAdaptorABI is the ABI of the ExSatBankYieldSourceAdaptor contract.
-const ExSatBankYieldSourceAdaptorABI = `[
+// ExSatBankFixedStakingYieldSourceAdaptorABI is the ABI of the ExSatBankFixedStakingYieldSourceAdaptor contract.
+const ExSatBankFixedStakingYieldSourceAdaptorABI = `[
     {
       "inputs": [
         {
           "internalType": "uint64",
-          "name": "_poolId",
+          "name": "",
           "type": "uint64"
         }
       ],
@@ -40,11 +40,6 @@ const ExSatBankYieldSourceAdaptorABI = `[
         },
         {
           "internalType": "uint256",
-          "name": "totalShares",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
           "name": "stakeTime",
           "type": "uint256"
         },
@@ -54,7 +49,7 @@ const ExSatBankYieldSourceAdaptorABI = `[
           "type": "uint256"
         },
         {
-          "internalType": "enum ExSatBankYieldSourceAdaptor.StakeState",
+          "internalType": "uint8",
           "name": "state",
           "type": "uint8"
         },
@@ -75,7 +70,7 @@ const ExSatBankYieldSourceAdaptorABI = `[
           "type": "uint64"
         }
       ],
-      "name": "triggerUnstake",
+      "name": "unstake",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -95,23 +90,22 @@ const (
 type Stake struct {
 	PoolId      uint64
 	TotalStake  *big.Int
-	TotalShares *big.Int
 	StakeTime   *big.Int
 	UnlockTime  *big.Int
 	State       uint8
 	TotalReturn *big.Int
 }
 
-// Client interacts with the ExSatBankYieldSourceAdaptor contract.
-type Client struct {
+// ExSatFS interacts with the ExSatBankFixedStakingYieldSourceAdaptor contract.
+type ExSatFS struct {
 	contract *bind.BoundContract
 	address  common.Address
 	auth     *bind.TransactOpts
 }
 
-// NewClient creates a new Client.
+// New creates a new ExSatFS client.
 // It dials the RPC URL, parses the private key, and sets up the transaction authorizer.
-func NewClient(rpcUrl string, privateKeyHex string, contractAddr common.Address) (*Client, error) {
+func New(rpcUrl string, privateKeyHex string, contractAddr common.Address) (*ExSatFS, error) {
 	// 1. Parse Private Key
 	privateKey, err := crypto.HexToECDSA(privateKeyHex)
 	if err != nil {
@@ -137,23 +131,23 @@ func NewClient(rpcUrl string, privateKeyHex string, contractAddr common.Address)
 	}
 
 	// 5. Parse ABI
-	parsedABI, err := abi.JSON(strings.NewReader(ExSatBankYieldSourceAdaptorABI))
+	parsedABI, err := abi.JSON(strings.NewReader(ExSatBankFixedStakingYieldSourceAdaptorABI))
 	if err != nil {
 		return nil, err
 	}
 
 	// 6. Create Bound Contract
 	contract := bind.NewBoundContract(contractAddr, parsedABI, client, client, client)
-	return &Client{
+	return &ExSatFS{
 		contract: contract,
 		address:  contractAddr,
 		auth:     auth,
 	}, nil
 }
 
-// NewReadClient creates a new Client for read-only operations.
+// NewRead creates a new ExSatFS client for read-only operations.
 // It dials the RPC URL but does not set up a transaction authorizer.
-func NewReadClient(rpcUrl string, contractAddr common.Address) (*Client, error) {
+func NewRead(rpcUrl string, contractAddr common.Address) (*ExSatFS, error) {
 	// 1. Connect to Eth Client
 	client, err := ethclient.Dial(rpcUrl)
 	if err != nil {
@@ -161,14 +155,14 @@ func NewReadClient(rpcUrl string, contractAddr common.Address) (*Client, error) 
 	}
 
 	// 2. Parse ABI
-	parsedABI, err := abi.JSON(strings.NewReader(ExSatBankYieldSourceAdaptorABI))
+	parsedABI, err := abi.JSON(strings.NewReader(ExSatBankFixedStakingYieldSourceAdaptorABI))
 	if err != nil {
 		return nil, err
 	}
 
 	// 3. Create Bound Contract
 	contract := bind.NewBoundContract(contractAddr, parsedABI, client, client, client)
-	return &Client{
+	return &ExSatFS{
 		contract: contract,
 		address:  contractAddr,
 		auth:     nil,
@@ -176,7 +170,7 @@ func NewReadClient(rpcUrl string, contractAddr common.Address) (*Client, error) 
 }
 
 // GetStake retrieves the stake information for a given pool ID.
-func (c *Client) GetStake(poolId uint64) (*Stake, error) {
+func (c *ExSatFS) GetStake(poolId uint64) (*Stake, error) {
 	var out []interface{}
 	err := c.contract.Call(nil, &out, "stakes", poolId)
 	if err != nil {
@@ -186,16 +180,15 @@ func (c *Client) GetStake(poolId uint64) (*Stake, error) {
 	return &Stake{
 		PoolId:      out[0].(uint64),
 		TotalStake:  out[1].(*big.Int),
-		TotalShares: out[2].(*big.Int),
-		StakeTime:   out[3].(*big.Int),
-		UnlockTime:  out[4].(*big.Int),
-		State:       out[5].(uint8),
-		TotalReturn: out[6].(*big.Int),
+		StakeTime:   out[2].(*big.Int),
+		UnlockTime:  out[3].(*big.Int),
+		State:       out[4].(uint8),
+		TotalReturn: out[5].(*big.Int),
 	}, nil
 }
 
 // GetStakes retrieves multiple stake information for a given list of pool IDs in parallel.
-func (c *Client) GetStakes(poolIds []uint64) (map[uint64]*Stake, error) {
+func (c *ExSatFS) GetStakes(poolIds []uint64) (map[uint64]*Stake, error) {
 	results := make(map[uint64]*Stake, len(poolIds))
 	var mu sync.Mutex
 	g, _ := errgroup.WithContext(context.Background())
@@ -221,10 +214,10 @@ func (c *Client) GetStakes(poolIds []uint64) (map[uint64]*Stake, error) {
 	return results, nil
 }
 
-// TriggerUnstake calls the triggerUnstake function on the contract.
-func (c *Client) TriggerUnstake(poolId uint64) (*types.Transaction, error) {
+// Unstake calls the unstake function on the contract.
+func (c *ExSatFS) Unstake(poolId uint64) (*types.Transaction, error) {
 	if c.auth == nil {
 		return nil, fmt.Errorf("client is read-only")
 	}
-	return c.contract.Transact(c.auth, "triggerUnstake", poolId)
+	return c.contract.Transact(c.auth, "unstake", poolId)
 }
