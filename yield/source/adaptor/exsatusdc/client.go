@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/sebastianmontero/bennyfi-go-client/common/eth"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -116,41 +117,39 @@ type ExSatUSDCWrite struct {
 // New creates a new ExSatUSDCWrite client.
 // It dials the RPC URL, parses the private key, and sets up the transaction authorizer.
 func New(rpcUrl string, privateKeyHex string, contractAddr common.Address) (*ExSatUSDCWrite, error) {
+	// 1. Connect to Eth Client
+	client, err := ethclient.Dial(rpcUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewWithClient(client, privateKeyHex, contractAddr)
+}
+
+// NewWithClient creates a new ExSatUSDCWrite client using an existing contract backend and private key.
+func NewWithClient(client eth.EthClient, privateKeyHex string, contractAddr common.Address) (*ExSatUSDCWrite, error) {
 	// 1. Parse Private Key
 	privateKey, err := crypto.HexToECDSA(privateKeyHex)
 	if err != nil {
 		return nil, err
 	}
 
-	// 2. Connect to Eth Client
-	client, err := ethclient.Dial(rpcUrl)
-	if err != nil {
-		return nil, err
-	}
-
-	// 3. Get Chain ID
+	// 2. Get Chain ID
 	chainID, err := client.ChainID(context.Background())
 	if err != nil {
 		return nil, err
 	}
 
-	// 4. Create TransactOpts
+	// 3. Create TransactOpts
 	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
 	if err != nil {
 		return nil, err
 	}
 
-	// 5. Parse ABI
-	parsedABI, err := abi.JSON(strings.NewReader(ExSatBankYieldSourceAdaptorABI))
+	// 4. Create Read Client
+	readClient, err := NewReadWithClient(client, contractAddr)
 	if err != nil {
 		return nil, err
-	}
-
-	// 6. Create Bound Contract
-	contract := bind.NewBoundContract(contractAddr, parsedABI, client, client, client)
-	readClient := &ExSatUSDCRead{
-		contract: contract,
-		address:  contractAddr,
 	}
 
 	return &ExSatUSDCWrite{
@@ -168,13 +167,18 @@ func NewRead(rpcUrl string, contractAddr common.Address) (*ExSatUSDCRead, error)
 		return nil, err
 	}
 
-	// 2. Parse ABI
+	return NewReadWithClient(client, contractAddr)
+}
+
+// NewReadWithClient creates a new ExSatUSDCRead client using an existing contract backend.
+func NewReadWithClient(client eth.EthClient, contractAddr common.Address) (*ExSatUSDCRead, error) {
+	// 1. Parse ABI
 	parsedABI, err := abi.JSON(strings.NewReader(ExSatBankYieldSourceAdaptorABI))
 	if err != nil {
 		return nil, err
 	}
 
-	// 3. Create Bound Contract
+	// 2. Create Bound Contract
 	contract := bind.NewBoundContract(contractAddr, parsedABI, client, client, client)
 	return &ExSatUSDCRead{
 		contract: contract,

@@ -10,12 +10,18 @@ import (
 	"github.com/sebastianmontero/eos-go-toolbox/dto"
 )
 
+var (
+	StakeStateStaked   = eos.Name("staked")
+	StakeStateUnstaked = eos.Name("unstaked")
+)
+
 type Stake struct {
 	RoundID          uint64                 `json:"pool_id"`
 	TotalStake       eos.Asset              `json:"total_stake"`
 	TotalReturn      eos.Asset              `json:"total_return"`
 	LastCycleReturn  eos.Asset              `json:"last_cycle_return"`
 	State            eos.Name               `json:"state"`
+	YieldSource      eos.Name               `json:"yield_source"`
 	Cycle            uint32                 `json:"cycle"`
 	StakingPeriod    *dto.Microseconds      `json:"staking_period"`
 	StakedTime       eos.TimePoint          `json:"staked_time"`
@@ -50,6 +56,7 @@ func (m *Stake) Clone() *Stake {
 		TotalReturn:      m.TotalReturn,
 		LastCycleReturn:  m.LastCycleReturn,
 		State:            m.State,
+		YieldSource:      m.YieldSource,
 		Cycle:            m.Cycle,
 		StakingPeriod:    m.StakingPeriod,
 		StakedTime:       m.StakedTime,
@@ -101,7 +108,7 @@ func (m *StakeLocalContract) GetStakesReq(req *eos.GetTableRowsRequest) ([]Stake
 	return stakes, nil
 }
 
-func (m *StakeLocalContract) GetAllStakesByState(state eos.Name) ([]Stake, error) {
+func (m *StakeLocalContract) GetAllStakesByState(state eos.Name, filters ...func(Stake) bool) ([]Stake, error) {
 	allStakes := []Stake{}
 	startPoolId := uint64(0)
 	for {
@@ -112,10 +119,27 @@ func (m *StakeLocalContract) GetAllStakesByState(state eos.Name) ([]Stake, error
 		if len(stakes) == 0 {
 			break
 		}
-		allStakes = append(allStakes, stakes...)
+		for _, stake := range stakes {
+			keep := true
+			for _, filter := range filters {
+				if !filter(stake) {
+					keep = false
+					break
+				}
+			}
+			if keep {
+				allStakes = append(allStakes, stake)
+			}
+		}
 		startPoolId = stakes[len(stakes)-1].RoundID + 1
 	}
 	return allStakes, nil
+}
+
+func (m *StakeLocalContract) GetAllStakesByStateAndYieldSource(state, yieldSource eos.Name) ([]Stake, error) {
+	return m.GetAllStakesByState(state, func(stake Stake) bool {
+		return stake.YieldSource == yieldSource
+	})
 }
 
 func (m *StakeLocalContract) GetStakesByStateAndId(state eos.Name, startPoolId uint64) ([]Stake, error) {

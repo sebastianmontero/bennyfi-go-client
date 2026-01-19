@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/sebastianmontero/bennyfi-go-client/common/eth"
 )
 
 // IFixedStakingABI is the ABI of the IFixedStaking contract.
@@ -102,13 +103,18 @@ func NewRead(rpcUrl string, contractAddr common.Address) (*ExSatFS, error) {
 		return nil, fmt.Errorf("failed to dial rpc: %w", err)
 	}
 
-	// 2. Parse ABI
+	return NewReadWithClient(client, contractAddr)
+}
+
+// NewReadWithClient creates a new ExSatFS client using an existing contract backend.
+func NewReadWithClient(client eth.EthClient, contractAddr common.Address) (*ExSatFS, error) {
+	// 1. Parse ABI
 	parsedABI, err := abi.JSON(strings.NewReader(IFixedStakingABI))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse abi: %w", err)
 	}
 
-	// 3. Create Bound Contract
+	// 2. Create Bound Contract
 	contract := bind.NewBoundContract(contractAddr, parsedABI, client, client, client)
 	return &ExSatFS{
 		contract: contract,

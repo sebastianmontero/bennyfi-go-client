@@ -36,8 +36,6 @@ var (
 	SettingExsatBridgeContract   = "EXSAT_BRIDGE_CONTRACT"
 	SettingEvmGasLimit           = "EVM_GAS_LIMIT"
 	SettingEvmAccount            = "EVM_ACCOUNT"
-	StakeStateStaked             = eos.Name("staked")
-	StakeStateUnstaked           = eos.Name("unstaked")
 )
 
 type StakeLocalContract struct {

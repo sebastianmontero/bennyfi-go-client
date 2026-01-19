@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/sebastianmontero/bennyfi-go-client/common/eth"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -110,41 +111,39 @@ type ExSatFSWrite struct {
 // New creates a new ExSatFSWrite client.
 // It dials the RPC URL, parses the private key, and sets up the transaction authorizer.
 func New(rpcUrl string, privateKeyHex string, contractAddr common.Address) (*ExSatFSWrite, error) {
+	// 1. Connect to Eth Client
+	client, err := ethclient.Dial(rpcUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewWithClient(client, privateKeyHex, contractAddr)
+}
+
+// NewWithClient creates a new ExSatFSWrite client using an existing contract backend and private key.
+func NewWithClient(client eth.EthClient, privateKeyHex string, contractAddr common.Address) (*ExSatFSWrite, error) {
 	// 1. Parse Private Key
 	privateKey, err := crypto.HexToECDSA(privateKeyHex)
 	if err != nil {
 		return nil, err
 	}
 
-	// 2. Connect to Eth Client
-	client, err := ethclient.Dial(rpcUrl)
-	if err != nil {
-		return nil, err
-	}
-
-	// 3. Get Chain ID
+	// 2. Get Chain ID
 	chainID, err := client.ChainID(context.Background())
 	if err != nil {
 		return nil, err
 	}
 
-	// 4. Create TransactOpts
+	// 3. Create TransactOpts
 	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
 	if err != nil {
 		return nil, err
 	}
 
-	// 5. Parse ABI
-	parsedABI, err := abi.JSON(strings.NewReader(ExSatBankFixedStakingYieldSourceAdaptorABI))
+	// 4. Create Read Client
+	readClient, err := NewReadWithClient(client, contractAddr)
 	if err != nil {
 		return nil, err
-	}
-
-	// 6. Create Bound Contract
-	contract := bind.NewBoundContract(contractAddr, parsedABI, client, client, client)
-	readClient := &ExSatFSRead{
-		contract: contract,
-		address:  contractAddr,
 	}
 
 	return &ExSatFSWrite{
@@ -162,18 +161,26 @@ func NewRead(rpcUrl string, contractAddr common.Address) (*ExSatFSRead, error) {
 		return nil, err
 	}
 
-	// 2. Parse ABI
+	return NewReadWithClient(client, contractAddr)
+}
+
+// NewReadWithClient creates a new ExSatFSRead client using an existing contract backend.
+func NewReadWithClient(client eth.EthClient, contractAddr common.Address) (*ExSatFSRead, error) {
 	parsedABI, err := abi.JSON(strings.NewReader(ExSatBankFixedStakingYieldSourceAdaptorABI))
 	if err != nil {
 		return nil, err
 	}
 
-	// 3. Create Bound Contract
 	contract := bind.NewBoundContract(contractAddr, parsedABI, client, client, client)
 	return &ExSatFSRead{
 		contract: contract,
 		address:  contractAddr,
 	}, nil
+}
+
+// Address returns the address of the contract.
+func (c *ExSatFSRead) Address() common.Address {
+	return c.address
 }
 
 // GetStake retrieves the stake information for a given pool ID.
@@ -199,6 +206,7 @@ func (c *ExSatFSRead) GetStakes(poolIds []uint64) (map[uint64]*Stake, error) {
 	results := make(map[uint64]*Stake, len(poolIds))
 	var mu sync.Mutex
 	g, _ := errgroup.WithContext(context.Background())
+	g.SetLimit(20)
 
 	for _, pid := range poolIds {
 		pid := pid // capture variable
