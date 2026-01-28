@@ -24,6 +24,9 @@ func NewBennyDummyContract(eos *service.EOS, contractName string) *BennyDummyCon
 	}
 }
 
+type Config struct {
+	StakeLocalContract eos.Name `json:"stakelocal_contract"`
+}
 type Transfer struct {
 	TransferID uint64          `json:"transfer_id"`
 	From       eos.AccountName `json:"from"`
@@ -38,6 +41,13 @@ func (m *BennyDummyContract) ExecAction(permissionLevel interface{}, action stri
 		return "", err
 	}
 	return fmt.Sprintf("Tx ID: %v", resp.TransactionID), nil
+}
+
+func (m *BennyDummyContract) SetConfig(stakeLocalContract eos.Name) (string, error) {
+	actionData := struct {
+		StakeLocalContract eos.Name
+	}{stakeLocalContract}
+	return m.ExecAction(m.ContractName, "setconfig", actionData)
 }
 
 func (m *BennyDummyContract) SetTerm(termId uint64, yieldSource eos.Name) (string, error) {
@@ -57,6 +67,23 @@ func (m *BennyDummyContract) SetPool(poolId uint64, termId uint64, currentState 
 		StakingPeriodHrs uint32
 	}{poolId, termId, currentState, bennyfi.RoundTypeYield, stakingPeriodHrs}
 	return m.ExecAction(m.ContractName, "setpool", actionData)
+}
+
+func (m *BennyDummyContract) GetConfig(req *eos.GetTableRowsRequest) (*Config, error) {
+
+	var config []Config
+	if req == nil {
+		req = &eos.GetTableRowsRequest{}
+	}
+	req.Table = "config"
+	err := m.GetTableRows(*req, &config)
+	if err != nil {
+		return nil, fmt.Errorf("get table rows %v", err)
+	}
+	if len(config) == 0 {
+		return nil, nil
+	}
+	return &config[0], nil
 }
 
 func (m *BennyDummyContract) GetTransfer(transferID uint64) (*Transfer, error) {
