@@ -56,7 +56,8 @@ func (m *TlosRexContract) CheckStakeParameters(authorizer, tokenContract eos.Acc
 		MinStakeAmount   eos.Asset
 		MaxStakeAmount   eos.Asset
 		StakingPeriodHrs uint32
-	}{tokenContract, minStakeAmount, maxStakeAmount, stakingPeriodHrs}
+		YieldSourceName  eos.Name
+	}{tokenContract, minStakeAmount, maxStakeAmount, stakingPeriodHrs, "tlosrex"}
 	return m.ExecAction(authorizer, "chckstkparam", actionData)
 }
 

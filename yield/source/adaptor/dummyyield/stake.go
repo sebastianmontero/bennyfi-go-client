@@ -45,7 +45,8 @@ func (m *DummyYieldContract) CheckStakeParameters(authorizer, tokenContract eos.
 		MinStakeAmount   eos.Asset
 		MaxStakeAmount   eos.Asset
 		StakingPeriodHrs uint32
-	}{tokenContract, minStakeAmount, maxStakeAmount, stakingPeriodHrs}
+		YieldSourceName  eos.Name
+	}{tokenContract, minStakeAmount, maxStakeAmount, stakingPeriodHrs, "dummyyield"}
 	return m.ExecAction(authorizer, "chckstkparam", actionData)
 }
 
