@@ -1,28 +1,25 @@
-package exsatfs
+package exsatusdc
 
 import (
 	"context"
 	"math/big"
-	"strings"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/sebastianmontero/bennyfi-go-client/common/eth"
+	"github.com/sebastianmontero/bennyfi-go-client/evm/common/eth"
+	"github.com/sebastianmontero/bennyfi-go-client/evm/yield/source/adaptor/base"
 	"golang.org/x/sync/errgroup"
 )
 
-// ExSatBankFixedStakingYieldSourceAdaptorABI is the ABI of the ExSatBankFixedStakingYieldSourceAdaptor contract.
-const ExSatBankFixedStakingYieldSourceAdaptorABI = `[
+// ExSatBankYieldSourceAdaptorABI is the ABI of the ExSatBankYieldSourceAdaptor contract.
+const ExSatBankYieldSourceAdaptorABI = `[
     {
       "inputs": [
         {
           "internalType": "uint64",
-          "name": "",
+          "name": "_poolId",
           "type": "uint64"
         }
       ],
@@ -40,6 +37,11 @@ const ExSatBankFixedStakingYieldSourceAdaptorABI = `[
         },
         {
           "internalType": "uint256",
+          "name": "totalShares",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
           "name": "stakeTime",
           "type": "uint256"
         },
@@ -49,7 +51,7 @@ const ExSatBankFixedStakingYieldSourceAdaptorABI = `[
           "type": "uint256"
         },
         {
-          "internalType": "uint8",
+          "internalType": "enum ExSatBankYieldSourceAdaptor.StakeState",
           "name": "state",
           "type": "uint8"
         },
@@ -62,6 +64,7 @@ const ExSatBankFixedStakingYieldSourceAdaptorABI = `[
       "stateMutability": "view",
       "type": "function"
     },
+
     {
       "inputs": [
         {
@@ -70,7 +73,7 @@ const ExSatBankFixedStakingYieldSourceAdaptorABI = `[
           "type": "uint64"
         }
       ],
-      "name": "unstake",
+      "name": "triggerUnstake",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -90,27 +93,27 @@ const (
 type Stake struct {
 	PoolId      uint64
 	TotalStake  *big.Int
+	TotalShares *big.Int
 	StakeTime   *big.Int
 	UnlockTime  *big.Int
 	State       uint8
 	TotalReturn *big.Int
 }
 
-// ExSatFSRead interacts with the ExSatBankFixedStakingYieldSourceAdaptor contract for read-only operations.
-type ExSatFSRead struct {
-	contract *bind.BoundContract
-	address  common.Address
+// ExSatUSDCRead interacts with the ExSatBankYieldSourceAdaptor contract for read-only operations.
+type ExSatUSDCRead struct {
+	*base.BaseRead
 }
 
-// ExSatFSWrite interacts with the ExSatBankFixedStakingYieldSourceAdaptor contract for write operations.
-type ExSatFSWrite struct {
-	*ExSatFSRead
-	auth *bind.TransactOpts
+// ExSatUSDCWrite interacts with the ExSatBankYieldSourceAdaptor contract for write operations.
+type ExSatUSDCWrite struct {
+	*ExSatUSDCRead
+	*base.BaseWrite
 }
 
-// New creates a new ExSatFSWrite client.
+// New creates a new ExSatUSDCWrite client.
 // It dials the RPC URL, parses the private key, and sets up the transaction authorizer.
-func New(rpcUrl string, privateKeyHex string, contractAddr common.Address) (*ExSatFSWrite, error) {
+func New(rpcUrl string, privateKeyHex string, contractAddr common.Address) (*ExSatUSDCWrite, error) {
 	// 1. Connect to Eth Client
 	client, err := ethclient.Dial(rpcUrl)
 	if err != nil {
@@ -120,41 +123,28 @@ func New(rpcUrl string, privateKeyHex string, contractAddr common.Address) (*ExS
 	return NewWithClient(client, privateKeyHex, contractAddr)
 }
 
-// NewWithClient creates a new ExSatFSWrite client using an existing contract backend and private key.
-func NewWithClient(client eth.EthClient, privateKeyHex string, contractAddr common.Address) (*ExSatFSWrite, error) {
-	// 1. Parse Private Key
-	privateKey, err := crypto.HexToECDSA(privateKeyHex)
+// NewWithClient creates a new ExSatUSDCWrite client using an existing contract backend and private key.
+func NewWithClient(client eth.EthClient, privateKeyHex string, contractAddr common.Address) (*ExSatUSDCWrite, error) {
+	// 1. Create BaseWrite Client (merged ABI handled in base)
+	baseClient, err := base.NewWithClient(client.(*ethclient.Client), privateKeyHex, contractAddr, ExSatBankYieldSourceAdaptorABI)
 	if err != nil {
 		return nil, err
 	}
 
-	// 2. Get Chain ID
-	chainID, err := client.ChainID(context.Background())
-	if err != nil {
-		return nil, err
+	// 2. Create Read Client wrapper
+	readClient := &ExSatUSDCRead{
+		BaseRead: baseClient.BaseRead,
 	}
 
-	// 3. Create TransactOpts
-	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
-	if err != nil {
-		return nil, err
-	}
-
-	// 4. Create Read Client
-	readClient, err := NewReadWithClient(client, contractAddr)
-	if err != nil {
-		return nil, err
-	}
-
-	return &ExSatFSWrite{
-		ExSatFSRead: readClient,
-		auth:        auth,
+	return &ExSatUSDCWrite{
+		ExSatUSDCRead: readClient,
+		BaseWrite:     baseClient,
 	}, nil
 }
 
-// NewRead creates a new ExSatFSRead client for read-only operations.
+// NewRead creates a new ExSatUSDCRead client for read-only operations.
 // It dials the RPC URL but does not set up a transaction authorizer.
-func NewRead(rpcUrl string, contractAddr common.Address) (*ExSatFSRead, error) {
+func NewRead(rpcUrl string, contractAddr common.Address) (*ExSatUSDCRead, error) {
 	// 1. Connect to Eth Client
 	client, err := ethclient.Dial(rpcUrl)
 	if err != nil {
@@ -164,29 +154,23 @@ func NewRead(rpcUrl string, contractAddr common.Address) (*ExSatFSRead, error) {
 	return NewReadWithClient(client, contractAddr)
 }
 
-// NewReadWithClient creates a new ExSatFSRead client using an existing contract backend.
-func NewReadWithClient(client eth.EthClient, contractAddr common.Address) (*ExSatFSRead, error) {
-	parsedABI, err := abi.JSON(strings.NewReader(ExSatBankFixedStakingYieldSourceAdaptorABI))
+// NewReadWithClient creates a new ExSatUSDCRead client using an existing contract backend.
+func NewReadWithClient(client eth.EthClient, contractAddr common.Address) (*ExSatUSDCRead, error) {
+	// 1. Create BaseRead Client with merged ABI
+	baseClient, err := base.NewReadWithClient(client.(*ethclient.Client), contractAddr, ExSatBankYieldSourceAdaptorABI)
 	if err != nil {
 		return nil, err
 	}
 
-	contract := bind.NewBoundContract(contractAddr, parsedABI, client, client, client)
-	return &ExSatFSRead{
-		contract: contract,
-		address:  contractAddr,
+	return &ExSatUSDCRead{
+		BaseRead: baseClient,
 	}, nil
 }
 
-// Address returns the address of the contract.
-func (c *ExSatFSRead) Address() common.Address {
-	return c.address
-}
-
 // GetStake retrieves the stake information for a given pool ID.
-func (c *ExSatFSRead) GetStake(poolId uint64) (*Stake, error) {
+func (c *ExSatUSDCRead) GetStake(poolId uint64) (*Stake, error) {
 	var out []interface{}
-	err := c.contract.Call(nil, &out, "stakes", poolId)
+	err := c.Contract.Call(nil, &out, "stakes", poolId)
 	if err != nil {
 		return nil, err
 	}
@@ -194,19 +178,19 @@ func (c *ExSatFSRead) GetStake(poolId uint64) (*Stake, error) {
 	return &Stake{
 		PoolId:      out[0].(uint64),
 		TotalStake:  out[1].(*big.Int),
-		StakeTime:   out[2].(*big.Int),
-		UnlockTime:  out[3].(*big.Int),
-		State:       out[4].(uint8),
-		TotalReturn: out[5].(*big.Int),
+		TotalShares: out[2].(*big.Int),
+		StakeTime:   out[3].(*big.Int),
+		UnlockTime:  out[4].(*big.Int),
+		State:       out[5].(uint8),
+		TotalReturn: out[6].(*big.Int),
 	}, nil
 }
 
 // GetStakes retrieves multiple stake information for a given list of pool IDs in parallel.
-func (c *ExSatFSRead) GetStakes(poolIds []uint64) (map[uint64]*Stake, error) {
+func (c *ExSatUSDCRead) GetStakes(poolIds []uint64) (map[uint64]*Stake, error) {
 	results := make(map[uint64]*Stake, len(poolIds))
 	var mu sync.Mutex
 	g, _ := errgroup.WithContext(context.Background())
-	g.SetLimit(20)
 
 	for _, pid := range poolIds {
 		pid := pid // capture variable
@@ -229,7 +213,7 @@ func (c *ExSatFSRead) GetStakes(poolIds []uint64) (map[uint64]*Stake, error) {
 	return results, nil
 }
 
-// Unstake calls the unstake function on the contract.
-func (c *ExSatFSWrite) Unstake(poolId uint64) (*types.Transaction, error) {
-	return c.contract.Transact(c.auth, "unstake", poolId)
+// TriggerUnstake calls the triggerUnstake function on the contract.
+func (c *ExSatUSDCWrite) TriggerUnstake(poolId uint64) (*types.Transaction, error) {
+	return c.BaseWrite.Contract.Transact(c.Auth, "triggerUnstake", poolId)
 }

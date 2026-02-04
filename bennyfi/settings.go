@@ -26,6 +26,7 @@ const (
 	SettingMaxPoolStartPrdHrs            = "MAX_POOL_START_PRD_HRS"
 	SettingBatchSize                     = "BATCH_SIZE"
 	SettingRedrawTimeoutMins             = "REDRAW_TIMEOUT_MINS"
+	SettingVrfContract                   = "VRF_CONTRACT"
 )
 
 func (m *BennyfiContract) ShouldBurnFees() (bool, error) {

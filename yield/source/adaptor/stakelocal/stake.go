@@ -49,6 +49,22 @@ func (m *StakeLocalContract) CheckStakeParameters(authorizer, tokenContract eos.
 	return m.ExecAction(authorizer, "chckstkparam", actionData)
 }
 
+func (m *StakeLocalContract) TstLapseTime(roundId uint64) (string, error) {
+	actionData := struct {
+		RoundId     uint64
+		CallCounter uint64
+	}{roundId, m.NextCallCounter()}
+	return m.ExecAction(eos.AN(m.ContractName), "tstlapsetime", actionData)
+}
+
+func (m *StakeLocalContract) StopStake(roundId uint64) (string, error) {
+	actionData := struct {
+		RoundId     uint64
+		CallCounter uint64
+	}{roundId, m.NextCallCounter()}
+	return m.ExecAction(eos.AN(m.ContractName), "stopstake", actionData)
+}
+
 func (m *Stake) Clone() *Stake {
 	return &Stake{
 		RoundID:          m.RoundID,

@@ -3,13 +3,11 @@ package exsatfs
 import (
 	"fmt"
 	"math/big"
-	"strings"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/sebastianmontero/bennyfi-go-client/common/eth"
+	"github.com/sebastianmontero/bennyfi-go-client/evm/common/eth"
+	"github.com/sebastianmontero/bennyfi-go-client/evm/yield/source/adaptor/base"
 )
 
 // IFixedStakingABI is the ABI of the IFixedStaking contract.
@@ -91,8 +89,7 @@ type Position struct {
 
 // ExSatFS interacts with the IFixedStaking contract.
 type ExSatFS struct {
-	contract *bind.BoundContract
-	address  common.Address
+	*base.BaseRead
 }
 
 // NewRead creates a new ExSatFS client for read-only operations.
@@ -108,24 +105,21 @@ func NewRead(rpcUrl string, contractAddr common.Address) (*ExSatFS, error) {
 
 // NewReadWithClient creates a new ExSatFS client using an existing contract backend.
 func NewReadWithClient(client eth.EthClient, contractAddr common.Address) (*ExSatFS, error) {
-	// 1. Parse ABI
-	parsedABI, err := abi.JSON(strings.NewReader(IFixedStakingABI))
+	// 1. Create BaseRead Client with merged ABI
+	baseClient, err := base.NewReadWithClient(client.(*ethclient.Client), contractAddr, IFixedStakingABI)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse abi: %w", err)
+		return nil, err
 	}
 
-	// 2. Create Bound Contract
-	contract := bind.NewBoundContract(contractAddr, parsedABI, client, client, client)
 	return &ExSatFS{
-		contract: contract,
-		address:  contractAddr,
+		BaseRead: baseClient,
 	}, nil
 }
 
 // StakingToken retrieves the address of the staking token.
 func (c *ExSatFS) StakingToken() (common.Address, error) {
 	var out []interface{}
-	err := c.contract.Call(nil, &out, "stakingToken")
+	err := c.Contract.Call(nil, &out, "stakingToken")
 	if err != nil {
 		return common.Address{}, err
 	}
@@ -142,7 +136,7 @@ func (c *ExSatFS) GetPosition(agent common.Address, subId uint64) (*Position, er
 	bigSubIdBytes := bigSubId.Bytes()
 	copy(subIdBytes[32-len(bigSubIdBytes):], bigSubIdBytes)
 
-	err := c.contract.Call(nil, &out, "getPosition", agent, subIdBytes)
+	err := c.Contract.Call(nil, &out, "getPosition", agent, subIdBytes)
 	if err != nil {
 		return nil, err
 	}
