@@ -1,6 +1,7 @@
 package yield_source_registry
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -111,61 +112,29 @@ func NewReadWithClient(client *ethclient.Client, contractAddr common.Address) (*
 
 // GetYieldSource retrieves a yield source by name.
 func (r *Registry) GetYieldSource(name string) (*YieldSource, error) {
-	var out []interface{}
-	err := r.contract.Call(nil, &out, "getYieldSource", name)
+	// Use generic unmarshalling to avoid type mismatches with anonymous structs
+	var results []interface{}
+	err := r.contract.Call(nil, &results, "getYieldSource", name)
 	if err != nil {
 		return nil, err
 	}
 
-	// The output is a tuple, so it's a struct in Go's ABI binding representation.
-	// However, since we are using dynamic binding with flattened outputs not applied here (it's a tuple return),
-	// we need to be careful.
-	// Wait, standard abi unpacking for a struct return typically creates a struct if generated,
-	// but with Call and []interface{}, it unpacks into the fields.
-	// Let's check the ABI constraint.
-	// The output is a single tuple.
-	// `out[0]` should be the struct/tuple data.
-	
-	// Actually, `abi.Unpack` (helper used by Call) unpacks the return values. 
-	// If the return is a single tuple, it might unpack into a struct if we pass a struct pointer, 
-	// OR it unpacks into individual fields if we flatten.
-	// But here we rely on generic []interface{}.
-	// `go-ethereum`'s dynamic Call usually unpacks a single tuple return as the struct fields directly if specific, 
-	// OR as a single struct object if properly mapped? 
-	// Without generated code, ABI decoding a tuple usually results in a struct-like generic representation or requires a matching Go struct.
-	
-	// Let's look at how `go-ethereum` handles this.
-	// If I pass `&out`, it tries to Unpack into it.
-	// If the output is a tuple `(string, address, bool)`, `out` will contain `[string, address, bool]`.
-	// Wait, the ABI says output is `type: tuple` named `` containing components.
-	// So `out` will have length 1, and `out[0]` will be the struct.
-	// Let's use a struct helper for safety.
-	
-	// Better approach: Define a temporary struct to hold the result for easy decoding if possible,
-	// but `Call` with `*[]interface{}` might be tricky with tuples.
-	
-	// Alternative: Flatten the ABI manually in client code? 
-	// The user provided ABI has it as a tuple.
-	// Let's try to map it to the struct.
-	
-	// Actually, for dynamic call with `[]interface{}`:
-	// If the output is a single named tuple, `abigen` usually creates a struct.
-	// Without abigen, `Call` usually returns the unpacked values.
-	// If it is a tuple, it might be unpacked as a single element which is the struct?
-	// Let's assume standard behavior: `abi.Unpack` into `&[]interface{}` for a tuple return 
-	// typically flattens the tuple fields into the slice IF the abi definition wasn't a tuple inside a tuple?
-	// The return type is `YieldSource` (tuple).
-	
-	// Let's try attempting to decode into `*YieldSource` directly? 
-	// `c.contract.Call(nil, &resultStruct, method, ...)`
-	
-	result := new(YieldSource)
-	// We need to pass a slice of outputs to Call usually.
-	results := []interface{}{result}
-	err = r.contract.Call(nil, &results, "getYieldSource", name)
-	if err != nil {
-		return nil, err
+	if len(results) == 0 {
+		return nil, fmt.Errorf("no result returned")
 	}
+
+	// Use JSON roundtrip to convert anonymous struct to YieldSource
+	// This works because the ABI tuple unpacking produces an anonymous struct with json tags matching YieldSource
+	data, err := json.Marshal(results[0])
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	result := new(YieldSource)
+	if err := json.Unmarshal(data, result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal into YieldSource: %w. Data: %s", err, string(data))
+	}
+
 	return result, nil
 }
 
