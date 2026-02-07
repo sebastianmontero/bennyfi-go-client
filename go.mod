@@ -61,6 +61,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-// replace github.com/sebastianmontero/eos-go-toolbox => ../eos-go-toolbox
+replace github.com/sebastianmontero/eos-go-toolbox => ../eos-go-toolbox
 
 // replace github.com/sebastianmontero/eos-go => ../eos-go

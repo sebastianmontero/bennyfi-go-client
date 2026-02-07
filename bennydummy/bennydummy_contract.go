@@ -8,6 +8,8 @@ import (
 	eos "github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/contract"
 	"github.com/sebastianmontero/eos-go-toolbox/service"
+	"github.com/sebastianmontero/eos-go-toolbox/util"
+	"github.com/sebastianmontero/eos-go/token"
 )
 
 type BennyDummyContract struct {
@@ -67,6 +69,26 @@ func (m *BennyDummyContract) SetPool(poolId uint64, termId uint64, currentState 
 		StakingPeriodHrs uint32
 	}{poolId, termId, currentState, bennyfi.RoundTypeYield, stakingPeriodHrs}
 	return m.ExecAction(m.ContractName, "setpool", actionData)
+}
+
+func (m *BennyDummyContract) GetStakeTransfer(to, quantity interface{}, poolId uint64) (*token.Transfer, error) {
+
+	toAN, err := util.ToAccountName(to)
+	if err != nil {
+		return nil, err
+	}
+
+	qty, err := util.ToAsset(quantity)
+	if err != nil {
+		return nil, err
+	}
+
+	return &token.Transfer{
+		From:     eos.AccountName(m.ContractName),
+		To:       toAN,
+		Quantity: qty,
+		Memo:     fmt.Sprintf("pool id: %v", poolId),
+	}, nil
 }
 
 func (m *BennyDummyContract) GetConfig(req *eos.GetTableRowsRequest) (*Config, error) {
