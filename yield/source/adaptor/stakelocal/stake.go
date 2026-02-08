@@ -13,6 +13,7 @@ import (
 var (
 	StakeStateStaked   = eos.Name("staked")
 	StakeStateUnstaked = eos.Name("unstaked")
+	StakeStateStopped  = eos.Name("stopped")
 )
 
 type Stake struct {
@@ -213,3 +214,4 @@ func (m *StakeLocalContract) FilterStakesByYieldSourceAndId(req *eos.GetTableRow
 	req.UpperBound = stateAndRndUB
 	return err
 }
+

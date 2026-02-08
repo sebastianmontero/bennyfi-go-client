@@ -54,3 +54,10 @@ func (m *TestUtil) AssertStake(actual, expected *stakelocal.Stake) {
 	}
 	ltest.AssertAdditionalFields(m.T, actual.AdditionalFields, expected.AdditionalFields)
 }
+
+func (m *TestUtil) CheckStakesAre(stakes []stakelocal.Stake, ids []uint64) {
+	assert.Equal(m.T, len(ids), len(stakes))
+	for i, id := range ids {
+		assert.Equal(m.T, id, stakes[i].RoundID)
+	}
+}

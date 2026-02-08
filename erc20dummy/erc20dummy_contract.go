@@ -17,9 +17,9 @@ type Token struct {
 	Balance                   eos.Asset       `json:"balance"`
 	FeeBalance                eos.Asset       `json:"fee_balance"`
 	Erc20Precision            uint8           `json:"erc20_precision"`
-	FromEvmToNative           *bool           `json:"from_evm_to_native,omitempty"`
-	OriginalErc20TokenAddress *eos.HexBytes   `json:"original_erc20_token_address,omitempty"`
-	MinIngress                *eos.Asset      `json:"min_ingress,omitempty"`
+	FromEvmToNative           uint8           `json:"from_evm_to_native,omitempty"`
+	OriginalErc20TokenAddress eos.HexBytes    `json:"original_erc20_token_address,omitempty"`
+	MinIngress                eos.Asset       `json:"min_ingress,omitempty"`
 }
 
 type ERC20DummyContract struct {
