@@ -24,8 +24,8 @@ package eosrexflow
 import (
 	"fmt"
 
+	"github.com/sebastianmontero/bennyfi-go-client/yield/source/adaptor/common"
 	"github.com/sebastianmontero/eos-go"
-	"github.com/sebastianmontero/eos-go-toolbox/contract"
 	"github.com/sebastianmontero/eos-go-toolbox/service"
 	"github.com/sebastianmontero/eos-go/ecc"
 )
@@ -56,28 +56,13 @@ var (
 )
 
 type EosRexFlowContract struct {
-	*contract.SettingsContract
-	callCounter uint64
+	*common.BaseContract
 }
 
 func NewEosRexFlowContract(eos *service.EOS, contractName string) *EosRexFlowContract {
 	return &EosRexFlowContract{
-		contract.NewSettingsContract(eos, contractName),
-		0,
+		common.NewBaseContract(eos, contractName),
 	}
-}
-
-func (m *EosRexFlowContract) NextCallCounter() uint64 {
-	m.callCounter++
-	return m.callCounter
-}
-
-func (m *EosRexFlowContract) ExecAction(permissionLevel interface{}, action string, actionData interface{}) (string, error) {
-	resp, err := m.Contract.ExecAction(permissionLevel, action, actionData)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("Tx ID: %v", resp.TransactionID), nil
 }
 
 func (m *EosRexFlowContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) error {

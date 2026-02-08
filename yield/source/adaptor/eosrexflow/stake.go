@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/sebastianmontero/bennyfi-go-client/common/types"
+	"github.com/sebastianmontero/bennyfi-go-client/yield/source/adaptor/common"
 	"github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/dto"
 )
@@ -299,4 +300,8 @@ func (m *EosRexFlowContract) FilterStakesByRexStateAndId(req *eos.GetTableRowsRe
 	req.LowerBound = stateAndRndLB
 	req.UpperBound = stateAndRndUB
 	return err
+}
+
+func (m *EosRexFlowContract) GetAllStoppedStakes() ([]common.BasicStake, error) {
+	return m.BaseContract.GetAllStoppedBasicStakes("rex_state", "pool_id")
 }

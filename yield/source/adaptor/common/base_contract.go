@@ -23,6 +23,7 @@ package common
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/contract"
@@ -33,24 +34,24 @@ var (
 	StateStopped = eos.Name("stopped")
 )
 
-type CommonContract struct {
+type BaseContract struct {
 	*contract.SettingsContract
 	callCounter uint64
 }
 
-func NewCommonContract(eos *service.EOS, contractName string) *CommonContract {
-	return &CommonContract{
+func NewBaseContract(eos *service.EOS, contractName string) *BaseContract {
+	return &BaseContract{
 		contract.NewSettingsContract(eos, contractName),
 		0,
 	}
 }
 
-func (m *CommonContract) NextCallCounter() uint64 {
+func (m *BaseContract) NextCallCounter() uint64 {
 	m.callCounter++
 	return m.callCounter
 }
 
-func (m *CommonContract) ExecAction(permissionLevel interface{}, action string, actionData interface{}) (string, error) {
+func (m *BaseContract) ExecAction(permissionLevel interface{}, action string, actionData interface{}) (string, error) {
 	resp, err := m.Contract.ExecAction(permissionLevel, action, actionData)
 	if err != nil {
 		return "", err
@@ -58,7 +59,7 @@ func (m *CommonContract) ExecAction(permissionLevel interface{}, action string, 
 	return fmt.Sprintf("Tx ID: %v", resp.TransactionID), nil
 }
 
-func (m *CommonContract) getStoppedStakeIndexValue(keyValue string) (string, error) {
+func (m *BaseContract) getStoppedStakeIndexValue(keyValue string) (string, error) {
 	if keyValue == "" {
 		keyValue = "0"
 	}
@@ -66,7 +67,7 @@ func (m *CommonContract) getStoppedStakeIndexValue(keyValue string) (string, err
 	return m.EOS.GetComposedIndexValue(StateStopped, keyValue)
 }
 
-func (m *CommonContract) GetAllStoppedStakesAsMap() ([]map[string]interface{}, error) {
+func (m *BaseContract) GetAllStoppedStakesAsMap() ([]map[string]interface{}, error) {
 	req := eos.GetTableRowsRequest{
 		Table:   "stakes",
 		Index:   "2",
@@ -77,4 +78,23 @@ func (m *CommonContract) GetAllStoppedStakesAsMap() ([]map[string]interface{}, e
 		return nil, fmt.Errorf("failed to generate upper bound composed index, err: %v", err)
 	}
 	return m.GetAllTableRowsFromTillAsMap(req, "pool_id", "0", m.getStoppedStakeIndexValue, stateAndRndUB)
+}
+
+func (m *BaseContract) GetAllStoppedBasicStakes(statePropertyName, roundIdPropertyName string) ([]BasicStake, error) {
+	stakes, err := m.GetAllStoppedStakesAsMap()
+	if err != nil {
+		return nil, err
+	}
+	var basicStakes []BasicStake
+	for _, stake := range stakes {
+		roundId, err := strconv.ParseUint(fmt.Sprintf("%v", stake[roundIdPropertyName]), 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing round id: %v, error: %v", stake[roundIdPropertyName], err)
+		}
+		basicStakes = append(basicStakes, BasicStake{
+			RoundId:   roundId,
+			IsStopped: eos.Name(stake[statePropertyName].(string)) == StateStopped,
+		})
+	}
+	return basicStakes, nil
 }

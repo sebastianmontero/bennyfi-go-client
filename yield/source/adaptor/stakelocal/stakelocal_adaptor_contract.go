@@ -22,10 +22,8 @@
 package stakelocal
 
 import (
-	"fmt"
-
+	"github.com/sebastianmontero/bennyfi-go-client/yield/source/adaptor/common"
 	"github.com/sebastianmontero/eos-go"
-	"github.com/sebastianmontero/eos-go-toolbox/contract"
 	"github.com/sebastianmontero/eos-go-toolbox/service"
 )
 
@@ -39,53 +37,14 @@ var (
 )
 
 type StakeLocalContract struct {
-	*contract.SettingsContract
-	callCounter uint64
+	*common.BaseContract
 }
 
 func NewStakeLocalContract(eos *service.EOS, contractName string) *StakeLocalContract {
 	return &StakeLocalContract{
-		contract.NewSettingsContract(eos, contractName),
-		0,
+		common.NewBaseContract(eos, contractName),
 	}
 }
-
-func (m *StakeLocalContract) NextCallCounter() uint64 {
-	m.callCounter++
-	return m.callCounter
-}
-
-func (m *StakeLocalContract) ExecAction(permissionLevel interface{}, action string, actionData interface{}) (string, error) {
-	resp, err := m.Contract.ExecAction(permissionLevel, action, actionData)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("Tx ID: %v", resp.TransactionID), nil
-}
-
-// func (m *StakeLocalContract) ConfigureOpenPermission(publicKey *ecc.PublicKey) error {
-// 	openActions := []string{
-// 		"mvfrmsvngsrn",
-// 		"clcproceedrn",
-// 		"withdrwrexrn",
-// 		"mvfrmsavings",
-// 		"updaterex",
-// 		"calcproceeds",
-// 		"sellrex",
-// 		"withdrawrex",
-// 	}
-// 	err := m.EOS.CreateSimplePermission(m.ContractName, "open", publicKey)
-// 	if err != nil {
-// 		return fmt.Errorf("failed to create open permission, error: %v", err)
-// 	}
-// 	for _, action := range openActions {
-// 		err = m.EOS.LinkPermission(m.ContractName, action, "open", false)
-// 		if err != nil {
-// 			return fmt.Errorf("failed to link open permission to the %v action, error: %v", action, err)
-// 		}
-// 	}
-// 	return nil
-// }
 
 func (m *StakeLocalContract) Reset(limit uint64, toDelete []string) (string, error) {
 	actionData := struct {

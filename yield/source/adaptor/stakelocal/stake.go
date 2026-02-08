@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/sebastianmontero/bennyfi-go-client/common/types"
+	"github.com/sebastianmontero/bennyfi-go-client/yield/source/adaptor/common"
 	"github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/dto"
 )
@@ -215,3 +216,6 @@ func (m *StakeLocalContract) FilterStakesByYieldSourceAndId(req *eos.GetTableRow
 	return err
 }
 
+func (m *StakeLocalContract) GetAllStoppedStakes() ([]common.BasicStake, error) {
+	return m.BaseContract.GetAllStoppedBasicStakes("state", "pool_id")
+}
