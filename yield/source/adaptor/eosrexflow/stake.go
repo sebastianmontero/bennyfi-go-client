@@ -302,6 +302,6 @@ func (m *EosRexFlowContract) FilterStakesByRexStateAndId(req *eos.GetTableRowsRe
 	return err
 }
 
-func (m *EosRexFlowContract) GetAllStoppedStakes() ([]common.BasicStake, error) {
+func (m *EosRexFlowContract) GetAllStoppedStakes() ([]common.StoppedStake, error) {
 	return m.BaseContract.GetAllStoppedBasicStakes("rex_state", "pool_id")
 }

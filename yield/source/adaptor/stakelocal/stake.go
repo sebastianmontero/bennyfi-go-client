@@ -216,6 +216,6 @@ func (m *StakeLocalContract) FilterStakesByYieldSourceAndId(req *eos.GetTableRow
 	return err
 }
 
-func (m *StakeLocalContract) GetAllStoppedStakes() ([]common.BasicStake, error) {
+func (m *StakeLocalContract) GetAllStoppedStakes() ([]common.StoppedStake, error) {
 	return m.BaseContract.GetAllStoppedBasicStakes("state", "pool_id")
 }

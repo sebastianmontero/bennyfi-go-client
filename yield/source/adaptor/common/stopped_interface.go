@@ -1,10 +1,10 @@
 package common
 
-type BasicStake struct {
+type StoppedStake struct {
 	RoundId   uint64
 	IsStopped bool
 }
 
 type StoppedInterface interface {
-	GetAllStoppedStakes() ([]BasicStake, error)
+	GetAllStoppedStakes() ([]StoppedStake, error)
 }

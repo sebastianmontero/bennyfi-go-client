@@ -80,18 +80,18 @@ func (m *BaseContract) GetAllStoppedStakesAsMap() ([]map[string]interface{}, err
 	return m.GetAllTableRowsFromTillAsMap(req, "pool_id", "0", m.getStoppedStakeIndexValue, stateAndRndUB)
 }
 
-func (m *BaseContract) GetAllStoppedBasicStakes(statePropertyName, roundIdPropertyName string) ([]BasicStake, error) {
+func (m *BaseContract) GetAllStoppedBasicStakes(statePropertyName, roundIdPropertyName string) ([]StoppedStake, error) {
 	stakes, err := m.GetAllStoppedStakesAsMap()
 	if err != nil {
 		return nil, err
 	}
-	var basicStakes []BasicStake
+	var basicStakes []StoppedStake
 	for _, stake := range stakes {
 		roundId, err := strconv.ParseUint(fmt.Sprintf("%v", stake[roundIdPropertyName]), 10, 64)
 		if err != nil {
 			return nil, fmt.Errorf("error parsing round id: %v, error: %v", stake[roundIdPropertyName], err)
 		}
-		basicStakes = append(basicStakes, BasicStake{
+		basicStakes = append(basicStakes, StoppedStake{
 			RoundId:   roundId,
 			IsStopped: eos.Name(stake[statePropertyName].(string)) == StateStopped,
 		})
