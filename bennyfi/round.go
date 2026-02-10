@@ -31,6 +31,9 @@ import (
 	"time"
 
 	"github.com/sebastianmontero/bennyfi-go-client/common/types"
+	"github.com/sebastianmontero/bennyfi-go-client/yield/source/adaptor/common"
+	"github.com/sebastianmontero/bennyfi-go-client/yield/source/adaptor/eosrex"
+	"github.com/sebastianmontero/bennyfi-go-client/yield/source/adaptor/stakelocal"
 	eos "github.com/sebastianmontero/eos-go"
 	"github.com/sebastianmontero/eos-go-toolbox/dto"
 	"github.com/sebastianmontero/eos-go-toolbox/util"
@@ -402,6 +405,11 @@ func (m *Round) SetYieldReward(totalReturn eos.Asset, partial bool) (reward eos.
 	totalReward = r.Reward.Add(reward)
 	r.Reward = totalReward
 	return
+}
+
+func (m *Round) StopPool() {
+	m.CurrentState = RoundStopped
+	m.StakeState = RoundStakeStateStopped
 }
 
 type NewRoundArgs struct {
@@ -953,6 +961,73 @@ func (m *BennyfiContract) ClaimPartialReturns() []error {
 		}
 	}
 	return errors
+}
+
+func (m *BennyfiContract) StopRoundsByYieldSource(yieldSource eos.Name) error {
+	ys, err := m.GetYieldSourceById(yieldSource)
+	if err != nil {
+		return fmt.Errorf("error getting yield source: %v, error: %v", yieldSource, err)
+	}
+	if ys.State != YieldSourceStateStopped {
+		return fmt.Errorf("yield source %v is not stopped", yieldSource)
+	}
+	client, err := m.getStoppedClient(ys)
+	if err != nil {
+		return fmt.Errorf("error getting stopped client: %v, error: %v", yieldSource, err)
+	}
+
+	stakes, err := client.GetAllStoppedStakes()
+	if err != nil {
+		return fmt.Errorf("error getting stopped stakes: %v, error: %v", yieldSource, err)
+	}
+	// fmt.Printf("\nStakes: %v\n", stakes)
+	fmt.Println("\nStopping pools...")
+	for _, stake := range stakes {
+
+		if !stake.IsStopped {
+			continue
+		}
+		pool, err := m.GetRound(stake.RoundId)
+		if err != nil {
+			return fmt.Errorf("error getting pool: %v, error: %v", stake.RoundId, err)
+		}
+		if pool.CurrentState != RoundClosed || pool.RoundType != RoundTypeYield {
+			continue
+		}
+		term, err := m.GetTermsById(pool.TermID)
+		if err != nil {
+			return fmt.Errorf("error getting term: %v, error: %v", pool.TermID, err)
+		}
+		mainDist := term.DistributionDefinitions.FindFT(DistributionMainToken)
+		if mainDist == nil {
+			continue
+		}
+		if mainDist.YieldSource == yieldSource {
+
+			fmt.Println("Stopping pool ID: ", stake.RoundId)
+			response, err := m.StopRound(stake.RoundId, false, nil)
+			if err != nil {
+				return fmt.Errorf("error stopping pool: %v, error: %v", stake.RoundId, err)
+			}
+			fmt.Printf("\nStopped pool ID: %v Tx: %v\n", stake.RoundId, response)
+		}
+	}
+	fmt.Println("\nFinished stopping pools.")
+
+	return nil
+}
+
+func (m *BennyfiContract) getStoppedClient(ys *YieldSource) (common.StoppedInterface, error) {
+	switch ys.YieldSource.String() {
+	case "eosrex", "vaultarex":
+		return eosrex.NewEosRexContract(m.EOS, string(ys.AdaptorContract)), nil
+	case "eosrexflow", "vaultarexflw":
+		return eosrex.NewEosRexContract(m.EOS, string(ys.AdaptorContract)), nil
+	case "exsatfsusdc":
+		return stakelocal.NewStakeLocalContract(m.EOS, string(ys.AdaptorContract)), nil
+	default:
+		return nil, fmt.Errorf("unsupported yield source: %v", ys.YieldSource)
+	}
 }
 
 func (m *BennyfiContract) TstLapseTime(roundId uint64) (string, error) {
