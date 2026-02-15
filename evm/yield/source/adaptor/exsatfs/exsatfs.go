@@ -71,6 +71,19 @@ const ExSatBankFixedStakingYieldSourceAdaptorABI = `[
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "_poolId",
+          "type": "uint64"
+        }
+      ],
+      "name": "unlockStake",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
     }
 ]`
 
@@ -209,4 +222,9 @@ func (c *ExSatFSRead) GetStakes(poolIds []uint64) (map[uint64]*Stake, error) {
 // Unstake calls the unstake function on the contract.
 func (c *ExSatFSWrite) Unstake(poolId uint64) (*types.Transaction, error) {
 	return c.BaseWrite.Contract.Transact(c.Auth, "unstake", poolId)
+}
+
+// UnlockStake calls the unlockStake function on the contract.
+func (c *ExSatFSWrite) UnlockStake(poolId uint64) (*types.Transaction, error) {
+	return c.BaseWrite.Contract.Transact(c.Auth, "unlockStake", poolId)
 }

@@ -23,4 +23,10 @@ func TestABI(t *testing.T) {
 	assert.Assert(t, ok, "Method 'unstake' not found in ABI")
 	assert.Equal(t, len(method.Inputs), 1)
 	assert.Equal(t, len(method.Outputs), 0)
+
+	// Verify 'unlockStake' method
+	method, ok = parsedABI.Methods["unlockStake"]
+	assert.Assert(t, ok, "Method 'unlockStake' not found in ABI")
+	assert.Equal(t, len(method.Inputs), 1)
+	assert.Equal(t, len(method.Outputs), 0)
 }

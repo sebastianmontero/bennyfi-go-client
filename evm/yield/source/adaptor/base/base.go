@@ -1,15 +1,12 @@
 package base
 
 import (
-	"context"
 	"fmt"
-	"strings"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	evmbase "github.com/sebastianmontero/bennyfi-go-client/evm/base"
 )
 
 // IYieldSourceAdaptorABI is the ABI of the IYieldSourceAdaptor contract.
@@ -101,8 +98,7 @@ const IYieldSourceAdaptorABI = `[
 
 // BaseRead represents a base yield source adaptor client for read-only operations.
 type BaseRead struct {
-	Contract *bind.BoundContract
-	Address  common.Address
+	*evmbase.ReadClient
 }
 
 // BaseWrite represents a base yield source adaptor client for write operations.
@@ -122,43 +118,45 @@ func New(rpcUrl string, privateKeyHex string, contractAddr common.Address, addit
 
 // NewWithClient creates a new BaseWrite client with an existing ethclient.
 func NewWithClient(client *ethclient.Client, privateKeyHex string, contractAddr common.Address, additionalABIs ...string) (*BaseWrite, error) {
-	privateKey, err := crypto.HexToECDSA(privateKeyHex)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse private key: %w", err)
-	}
-
-	chainID, err := client.ChainID(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("failed to get chain id: %w", err)
-	}
-
-	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create auth: %w", err)
-	}
-
-	readClient, err := NewReadWithClient(client, contractAddr, additionalABIs...)
+	abis := append([]string{IYieldSourceAdaptorABI}, additionalABIs...)
+	wc, err := evmbase.NewWithClient(client, privateKeyHex, contractAddr, abis...)
 	if err != nil {
 		return nil, err
 	}
 
 	return &BaseWrite{
-		BaseRead: readClient,
-		Auth:     auth,
+		BaseRead: &BaseRead{ReadClient: wc.ReadClient},
+		Auth:     wc.Auth,
 	}, nil
 }
 
 // NewClientFactory creates a factory function that produces BaseWrite clients for a given address.
 // It captures the client and credentials to reuse them for creating multiple clients.
 func NewClientFactory(client *ethclient.Client, privateKeyHex string, additionalABIs ...string) (func(common.Address) (*BaseWrite, error), error) {
-	// Verify private key validity early
-	_, err := crypto.HexToECDSA(privateKeyHex)
+	abis := append([]string{IYieldSourceAdaptorABI}, additionalABIs...)
+	// Using generic factory
+	// Note: generic factory returns *WriteClient. We need to wrap it.
+	// But generic factory does NOT exist in evmbase based on my previous file creation?
+	// Wait, I did write NewClientFactory in evm/base/client.go!
+	// "func NewClientFactory(...) (func(common.Address) (*WriteClient, error), error)"
+
+	// However, the generic NewClientFactory does the private key check once.
+	// And returns a closure.
+	
+	factory, err := evmbase.NewClientFactory(client, privateKeyHex, abis...)
 	if err != nil {
-		return nil, fmt.Errorf("invalid private key: %w", err)
+		return nil, err
 	}
 
 	return func(contractAddr common.Address) (*BaseWrite, error) {
-		return NewWithClient(client, privateKeyHex, contractAddr, additionalABIs...)
+		wc, err := factory(contractAddr)
+		if err != nil {
+			return nil, err
+		}
+		return &BaseWrite{
+			BaseRead: &BaseRead{ReadClient: wc.ReadClient},
+			Auth:     wc.Auth,
+		}, nil
 	}, nil
 }
 
@@ -174,60 +172,21 @@ func NewRead(rpcUrl string, contractAddr common.Address, additionalABIs ...strin
 // NewReadWithClient creates a new BaseRead client with an existing ethclient.
 func NewReadWithClient(client *ethclient.Client, contractAddr common.Address, additionalABIs ...string) (*BaseRead, error) {
 	abis := append([]string{IYieldSourceAdaptorABI}, additionalABIs...)
-	mergedABI, err := MergeABIs(abis...)
+	rc, err := evmbase.NewReadWithClient(client, contractAddr, abis...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to merge ABIs: %w", err)
+		return nil, err
 	}
-
-	parsedABI, err := abi.JSON(strings.NewReader(mergedABI))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse abi: %w", err)
-	}
-
-	contract := bind.NewBoundContract(contractAddr, parsedABI, client, client, client)
 
 	return &BaseRead{
-		Contract: contract,
-		Address:  contractAddr,
+		ReadClient: rc,
 	}, nil
-}
-
-// MergeABIs merges multiple ABI JSON strings into a single ABI string.
-// It naively concatenates the arrays, verifying they are valid JSON arrays.
-func MergeABIs(abis ...string) (string, error) {
-	var builder strings.Builder
-	builder.WriteString("[")
-	first := true
-	for _, abiStr := range abis {
-		trimmed := strings.TrimSpace(abiStr)
-		if len(trimmed) < 2 {
-			continue
-		} // "[]" or empty
-
-		if !strings.HasPrefix(trimmed, "[") || !strings.HasSuffix(trimmed, "]") {
-			return "", fmt.Errorf("invalid ABI JSON: must be an array")
-		}
-
-		inner := trimmed[1 : len(trimmed)-1]
-		if strings.TrimSpace(inner) == "" {
-			continue
-		}
-
-		if !first {
-			builder.WriteString(",")
-		}
-		builder.WriteString(inner)
-		first = false
-	}
-	builder.WriteString("]")
-	return builder.String(), nil
 }
 
 // NewReadFromContract creates a new BaseRead client from an existing bound contract.
 func NewReadFromContract(contract *bind.BoundContract, contractAddr common.Address) *BaseRead {
+	rc := evmbase.NewReadFromContract(contract, contractAddr)
 	return &BaseRead{
-		Contract: contract,
-		Address:  contractAddr,
+		ReadClient: rc,
 	}
 }
 

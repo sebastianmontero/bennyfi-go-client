@@ -188,6 +188,80 @@ func (m *StakeLocalContract) FilterStakesByStateAndId(req *eos.GetTableRowsReque
 	return err
 }
 
+func (m *StakeLocalContract) GetStakesByStateAndStakeEndTime(state eos.Name, startStakeEndTime eos.TimePoint) ([]Stake, error) {
+	request := &eos.GetTableRowsRequest{}
+	err := m.FilterStakesByStateAndStakeEndTime(request, state, startStakeEndTime)
+	if err != nil {
+		return nil, err
+	}
+	return m.GetStakesReq(request)
+}
+
+func (m *StakeLocalContract) GetAllStakesByStateAndStakeEndTime(state eos.Name, limitEndTime eos.TimePoint, filters ...func(Stake) bool) ([]Stake, error) {
+	allStakes := []Stake{}
+	startStakeEndTime := eos.TimePoint(0)
+	seenIDs := make(map[uint64]bool)
+
+	for {
+		stakes, err := m.GetStakesByStateAndStakeEndTime(state, startStakeEndTime)
+		if err != nil {
+			return nil, err
+		}
+		if len(stakes) == 0 {
+			break
+		}
+
+		for _, stake := range stakes {
+			if stake.StakeEndTime > limitEndTime {
+				return allStakes, nil
+			}
+
+			if seenIDs[stake.RoundID] {
+				continue
+			}
+			seenIDs[stake.RoundID] = true
+
+			keep := true
+			for _, filter := range filters {
+				if !filter(stake) {
+					keep = false
+					break
+				}
+			}
+			if keep {
+				allStakes = append(allStakes, stake)
+			}
+		}
+
+		lastStake := stakes[len(stakes)-1]
+		if lastStake.StakeEndTime > startStakeEndTime {
+			startStakeEndTime = lastStake.StakeEndTime
+		} else {
+			startStakeEndTime = startStakeEndTime + 1
+		}
+	}
+	return allStakes, nil
+}
+
+func (m *StakeLocalContract) FilterStakesByStateAndStakeEndTime(req *eos.GetTableRowsRequest, state eos.Name, startStakeEndTime eos.TimePoint) error {
+
+	req.Index = "2"
+	req.KeyType = "i128"
+	req.Reverse = false
+	stateAndRndLB, err := m.EOS.GetComposedIndexValue(state, startStakeEndTime)
+	if err != nil {
+		return fmt.Errorf("failed to generate lower bound composed index, err: %v", err)
+	}
+	stateAndRndUB, err := m.EOS.GetComposedIndexValue(state, eos.TimePoint(uint64(18446744073709551615)))
+	if err != nil {
+		return fmt.Errorf("failed to generate upper bound composed index, err: %v", err)
+	}
+	// fmt.Println("LB: ", stateAndRndLB, "UB: ", stateAndRndUB)
+	req.LowerBound = stateAndRndLB
+	req.UpperBound = stateAndRndUB
+	return err
+}
+
 func (m *StakeLocalContract) GetStakesByYieldSourceAndId(yieldSource eos.Name, startPoolId uint64) ([]Stake, error) {
 	request := &eos.GetTableRowsRequest{}
 	err := m.FilterStakesByYieldSourceAndId(request, yieldSource, startPoolId)
@@ -218,4 +292,10 @@ func (m *StakeLocalContract) FilterStakesByYieldSourceAndId(req *eos.GetTableRow
 
 func (m *StakeLocalContract) GetAllStoppedStakes() ([]common.StoppedStake, error) {
 	return m.BaseContract.GetAllStoppedBasicStakes("state", "pool_id")
+}
+
+func (m *StakeLocalContract) GetAllStakesByStateYieldSourceAndStakeEndTime(state, yieldSource eos.Name, limitEndTime eos.TimePoint) ([]Stake, error) {
+	return m.GetAllStakesByStateAndStakeEndTime(state, limitEndTime, func(stake Stake) bool {
+		return stake.YieldSource == yieldSource
+	})
 }
