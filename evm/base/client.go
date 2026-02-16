@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/sebastianmontero/bennyfi-go-client/evm/common/eth"
 )
 
 // ReadClient represents a base client for read-only operations.
@@ -34,7 +35,7 @@ func New(rpcUrl string, privateKeyHex string, contractAddr common.Address, addit
 }
 
 // NewWithClient creates a new WriteClient with an existing ethclient.
-func NewWithClient(client *ethclient.Client, privateKeyHex string, contractAddr common.Address, additionalABIs ...string) (*WriteClient, error) {
+func NewWithClient(client eth.EthClient, privateKeyHex string, contractAddr common.Address, additionalABIs ...string) (*WriteClient, error) {
 	privateKey, err := crypto.HexToECDSA(privateKeyHex)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse private key: %w", err)
@@ -63,7 +64,7 @@ func NewWithClient(client *ethclient.Client, privateKeyHex string, contractAddr 
 
 // NewClientFactory creates a factory function that produces WriteClients for a given address.
 // It captures the client and credentials to reuse them for creating multiple clients.
-func NewClientFactory(client *ethclient.Client, privateKeyHex string, additionalABIs ...string) (func(common.Address) (*WriteClient, error), error) {
+func NewClientFactory(client eth.EthClient, privateKeyHex string, additionalABIs ...string) (func(common.Address) (*WriteClient, error), error) {
 	// Verify private key validity early
 	_, err := crypto.HexToECDSA(privateKeyHex)
 	if err != nil {
@@ -85,7 +86,7 @@ func NewRead(rpcUrl string, contractAddr common.Address, additionalABIs ...strin
 }
 
 // NewReadWithClient creates a new ReadClient with an existing ethclient.
-func NewReadWithClient(client *ethclient.Client, contractAddr common.Address, additionalABIs ...string) (*ReadClient, error) {
+func NewReadWithClient(client eth.EthClient, contractAddr common.Address, additionalABIs ...string) (*ReadClient, error) {
 	mergedABI, err := MergeABIs(additionalABIs...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to merge ABIs: %w", err)

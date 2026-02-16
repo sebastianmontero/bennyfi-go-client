@@ -18,18 +18,19 @@ var (
 )
 
 type Stake struct {
-	RoundID          uint64                 `json:"pool_id"`
-	TotalStake       eos.Asset              `json:"total_stake"`
-	TotalReturn      eos.Asset              `json:"total_return"`
-	LastCycleReturn  eos.Asset              `json:"last_cycle_return"`
-	State            eos.Name               `json:"state"`
-	YieldSource      eos.Name               `json:"yield_source"`
-	Cycle            uint32                 `json:"cycle"`
-	StakingPeriod    *dto.Microseconds      `json:"staking_period"`
-	StakedTime       eos.TimePoint          `json:"staked_time"`
-	CycleStakedTime  eos.TimePoint          `json:"cycle_staked_time"`
-	StakeEndTime     eos.TimePoint          `json:"stake_end_time"`
-	AdditionalFields types.AdditionalFields `json:"additional_fields"`
+	RoundID            uint64                 `json:"pool_id"`
+	TotalStake         eos.Asset              `json:"total_stake"`
+	TotalReturn        eos.Asset              `json:"total_return"`
+	LastCycleReturn    eos.Asset              `json:"last_cycle_return"`
+	State              eos.Name               `json:"state"`
+	YieldSource        eos.Name               `json:"yield_source"`
+	Cycle              uint32                 `json:"cycle"`
+	CycleStakingPeriod *dto.Microseconds      `json:"cycle_staking_period"`
+	StakingPeriod      *dto.Microseconds      `json:"staking_period"`
+	StakedTime         eos.TimePoint          `json:"staked_time"`
+	CycleStakedTime    eos.TimePoint          `json:"cycle_staked_time"`
+	StakeEndTime       eos.TimePoint          `json:"stake_end_time"`
+	AdditionalFields   types.AdditionalFields `json:"additional_fields"`
 }
 
 func (m *Stake) String() string {

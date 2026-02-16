@@ -216,3 +216,17 @@ func (mc *MultiClient) nextClient() EthClient {
 	idx := atomic.AddUint64(&mc.index, 1) % uint64(len(mc.clients))
 	return mc.clients[idx]
 }
+
+func (mc *MultiClient) GetFirstClient() (*ethclient.Client, error) {
+	if len(mc.clients) == 0 {
+		return nil, nil // Or error "no clients"
+	}
+	// We know NewMultiClient populates with *ethclient.Client, but interface is EthClient.
+	// Type assertion needed.
+	client, ok := mc.clients[0].(*ethclient.Client)
+	if !ok {
+		// Should not happen if created via NewMultiClient, but safe check.
+		return nil, context.DeadlineExceeded // Just some error
+	}
+	return client, nil
+}

@@ -132,7 +132,7 @@ func New(rpcUrl string, privateKeyHex string, contractAddr common.Address) (*ExS
 // NewWithClient creates a new ExSatFSWrite client using an existing contract backend and private key.
 func NewWithClient(client eth.EthClient, privateKeyHex string, contractAddr common.Address) (*ExSatFSWrite, error) {
 	// 1. Create BaseWrite Client (merged ABI handled in base)
-	baseClient, err := base.NewWithClient(client.(*ethclient.Client), privateKeyHex, contractAddr, ExSatBankFixedStakingYieldSourceAdaptorABI)
+	baseClient, err := base.NewWithClient(client, privateKeyHex, contractAddr, ExSatBankFixedStakingYieldSourceAdaptorABI)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func NewRead(rpcUrl string, contractAddr common.Address) (*ExSatFSRead, error) {
 // NewReadWithClient creates a new ExSatFSRead client using an existing contract backend.
 func NewReadWithClient(client eth.EthClient, contractAddr common.Address) (*ExSatFSRead, error) {
 	// 1. Create BaseRead Client with merged ABI
-	baseClient, err := base.NewReadWithClient(client.(*ethclient.Client), contractAddr, ExSatBankFixedStakingYieldSourceAdaptorABI)
+	baseClient, err := base.NewReadWithClient(client, contractAddr, ExSatBankFixedStakingYieldSourceAdaptorABI)
 	if err != nil {
 		return nil, err
 	}

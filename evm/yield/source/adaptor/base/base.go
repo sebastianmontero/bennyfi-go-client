@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	evmbase "github.com/sebastianmontero/bennyfi-go-client/evm/base"
+	"github.com/sebastianmontero/bennyfi-go-client/evm/common/eth"
 )
 
 // IYieldSourceAdaptorABI is the ABI of the IYieldSourceAdaptor contract.
@@ -117,7 +118,7 @@ func New(rpcUrl string, privateKeyHex string, contractAddr common.Address, addit
 }
 
 // NewWithClient creates a new BaseWrite client with an existing ethclient.
-func NewWithClient(client *ethclient.Client, privateKeyHex string, contractAddr common.Address, additionalABIs ...string) (*BaseWrite, error) {
+func NewWithClient(client eth.EthClient, privateKeyHex string, contractAddr common.Address, additionalABIs ...string) (*BaseWrite, error) {
 	abis := append([]string{IYieldSourceAdaptorABI}, additionalABIs...)
 	wc, err := evmbase.NewWithClient(client, privateKeyHex, contractAddr, abis...)
 	if err != nil {
@@ -132,7 +133,7 @@ func NewWithClient(client *ethclient.Client, privateKeyHex string, contractAddr 
 
 // NewClientFactory creates a factory function that produces BaseWrite clients for a given address.
 // It captures the client and credentials to reuse them for creating multiple clients.
-func NewClientFactory(client *ethclient.Client, privateKeyHex string, additionalABIs ...string) (func(common.Address) (*BaseWrite, error), error) {
+func NewClientFactory(client eth.EthClient, privateKeyHex string, additionalABIs ...string) (func(common.Address) (*BaseWrite, error), error) {
 	abis := append([]string{IYieldSourceAdaptorABI}, additionalABIs...)
 	// Using generic factory
 	// Note: generic factory returns *WriteClient. We need to wrap it.
@@ -170,7 +171,7 @@ func NewRead(rpcUrl string, contractAddr common.Address, additionalABIs ...strin
 }
 
 // NewReadWithClient creates a new BaseRead client with an existing ethclient.
-func NewReadWithClient(client *ethclient.Client, contractAddr common.Address, additionalABIs ...string) (*BaseRead, error) {
+func NewReadWithClient(client eth.EthClient, contractAddr common.Address, additionalABIs ...string) (*BaseRead, error) {
 	abis := append([]string{IYieldSourceAdaptorABI}, additionalABIs...)
 	rc, err := evmbase.NewReadWithClient(client, contractAddr, abis...)
 	if err != nil {
