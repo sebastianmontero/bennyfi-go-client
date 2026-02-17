@@ -221,8 +221,13 @@ func (c *ExSatFSRead) GetPosition(agent common.Address, subId uint64) (*Position
 		return nil, err
 	}
 
+	principal := out[0].(*big.Int)
+	if principal.Sign() == 0 {
+		return nil, fmt.Errorf("position not found for agent %s and subId %d", agent.Hex(), subId)
+	}
+
 	return &Position{
-		Principal:    out[0].(*big.Int),
+		Principal:    principal,
 		StartTime:    out[1].(*big.Int),
 		Duration:     out[2].(*big.Int),
 		ReturnAmount: out[3].(*big.Int),

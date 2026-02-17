@@ -2,6 +2,7 @@ package exsatusdc
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"sync"
 
@@ -175,13 +176,18 @@ func (c *ExSatUSDCRead) GetStake(poolId uint64) (*Stake, error) {
 		return nil, err
 	}
 
+	state := out[5].(uint8)
+	if state == uint8(StakeStateUninitialized) {
+		return nil, fmt.Errorf("stake not found for poolId %d", poolId)
+	}
+
 	return &Stake{
 		PoolId:      out[0].(uint64),
 		TotalStake:  out[1].(*big.Int),
 		TotalShares: out[2].(*big.Int),
 		StakeTime:   out[3].(*big.Int),
 		UnlockTime:  out[4].(*big.Int),
-		State:       out[5].(uint8),
+		State:       state,
 		TotalReturn: out[6].(*big.Int),
 	}, nil
 }
