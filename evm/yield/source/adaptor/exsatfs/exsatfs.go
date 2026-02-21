@@ -84,6 +84,19 @@ const ExSatBankFixedStakingYieldSourceAdaptorABI = `[
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "fixedStakingAddress",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
     }
 ]`
 
@@ -217,6 +230,17 @@ func (c *ExSatFSRead) GetStakes(poolIds []uint64) (map[uint64]*Stake, error) {
 		return nil, err
 	}
 	return results, nil
+}
+
+// FixedStakingAddress retrieves the fixed staking address.
+func (c *ExSatFSRead) FixedStakingAddress() (common.Address, error) {
+	var out []interface{}
+	err := c.BaseRead.Contract.Call(nil, &out, "fixedStakingAddress")
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	return out[0].(common.Address), nil
 }
 
 // Unstake calls the unstake function on the contract.

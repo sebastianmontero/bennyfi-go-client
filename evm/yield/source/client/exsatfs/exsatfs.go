@@ -145,6 +145,7 @@ type ExSatFSRead struct {
 
 // ExSatFSWrite interacts with the IFixedStaking contract for write operations.
 type ExSatFSWrite struct {
+	*ExSatFSRead
 	*evmbase.WriteClient
 }
 
@@ -191,7 +192,12 @@ func NewWriteWithClient(client eth.EthClient, privateKeyHex string, contractAddr
 		return nil, err
 	}
 
+	readClient := &ExSatFSRead{
+		ReadClient: baseClient.ReadClient,
+	}
+
 	return &ExSatFSWrite{
+		ExSatFSRead: readClient,
 		WriteClient: baseClient,
 	}, nil
 }
@@ -244,7 +250,7 @@ func (c *ExSatFSWrite) Settle(agent common.Address, subId uint64, returnAmount *
 	bigSubIdBytes := bigSubId.Bytes()
 	copy(subIdBytes[32-len(bigSubIdBytes):], bigSubIdBytes)
 
-	tx, err := c.Contract.Transact(c.Auth, "settle", agent, subIdBytes, returnAmount, topupAmount, forceEarly)
+	tx, err := c.WriteClient.Contract.Transact(c.Auth, "settle", agent, subIdBytes, returnAmount, topupAmount, forceEarly)
 	if err != nil {
 		return "", fmt.Errorf("failed to settle position: %w", err)
 	}
@@ -259,7 +265,7 @@ func (c *ExSatFSWrite) UnlockPosition(agent common.Address, subId uint64) (strin
 	bigSubIdBytes := bigSubId.Bytes()
 	copy(subIdBytes[32-len(bigSubIdBytes):], bigSubIdBytes)
 
-	tx, err := c.Contract.Transact(c.Auth, "unlockPosition", agent, subIdBytes)
+	tx, err := c.WriteClient.Contract.Transact(c.Auth, "unlockPosition", agent, subIdBytes)
 	if err != nil {
 		return "", fmt.Errorf("failed to unlock position: %w", err)
 	}
