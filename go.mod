@@ -7,7 +7,7 @@ toolchain go1.24.11
 require (
 	github.com/ethereum/go-ethereum v1.16.7
 	github.com/sebastianmontero/eos-go v0.10.5-0.20251014033848-1f05f693154c
-	github.com/sebastianmontero/eos-go-toolbox v0.0.0-20251016002805-ba6e9b03a28e
+	github.com/sebastianmontero/eos-go-toolbox v0.0.0-20260214230409-ab3265a799e2
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/sync v0.12.0
 	gotest.tools v2.2.0+incompatible
@@ -61,6 +61,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/sebastianmontero/eos-go-toolbox => ../eos-go-toolbox
+// replace github.com/sebastianmontero/eos-go-toolbox => ../eos-go-toolbox
 
 // replace github.com/sebastianmontero/eos-go => ../eos-go
