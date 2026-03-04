@@ -184,8 +184,8 @@ func NewReadWithClient(client eth.EthClient, contractAddr common.Address, additi
 }
 
 // NewReadFromContract creates a new BaseRead client from an existing bound contract.
-func NewReadFromContract(contract *bind.BoundContract, contractAddr common.Address) *BaseRead {
-	rc := evmbase.NewReadFromContract(contract, contractAddr)
+func NewReadFromContract(client eth.EthClient, contract *bind.BoundContract, contractAddr common.Address) *BaseRead {
+	rc := evmbase.NewReadFromContract(client, contract, contractAddr)
 	return &BaseRead{
 		ReadClient: rc,
 	}

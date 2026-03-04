@@ -17,6 +17,7 @@ import (
 type ReadClient struct {
 	Contract *bind.BoundContract
 	Address  common.Address
+	Client   eth.EthClient
 }
 
 // WriteClient represents a base client for write operations.
@@ -102,6 +103,7 @@ func NewReadWithClient(client eth.EthClient, contractAddr common.Address, additi
 	return &ReadClient{
 		Contract: contract,
 		Address:  contractAddr,
+		Client:   client,
 	}, nil
 }
 
@@ -137,9 +139,10 @@ func MergeABIs(abis ...string) (string, error) {
 }
 
 // NewReadFromContract creates a new ReadClient from an existing bound contract.
-func NewReadFromContract(contract *bind.BoundContract, contractAddr common.Address) *ReadClient {
+func NewReadFromContract(client eth.EthClient, contract *bind.BoundContract, contractAddr common.Address) *ReadClient {
 	return &ReadClient{
 		Contract: contract,
 		Address:  contractAddr,
+		Client:   client,
 	}
 }

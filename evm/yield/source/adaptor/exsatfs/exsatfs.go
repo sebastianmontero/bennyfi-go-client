@@ -97,6 +97,19 @@ const ExSatBankFixedStakingYieldSourceAdaptorABI = `[
       ],
       "stateMutability": "view",
       "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "_poolId",
+          "type": "uint64"
+        }
+      ],
+      "name": "claimPartialReturn",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
     }
 ]`
 
@@ -251,4 +264,9 @@ func (c *ExSatFSWrite) Unstake(poolId uint64) (*types.Transaction, error) {
 // UnlockStake calls the unlockStake function on the contract.
 func (c *ExSatFSWrite) UnlockStake(poolId uint64) (*types.Transaction, error) {
 	return c.BaseWrite.Contract.Transact(c.Auth, "unlockStake", poolId)
+}
+
+// ClaimPartialReturn calls the claimPartialReturn function on the contract.
+func (c *ExSatFSWrite) ClaimPartialReturn(poolId uint64) (*types.Transaction, error) {
+	return c.BaseWrite.Contract.Transact(c.Auth, "claimPartialReturn", poolId)
 }

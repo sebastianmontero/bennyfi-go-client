@@ -1,10 +1,15 @@
 package exsatfs
 
 import (
+	"context"
 	"fmt"
 	"math/big"
+	"strings"
 
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	evmbase "github.com/sebastianmontero/bennyfi-go-client/evm/base"
 	"github.com/sebastianmontero/bennyfi-go-client/evm/common/eth"
@@ -46,6 +51,16 @@ const IFixedStakingABI = `[
         {
           "internalType": "uint256",
           "name": "returnAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "totalCoupons",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "pendingRewards",
           "type": "uint256"
         },
         {
@@ -125,17 +140,102 @@ const IFixedStakingABI = `[
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "agent",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "subId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "distributeReturn",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "minPartialReturnThreshold",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "agent",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "subId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "returnAmount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "topupAmount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "forcedEarly",
+          "type": "bool"
+        }
+      ],
+      "name": "Settled",
+      "type": "event"
     }
 ]`
 
 // Position represents the fixed-term position details.
 type Position struct {
-	Principal    *big.Int
-	StartTime    *big.Int
-	Duration     *big.Int
+	Principal      *big.Int
+	StartTime      *big.Int
+	Duration       *big.Int
+	ReturnAmount   *big.Int
+	TotalCoupons   *big.Int
+	PendingRewards *big.Int
+	IsSettled      bool
+	IsWithdrawn    bool
+}
+
+// SettledEvent represents a Settled event emitted by the IFixedStaking contract.
+type SettledEvent struct {
+	Agent        common.Address
+	SubId        [32]byte
 	ReturnAmount *big.Int
-	IsSettled    bool
-	IsWithdrawn  bool
+	TopupAmount  *big.Int
+	ForcedEarly  bool
+	Raw          types.Log
 }
 
 // ExSatFSRead interacts with the IFixedStaking contract for read-only operations.
@@ -212,6 +312,16 @@ func (c *ExSatFSRead) StakingToken() (common.Address, error) {
 	return out[0].(common.Address), nil
 }
 
+// MinPartialReturnThreshold retrieves the minimum partial return threshold.
+func (c *ExSatFSRead) MinPartialReturnThreshold() (*big.Int, error) {
+	var out []interface{}
+	err := c.Contract.Call(nil, &out, "minPartialReturnThreshold")
+	if err != nil {
+		return nil, err
+	}
+	return out[0].(*big.Int), nil
+}
+
 // GetPosition retrieves the position details for a given agent and subId.
 func (c *ExSatFSRead) GetPosition(agent common.Address, subId uint64) (*Position, error) {
 	var out []interface{}
@@ -233,12 +343,14 @@ func (c *ExSatFSRead) GetPosition(agent common.Address, subId uint64) (*Position
 	}
 
 	return &Position{
-		Principal:    principal,
-		StartTime:    out[1].(*big.Int),
-		Duration:     out[2].(*big.Int),
-		ReturnAmount: out[3].(*big.Int),
-		IsSettled:    out[4].(bool),
-		IsWithdrawn:  out[5].(bool),
+		Principal:      principal,
+		StartTime:      out[1].(*big.Int),
+		Duration:       out[2].(*big.Int),
+		ReturnAmount:   out[3].(*big.Int),
+		TotalCoupons:   out[4].(*big.Int),
+		PendingRewards: out[5].(*big.Int),
+		IsSettled:      out[6].(bool),
+		IsWithdrawn:    out[7].(bool),
 	}, nil
 }
 
@@ -270,4 +382,67 @@ func (c *ExSatFSWrite) UnlockPosition(agent common.Address, subId uint64) (strin
 		return "", fmt.Errorf("failed to unlock position: %w", err)
 	}
 	return tx.Hash().Hex(), nil
+}
+
+// DistributeReturn distributes an interim return (coupon) to a specific position.
+func (c *ExSatFSWrite) DistributeReturn(agent common.Address, subId uint64, amount *big.Int) (string, error) {
+	// Convert uint64 subId to bytes32 (Big Endian)
+	var subIdBytes [32]byte
+	bigSubId := new(big.Int).SetUint64(subId)
+	bigSubIdBytes := bigSubId.Bytes()
+	copy(subIdBytes[32-len(bigSubIdBytes):], bigSubIdBytes)
+
+	tx, err := c.WriteClient.Contract.Transact(c.Auth, "distributeReturn", agent, subIdBytes, amount)
+	if err != nil {
+		return "", fmt.Errorf("failed to distribute return: %w", err)
+	}
+	return tx.Hash().Hex(), nil
+}
+
+// FilterSettledEvents retrieves Settled events for a specific agent from a starting block.
+// endBlock is optional (can be nil).
+func (c *ExSatFSRead) FilterSettledEvents(ctx context.Context, startBlock uint64, endBlock *uint64, agent common.Address) ([]*SettledEvent, error) {
+	parsedABI, err := abi.JSON(strings.NewReader(IFixedStakingABI))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse ABI: %w", err)
+	}
+
+	query := ethereum.FilterQuery{
+		FromBlock: new(big.Int).SetUint64(startBlock),
+		Addresses: []common.Address{c.Address},
+		Topics: [][]common.Hash{
+			{parsedABI.Events["Settled"].ID},
+			{common.BytesToHash(agent.Bytes())},
+		},
+	}
+	if endBlock != nil {
+		query.ToBlock = new(big.Int).SetUint64(*endBlock)
+	}
+
+	logs, err := c.Client.FilterLogs(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to filter logs: %w", err)
+	}
+
+	var events []*SettledEvent
+	for _, vLog := range logs {
+		var event SettledEvent
+
+		err := parsedABI.UnpackIntoInterface(&event, "Settled", vLog.Data)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unpack event data: %w", err)
+		}
+
+		if len(vLog.Topics) > 1 {
+			event.Agent = common.BytesToAddress(vLog.Topics[1].Bytes())
+		}
+		if len(vLog.Topics) > 2 {
+			event.SubId = vLog.Topics[2]
+		}
+
+		event.Raw = vLog
+		events = append(events, &event)
+	}
+
+	return events, nil
 }
