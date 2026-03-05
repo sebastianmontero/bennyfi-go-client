@@ -110,6 +110,19 @@ const ExSatBankFixedStakingYieldSourceAdaptorABI = `[
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
+    },
+		{
+      "inputs": [],
+      "name": "minPartialReturnThreshold",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
     }
 ]`
 
@@ -254,6 +267,16 @@ func (c *ExSatFSRead) FixedStakingAddress() (common.Address, error) {
 	}
 
 	return out[0].(common.Address), nil
+}
+
+// MinPartialReturnThreshold retrieves the minimum partial return threshold.
+func (c *ExSatFSRead) MinPartialReturnThreshold() (*big.Int, error) {
+	var out []interface{}
+	err := c.Contract.Call(nil, &out, "minPartialReturnThreshold")
+	if err != nil {
+		return nil, err
+	}
+	return out[0].(*big.Int), nil
 }
 
 // Unstake calls the unstake function on the contract.

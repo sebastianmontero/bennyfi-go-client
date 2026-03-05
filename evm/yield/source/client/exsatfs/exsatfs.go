@@ -165,19 +165,6 @@ const IFixedStakingABI = `[
       "type": "function"
     },
     {
-      "inputs": [],
-      "name": "minPartialReturnThreshold",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
       "anonymous": false,
       "inputs": [
         {
@@ -213,6 +200,31 @@ const IFixedStakingABI = `[
       ],
       "name": "Settled",
       "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "agent",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "subId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "CouponDistributed",
+      "type": "event"
     }
 ]`
 
@@ -236,6 +248,14 @@ type SettledEvent struct {
 	TopupAmount  *big.Int
 	ForcedEarly  bool
 	Raw          types.Log
+}
+
+// CouponDistributedEvent represents a CouponDistributed event emitted by the IFixedStaking contract.
+type CouponDistributedEvent struct {
+	Agent  common.Address
+	SubId  [32]byte
+	Amount *big.Int
+	Raw    types.Log
 }
 
 // ExSatFSRead interacts with the IFixedStaking contract for read-only operations.
@@ -310,16 +330,6 @@ func (c *ExSatFSRead) StakingToken() (common.Address, error) {
 		return common.Address{}, err
 	}
 	return out[0].(common.Address), nil
-}
-
-// MinPartialReturnThreshold retrieves the minimum partial return threshold.
-func (c *ExSatFSRead) MinPartialReturnThreshold() (*big.Int, error) {
-	var out []interface{}
-	err := c.Contract.Call(nil, &out, "minPartialReturnThreshold")
-	if err != nil {
-		return nil, err
-	}
-	return out[0].(*big.Int), nil
 }
 
 // GetPosition retrieves the position details for a given agent and subId.
@@ -399,21 +409,28 @@ func (c *ExSatFSWrite) DistributeReturn(agent common.Address, subId uint64, amou
 	return tx.Hash().Hex(), nil
 }
 
-// FilterSettledEvents retrieves Settled events for a specific agent from a starting block.
-// endBlock is optional (can be nil).
-func (c *ExSatFSRead) FilterSettledEvents(ctx context.Context, startBlock uint64, endBlock *uint64, agent common.Address) ([]*SettledEvent, error) {
+func (c *ExSatFSRead) filterEvents(ctx context.Context, eventName string, startBlock uint64, endBlock *uint64, agent *common.Address) ([]types.Log, *abi.ABI, error) {
 	parsedABI, err := abi.JSON(strings.NewReader(IFixedStakingABI))
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse ABI: %w", err)
+		return nil, nil, fmt.Errorf("failed to parse ABI: %w", err)
+	}
+
+	eventAbi, ok := parsedABI.Events[eventName]
+	if !ok {
+		return nil, nil, fmt.Errorf("event %s not found in ABI", eventName)
+	}
+
+	var topics [][]common.Hash
+	topics = append(topics, []common.Hash{eventAbi.ID})
+
+	if agent != nil {
+		topics = append(topics, []common.Hash{common.BytesToHash(agent.Bytes())})
 	}
 
 	query := ethereum.FilterQuery{
 		FromBlock: new(big.Int).SetUint64(startBlock),
 		Addresses: []common.Address{c.Address},
-		Topics: [][]common.Hash{
-			{parsedABI.Events["Settled"].ID},
-			{common.BytesToHash(agent.Bytes())},
-		},
+		Topics:    topics,
 	}
 	if endBlock != nil {
 		query.ToBlock = new(big.Int).SetUint64(*endBlock)
@@ -421,7 +438,18 @@ func (c *ExSatFSRead) FilterSettledEvents(ctx context.Context, startBlock uint64
 
 	logs, err := c.Client.FilterLogs(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("failed to filter logs: %w", err)
+		return nil, nil, fmt.Errorf("failed to filter logs: %w", err)
+	}
+
+	return logs, &parsedABI, nil
+}
+
+// FilterSettledEvents retrieves Settled events for a specific agent from a starting block.
+// endBlock is optional (can be nil).
+func (c *ExSatFSRead) FilterSettledEvents(ctx context.Context, startBlock uint64, endBlock *uint64, agent common.Address) ([]*SettledEvent, error) {
+	logs, parsedABI, err := c.filterEvents(ctx, "Settled", startBlock, endBlock, &agent)
+	if err != nil {
+		return nil, err
 	}
 
 	var events []*SettledEvent
@@ -429,6 +457,37 @@ func (c *ExSatFSRead) FilterSettledEvents(ctx context.Context, startBlock uint64
 		var event SettledEvent
 
 		err := parsedABI.UnpackIntoInterface(&event, "Settled", vLog.Data)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unpack event data: %w", err)
+		}
+
+		if len(vLog.Topics) > 1 {
+			event.Agent = common.BytesToAddress(vLog.Topics[1].Bytes())
+		}
+		if len(vLog.Topics) > 2 {
+			event.SubId = vLog.Topics[2]
+		}
+
+		event.Raw = vLog
+		events = append(events, &event)
+	}
+
+	return events, nil
+}
+
+// FilterCouponDistributedEvents retrieves CouponDistributed events for a specific agent from a starting block.
+// endBlock is optional (can be nil).
+func (c *ExSatFSRead) FilterCouponDistributedEvents(ctx context.Context, startBlock uint64, endBlock *uint64, agent common.Address) ([]*CouponDistributedEvent, error) {
+	logs, parsedABI, err := c.filterEvents(ctx, "CouponDistributed", startBlock, endBlock, &agent)
+	if err != nil {
+		return nil, err
+	}
+
+	var events []*CouponDistributedEvent
+	for _, vLog := range logs {
+		var event CouponDistributedEvent
+
+		err := parsedABI.UnpackIntoInterface(&event, "CouponDistributed", vLog.Data)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unpack event data: %w", err)
 		}
