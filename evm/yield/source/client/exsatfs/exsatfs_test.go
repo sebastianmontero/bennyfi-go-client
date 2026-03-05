@@ -18,7 +18,7 @@ func TestABI(t *testing.T) {
 	method, ok := parsedABI.Methods["getPosition"]
 	assert.Assert(t, ok, "Method 'getPosition' not found in ABI")
 	assert.Equal(t, len(method.Inputs), 2) // agent, subId
-	assert.Equal(t, len(method.Outputs), 6) // Flattened outputs
+	assert.Equal(t, len(method.Outputs), 8) // Flattened outputs
 
 	// Verify Input types
 	assert.Equal(t, method.Inputs[0].Type.String(), "address")

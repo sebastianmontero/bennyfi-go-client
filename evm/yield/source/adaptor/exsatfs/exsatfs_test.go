@@ -16,7 +16,7 @@ func TestABI(t *testing.T) {
 	method, ok := parsedABI.Methods["stakes"]
 	assert.Assert(t, ok, "Method 'stakes' not found in ABI")
 	assert.Equal(t, len(method.Inputs), 1)
-	assert.Equal(t, len(method.Outputs), 6) // poolId, totalStake, stakeTime, unlockTime, state, totalReturn
+	assert.Equal(t, len(method.Outputs), 7) // poolId, yieldSourceName, totalStake, stakeTime, unlockTime, state, totalReturn
 
 	// Verify 'unstake' method
 	method, ok = parsedABI.Methods["unstake"]

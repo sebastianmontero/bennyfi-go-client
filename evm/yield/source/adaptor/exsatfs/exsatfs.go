@@ -31,6 +31,11 @@ const ExSatBankFixedStakingYieldSourceAdaptorABI = `[
           "type": "uint64"
         },
         {
+          "internalType": "string",
+          "name": "yieldSourceName",
+          "type": "string"
+        },
+        {
           "internalType": "uint256",
           "name": "totalStake",
           "type": "uint256"
@@ -137,12 +142,13 @@ const (
 
 // Stake represents the stake information returned by the smart contract.
 type Stake struct {
-	PoolId      uint64
-	TotalStake  *big.Int
-	StakeTime   *big.Int
-	UnlockTime  *big.Int
-	State       uint8
-	TotalReturn *big.Int
+	PoolId          uint64
+	YieldSourceName string
+	TotalStake      *big.Int
+	StakeTime       *big.Int
+	UnlockTime      *big.Int
+	State           uint8
+	TotalReturn     *big.Int
 }
 
 // ExSatFSRead interacts with the ExSatBankFixedStakingYieldSourceAdaptor contract for read-only operations.
@@ -221,12 +227,13 @@ func (c *ExSatFSRead) GetStake(poolId uint64) (*Stake, error) {
 	}
 
 	return &Stake{
-		PoolId:      out[0].(uint64),
-		TotalStake:  out[1].(*big.Int),
-		StakeTime:   out[2].(*big.Int),
-		UnlockTime:  out[3].(*big.Int),
-		State:       out[4].(uint8),
-		TotalReturn: out[5].(*big.Int),
+		PoolId:          out[0].(uint64),
+		YieldSourceName: out[1].(string),
+		TotalStake:      out[2].(*big.Int),
+		StakeTime:       out[3].(*big.Int),
+		UnlockTime:      out[4].(*big.Int),
+		State:           out[5].(uint8),
+		TotalReturn:     out[6].(*big.Int),
 	}, nil
 }
 
