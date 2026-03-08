@@ -147,7 +147,7 @@ type Stake struct {
 	TotalStake      *big.Int
 	StakeTime       *big.Int
 	UnlockTime      *big.Int
-	State           uint8
+	State           StakeState
 	TotalReturn     *big.Int
 }
 
@@ -232,7 +232,7 @@ func (c *ExSatFSRead) GetStake(poolId uint64) (*Stake, error) {
 		TotalStake:      out[2].(*big.Int),
 		StakeTime:       out[3].(*big.Int),
 		UnlockTime:      out[4].(*big.Int),
-		State:           out[5].(uint8),
+		State:           StakeState(out[5].(uint8)),
 		TotalReturn:     out[6].(*big.Int),
 	}, nil
 }

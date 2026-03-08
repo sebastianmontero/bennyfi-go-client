@@ -2,6 +2,7 @@ package base
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -145,4 +146,60 @@ func NewReadFromContract(client eth.EthClient, contract *bind.BoundContract, con
 		Address:  contractAddr,
 		Client:   client,
 	}
+}
+
+// TryGetRevertReason simulates a transaction using Call to extract a more detailed revert reason.
+// Many EVM nodes drop the revert data during gas estimation (which Transact uses),
+// but provide it reliably during eth_call.
+func (c *WriteClient) TryGetRevertReason(origErr error, method string, params ...interface{}) error {
+	callOpts := &bind.CallOpts{
+		Pending: false,
+		From:    c.Auth.From,
+		Context: c.Auth.Context,
+	}
+	if callOpts.Context == nil {
+		callOpts.Context = context.Background()
+	}
+	
+	var out []interface{}
+	callErr := c.Contract.Call(callOpts, &out, method, params...)
+	if callErr != nil {
+		// Parse the simulated call error
+		return ParseError(callErr)
+	}
+	// If the call inexplicably succeeds, or origErr cannot be parsed better, fallback to parsing origErr
+	return ParseError(origErr)
+}
+
+// ParseError attempts to extract a revert reason from an error returned by go-ethereum.
+// It looks for a JSON-RPC DataError and tries to decode it.
+func ParseError(err error) error {
+	if err == nil {
+		return nil
+	}
+	
+	// Use reflection or interface assertion to get the RPC DataError if present.
+	type dataError interface {
+		ErrorData() interface{}
+	}
+
+	var dErr dataError
+	if errors.As(err, &dErr) {
+		data := dErr.ErrorData()
+		if strData, ok := data.(string); ok && strData != "" {
+			// Try to unpack the standard revert reason
+			if len(strData) >= 138 && strings.HasPrefix(strData, "0x08c379a0") { // 0x08c379a0 is Error(string) signature
+				bytesData := common.FromHex(strData)
+				revertReason, unpackErr := abi.UnpackRevert(bytesData)
+				if unpackErr == nil {
+					return fmt.Errorf("execution reverted: %s", revertReason)
+				}
+			}
+			return fmt.Errorf("execution reverted (raw data: %s): %w", strData, err)
+		} else if data != nil {
+			return fmt.Errorf("execution reverted (complex data structure): %w", err)
+		}
+	}
+	
+	return err
 }

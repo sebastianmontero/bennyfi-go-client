@@ -225,6 +225,29 @@ const IFixedStakingABI = `[
       ],
       "name": "CouponDistributed",
       "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "agent",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "subId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "intervalDays",
+          "type": "uint256"
+        }
+      ],
+      "name": "shiftStartTime",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
     }
 ]`
 
@@ -374,7 +397,8 @@ func (c *ExSatFSWrite) Settle(agent common.Address, subId uint64, returnAmount *
 
 	tx, err := c.WriteClient.Contract.Transact(c.Auth, "settle", agent, subIdBytes, returnAmount, topupAmount, forceEarly)
 	if err != nil {
-		return "", fmt.Errorf("failed to settle position: %w", err)
+		err = c.WriteClient.TryGetRevertReason(err, "settle", agent, subIdBytes, returnAmount, topupAmount, forceEarly)
+		return "", fmt.Errorf("failed to settle position for agent %s, subId %d, returnAmount %s, topupAmount %s, forceEarly %t: %w", agent.Hex(), subId, returnAmount.String(), topupAmount.String(), forceEarly, err)
 	}
 	return tx.Hash().Hex(), nil
 }
@@ -389,7 +413,8 @@ func (c *ExSatFSWrite) UnlockPosition(agent common.Address, subId uint64) (strin
 
 	tx, err := c.WriteClient.Contract.Transact(c.Auth, "unlockPosition", agent, subIdBytes)
 	if err != nil {
-		return "", fmt.Errorf("failed to unlock position: %w", err)
+		err = c.WriteClient.TryGetRevertReason(err, "unlockPosition", agent, subIdBytes)
+		return "", fmt.Errorf("failed to unlock position for agent %s, subId %d: %w", agent.Hex(), subId, err)
 	}
 	return tx.Hash().Hex(), nil
 }
@@ -404,7 +429,24 @@ func (c *ExSatFSWrite) DistributeReturn(agent common.Address, subId uint64, amou
 
 	tx, err := c.WriteClient.Contract.Transact(c.Auth, "distributeReturn", agent, subIdBytes, amount)
 	if err != nil {
-		return "", fmt.Errorf("failed to distribute return: %w", err)
+		err = c.WriteClient.TryGetRevertReason(err, "distributeReturn", agent, subIdBytes, amount)
+		return "", fmt.Errorf("failed to distribute return for agent %s, subId %d, amount %s: %w", agent.Hex(), subId, amount.String(), err)
+	}
+	return tx.Hash().Hex(), nil
+}
+
+// ShiftStartTime shifts the startTime of a position to the start of the next interval.
+func (c *ExSatFSWrite) ShiftStartTime(agent common.Address, subId uint64, intervalDays *big.Int) (string, error) {
+	// Convert uint64 subId to bytes32 (Big Endian)
+	var subIdBytes [32]byte
+	bigSubId := new(big.Int).SetUint64(subId)
+	bigSubIdBytes := bigSubId.Bytes()
+	copy(subIdBytes[32-len(bigSubIdBytes):], bigSubIdBytes)
+
+	tx, err := c.WriteClient.Contract.Transact(c.Auth, "shiftStartTime", agent, subIdBytes, intervalDays)
+	if err != nil {
+		err = c.WriteClient.TryGetRevertReason(err, "shiftStartTime", agent, subIdBytes, intervalDays)
+		return "", fmt.Errorf("failed to shift start time for agent %s, subId %d, intervalDays %s: %w", agent.Hex(), subId, intervalDays.String(), err)
 	}
 	return tx.Hash().Hex(), nil
 }
