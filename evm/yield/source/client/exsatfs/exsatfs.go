@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -251,6 +252,33 @@ const IFixedStakingABI = `[
     }
 ]`
 
+// ERC20ApproveABI is a minimal ABI for the ERC20 approve function.
+const ERC20ApproveABI = `[
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_spender",
+				"type": "address"
+			},
+			{
+				"name": "_value",
+				"type": "uint256"
+			}
+		],
+		"name": "approve",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	}
+]`
+
 // Position represents the fixed-term position details.
 type Position struct {
 	Principal      *big.Int
@@ -273,12 +301,26 @@ type SettledEvent struct {
 	Raw          types.Log
 }
 
+// String returns a string representation of the SettledEvent.
+func (e *SettledEvent) String() string {
+	subId := new(big.Int).SetBytes(e.SubId[:]).Uint64()
+	return fmt.Sprintf("Agent: %s, SubId: %d, ReturnAmount: %s, TopupAmount: %s, ForcedEarly: %v",
+		e.Agent.Hex(), subId, e.ReturnAmount.String(), e.TopupAmount.String(), e.ForcedEarly)
+}
+
 // CouponDistributedEvent represents a CouponDistributed event emitted by the IFixedStaking contract.
 type CouponDistributedEvent struct {
 	Agent  common.Address
 	SubId  [32]byte
 	Amount *big.Int
 	Raw    types.Log
+}
+
+// String returns a string representation of the CouponDistributedEvent.
+func (e *CouponDistributedEvent) String() string {
+	subId := new(big.Int).SetBytes(e.SubId[:]).Uint64()
+	return fmt.Sprintf("Agent: %s, SubId: %d, Amount: %s",
+		e.Agent.Hex(), subId, e.Amount.String())
 }
 
 // ExSatFSRead interacts with the IFixedStaking contract for read-only operations.
@@ -421,13 +463,78 @@ func (c *ExSatFSWrite) UnlockPosition(agent common.Address, subId uint64) (strin
 
 // DistributeReturn distributes an interim return (coupon) to a specific position.
 func (c *ExSatFSWrite) DistributeReturn(agent common.Address, subId uint64, amount *big.Int) (string, error) {
+	// 1. Approve the staking token to be spent by the ExSatFS contract
+	stakingTokenAddr, err := c.StakingToken()
+	if err != nil {
+		return "", fmt.Errorf("failed to get staking token address: %w", err)
+	}
+
+	parsedABI, err := abi.JSON(strings.NewReader(ERC20ApproveABI))
+	if err != nil {
+		return "", fmt.Errorf("failed to parse ERC20 Approve ABI: %w", err)
+	}
+
+	tokenContract := bind.NewBoundContract(stakingTokenAddr, parsedABI, c.WriteClient.Client, c.WriteClient.Client, c.WriteClient.Client)
+
+	// Get pending nonce to sequence transactions correctly
+	nonce, err := c.WriteClient.Client.PendingNonceAt(context.Background(), c.Auth.From)
+	if err != nil {
+		return "", fmt.Errorf("failed to get pending nonce for %s: %w", c.Auth.From.Hex(), err)
+	}
+
+	approveAuth := &bind.TransactOpts{
+		From:     c.Auth.From,
+		Nonce:    new(big.Int).SetUint64(nonce),
+		Signer:   c.Auth.Signer,
+		Value:    c.Auth.Value,
+		GasPrice: c.Auth.GasPrice,
+		GasFeeCap: c.Auth.GasFeeCap,
+		GasTipCap: c.Auth.GasTipCap,
+		GasLimit: c.Auth.GasLimit,
+		Context:  c.Auth.Context,
+		NoSend:   c.Auth.NoSend,
+	}
+
+	txApprove, err := tokenContract.Transact(approveAuth, "approve", c.WriteClient.Address, amount)
+	if err != nil {
+		return "", fmt.Errorf("failed to approve token amount %s for contract %s: %w", amount.String(), c.WriteClient.Address.Hex(), err)
+	}
+
+	// Wait for the approve transaction to be mined
+	receipt, err := bind.WaitMined(context.Background(), c.WriteClient.Client, txApprove)
+	if err != nil {
+		return "", fmt.Errorf("failed to wait for approve transaction to be mined: %w", err)
+	}
+	if receipt.Status != types.ReceiptStatusSuccessful {
+		return "", fmt.Errorf("approve transaction reverted")
+	}
+
+	// 2. Execute distributeReturn using the updated pending nonce
+	distributeNonce, err := c.WriteClient.Client.PendingNonceAt(context.Background(), c.Auth.From)
+	if err != nil {
+		return "", fmt.Errorf("failed to get pending nonce for %s: %w", c.Auth.From.Hex(), err)
+	}
+
+	distributeAuth := &bind.TransactOpts{
+		From:      c.Auth.From,
+		Nonce:     new(big.Int).SetUint64(distributeNonce),
+		Signer:    c.Auth.Signer,
+		Value:     c.Auth.Value,
+		GasPrice:  c.Auth.GasPrice,
+		GasFeeCap: c.Auth.GasFeeCap,
+		GasTipCap: c.Auth.GasTipCap,
+		GasLimit:  c.Auth.GasLimit,
+		Context:   c.Auth.Context,
+		NoSend:    c.Auth.NoSend,
+	}
+
 	// Convert uint64 subId to bytes32 (Big Endian)
 	var subIdBytes [32]byte
 	bigSubId := new(big.Int).SetUint64(subId)
 	bigSubIdBytes := bigSubId.Bytes()
 	copy(subIdBytes[32-len(bigSubIdBytes):], bigSubIdBytes)
 
-	tx, err := c.WriteClient.Contract.Transact(c.Auth, "distributeReturn", agent, subIdBytes, amount)
+	tx, err := c.WriteClient.Contract.Transact(distributeAuth, "distributeReturn", agent, subIdBytes, amount)
 	if err != nil {
 		err = c.WriteClient.TryGetRevertReason(err, "distributeReturn", agent, subIdBytes, amount)
 		return "", fmt.Errorf("failed to distribute return for agent %s, subId %d, amount %s: %w", agent.Hex(), subId, amount.String(), err)

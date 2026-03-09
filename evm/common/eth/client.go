@@ -16,6 +16,7 @@ import (
 // It includes all methods from bind.ContractBackend and verify methods like ChainID.
 type EthClient interface {
 	bind.ContractBackend
+	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 	ChainID(ctx context.Context) (*big.Int, error)
 	Close()
 }
@@ -203,6 +204,17 @@ func (mc *MultiClient) ChainID(ctx context.Context) (*big.Int, error) {
 	err := mc.executeTry(func(c EthClient) error {
 		var err error
 		val, err = c.ChainID(ctx)
+		return err
+	})
+	return val, err
+}
+
+// TransactionReceipt implementation.
+func (mc *MultiClient) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
+	var val *types.Receipt
+	err := mc.executeTry(func(c EthClient) error {
+		var err error
+		val, err = c.TransactionReceipt(ctx, txHash)
 		return err
 	})
 	return val, err
