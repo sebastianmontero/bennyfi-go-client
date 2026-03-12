@@ -222,11 +222,11 @@ func (c *ExSatFRSRead) GetStake(poolId uint64) (*Stake, error) {
 
 	return &Stake{
 		PoolId:      out[0].(uint64),
-		TotalStake:  out[2].(*big.Int),
-		StakeTime:   out[3].(*big.Int),
-		UnlockTime:  out[4].(*big.Int),
-		State:       StakeState(out[5].(uint8)),
-		TotalReturn: out[6].(*big.Int),
+		TotalStake:  out[1].(*big.Int),
+		StakeTime:   out[2].(*big.Int),
+		UnlockTime:  out[3].(*big.Int),
+		State:       StakeState(out[4].(uint8)),
+		TotalReturn: out[5].(*big.Int),
 	}, nil
 }
 
